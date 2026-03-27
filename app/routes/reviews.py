@@ -43,14 +43,14 @@ def generate():
     check_usage_limit(user_id)
 
     # 2. Save the incoming review to DB
+    # Column names MUST match the DB schema exactly (see 002_create_reviews.sql)
+    # DB column is "rating" NOT "star_rating". No "platform" column exists.
     review_data = {
-        "star_rating": data["rating"],
+        "rating": data["rating"],
         "review_text": data["review_text"] if data["review_text"] else None,
         "reviewer_name": data["reviewer_name"] if data["reviewer_name"] else None,
-        "google_review_id": data["google_review_id"],
+        "google_review_id": data["google_review_id"] if data["google_review_id"] else None,
         "status": "pending",
-        "platform": "google",
-        "is_deleted": False,
     }
 
     saved_review = insert_review(user_id, review_data)
@@ -76,13 +76,13 @@ def generate():
     model_used = get_model_for_complexity(complexity)
 
     # 4. Save the generated reply to DB
+    # Column names match 003_create_replies.sql; is_deleted has DB DEFAULT
     reply_data = {
         "review_id": saved_review["id"],
         "reply_text": reply_text,
         "status": "draft",
         "generation_ms": duration_ms,
         "model_used": model_used,
-        "is_deleted": False,
     }
 
     saved_reply = insert_reply(user_id, reply_data)
@@ -138,7 +138,7 @@ def history():
     # Fetch page of reviews
     rows_result = (
         supabase.from_("reviews")
-        .select("id, review_text, star_rating, reviewer_name, platform, status, created_at")
+        .select("id, review_text, rating, reviewer_name, status, created_at")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
         .order("created_at", desc=True)
