@@ -8,6 +8,7 @@ This log tracks all major architectural shifts, feature additions, and critical 
 **Goal:** Merge separate services into a unified, one-click deployable monorepo.
 
 ### 2026-03-27
+- **[Resiliency] Webhook Observability:** Added detailed logging to the Stripe webhook handler and aligned Supabase syntax (`table` instead of `from_`). This ensures transparent tracking of plan upgrades.
 - **[DEFINITIVE FIX] Column Name Mismatch:** The `reviews` table uses `rating` (per `002_create_reviews.sql`), but the insert payload was sending `star_rating` — a column that doesn't exist. Also removed phantom `platform` column from inserts and SELECT queries. This was the true root cause of every `PGRST204` error.
 - **[Fix] Supabase Schema Compliance:** Resolved `PGRST204` error by adding missing `platform` and `is_deleted` fields to review/reply inserts.
 - **[BREAKTHROUGH] World-Class Debugging:** Resolved a persistent 500 error caused by a `TypeError` in the logging utility. Found a signature mismatch where `user_id` was being passed both positionally and as a keyword across the model layer.

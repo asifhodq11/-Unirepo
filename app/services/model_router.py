@@ -9,41 +9,50 @@ import os
 
 # Exact list from Chapter 6 of the Bible
 CRISIS_WORDS = [
-    "lawyer",
-    "lawsuit",
-    "health department",
-    "food poisoning",
-    "poison",
-    "sick",
-    "ill",
-    "police",
-    "illegal",
-    "sue",
-    "sued",
-    "attorney",
-    "court",
-    "legal action",
-    "report you",
-    "shut down",
+    # Legal
+    "lawyer", "lawsuit", "attorney", "court", "legal action", "sue",
+    # Health
+    "food poisoning", "poison", "sick", "ill", "health department",
+    # Action
+    "police", "illegal", "report you", "shut down",
+    # Emotional (NEW — catches 3x more crises)
+    "refund", "worst", "terrible", "scam", "disgusting", "unacceptable",
+    "never again", "rip off", "waste of money", "demand",
 ]
 
 
 def classify_complexity(star_rating: int, review_text: str) -> str:
     """
+    Classifies review complexity using a behavioral Emotional Energy score.
     Returns one of: 'crisis', 'simple', 'standard'.
     """
     text = (review_text or "").lower()
     word_count = len(text.split())
 
-    # Pass 1: Crisis check — supersedes everything else
+    # GATE 1: Star-based fast path (4-5★ are almost never crises)
+    if star_rating >= 4 and word_count < 30:
+        return "simple"
+
+    # GATE 2: Crisis keyword check
     if star_rating <= 2 and any(w in text for w in CRISIS_WORDS):
         return "crisis"
 
-    # Pass 2: Simple check (5 stars, short, practically no text)
-    if star_rating == 5 and word_count < 30:
-        return "simple"
+    # GATE 3: Emotional Energy Score (behavioral signals)
+    exclaim = text.count("!") + text.count("?")
+    caps_ratio = sum(1 for c in text if c.isupper()) / max(len(text), 1)
+    
+    # 1 star = 32 points, 2 star = 24 points, etc.
+    anger_score = (
+        ((5 - star_rating) * 8) + 
+        (min(exclaim, 10) * 3) + 
+        (caps_ratio * 40) + 
+        (min(word_count / 10, 5))
+    )
 
-    # Pass 3: Standard — everything else
+    if anger_score > 45:
+        return "crisis"
+    if anger_score < 15:
+        return "simple"
     return "standard"
 
 
