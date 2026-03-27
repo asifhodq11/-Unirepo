@@ -49,6 +49,8 @@ def generate():
         "reviewer_name": data["reviewer_name"] if data["reviewer_name"] else None,
         "google_review_id": data["google_review_id"],
         "status": "pending",
+        "platform": "google",
+        "is_deleted": False,
     }
 
     saved_review = insert_review(user_id, review_data)
@@ -80,6 +82,7 @@ def generate():
         "status": "draft",
         "generation_ms": duration_ms,
         "model_used": model_used,
+        "is_deleted": False,
     }
 
     saved_reply = insert_reply(user_id, reply_data)
