@@ -33,6 +33,13 @@ desktop.ini
 htmlcov/
 .pytest_cache/
 
+# ===== Frontend =====
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+.eslintcache
+
 # ===== Misc =====
 *.log
 fail_output.txt

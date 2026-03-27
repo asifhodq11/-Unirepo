@@ -1,7 +1,4 @@
-# ============================================================
-# ReplyIQ Backend — Application Factory
-# ============================================================
-
+import os
 from flask import Flask, request
 from .config import config_map
 from .extensions import limiter, cors, talisman
@@ -11,7 +8,17 @@ from .utils.logger import log_event
 def create_app(config_name="development"):
     """Assembles the Flask application."""
 
-    app = Flask(__name__)
+    # Point Flask to the frontend distribution folder
+    # In production, this will be in the same root
+    template_dir = os.path.abspath("frontend/dist")
+    static_dir = os.path.abspath("frontend/dist/assets")
+
+    app = Flask(
+        __name__, 
+        template_folder=template_dir,
+        static_folder=static_dir,
+        static_url_path="/assets"
+    )
 
     # Load completely isolated environment config
     app.config.from_object(config_map[config_name])
@@ -39,10 +46,21 @@ def create_app(config_name="development"):
     app.register_blueprint(settings_bp, url_prefix="/api/v1/settings")
     app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")
 
-    # Health endpoint sits at /api/v1/health (no prefix section needed if defined on root of bp)
+    # Health endpoint sits at /api/v1/health
     app.register_blueprint(health_bp, url_prefix="/api/v1")
 
-    # 3. Register Global Error Handlers
+    # 3. Serve Frontend (Catch-all for SPA)
+    from flask import send_from_directory
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path):
+        if path != "" and os.path.exists(os.path.join(app.template_folder, path)):
+            return send_from_directory(app.template_folder, path)
+        else:
+            return send_from_directory(app.template_folder, "index.html")
+
+    # 4. Register Global Error Handlers
     from werkzeug.exceptions import HTTPException
     from .utils.errors import build_error, build_error_from_exception
     from .utils.exceptions import ReplyIQError
