@@ -126,6 +126,21 @@ class AIServiceError(ReplyIQError):
         )
 
 
+class AIBillingError(ReplyIQError):
+    """Raised when the AI provider (OpenAI/OpenRouter) returns a 402 Payment Required error."""
+
+    error_code = "AI_BILLING_ERROR"
+    http_status = 402
+
+    def __init__(self, provider="AI Provider"):
+        super().__init__(
+            details={
+                "message": f"Your {provider} account has run out of credits. Please top up your balance to continue generating replies.",
+                "action_required": "billing_update"
+            }
+        )
+
+
 class GooglePostError(ReplyIQError):
     """Raised when posting a reply to Google fails."""
 
