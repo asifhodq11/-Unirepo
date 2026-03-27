@@ -109,17 +109,17 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                 wait = 2**attempt  # attempt 1 = 2s, attempt 2 = 4s
                 time.sleep(wait)
 
+        except openai.BadRequestError as e:
+            from app.utils.exceptions import AIBadRequestError
+            provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
+            raise AIBadRequestError(provider=provider_name, message=str(e))
+
         except openai.APIStatusError as e:
             if e.status_code == 402:
                 from app.utils.exceptions import AIBillingError
                 provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
                 raise AIBillingError(provider=provider_name)
             raise  # Do not retry, re-raise immediately
-            
-        except openai.BadRequestError as e:
-            from app.utils.exceptions import AIBadRequestError
-            provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
-            raise AIBadRequestError(provider=provider_name, message=str(e))
 
         except openai.AuthenticationError:
             raise  # do not retry — re-raise immediately
