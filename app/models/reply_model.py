@@ -21,20 +21,27 @@ def insert_reply(user_id: str, reply_data: dict) -> dict | None:
         
         if result.data:
             return result.data[0]
-        
-        # Fallback Fetch: Retrieve the latest reply we just attempted to insert
-        fallback = (
-            supabase.table("replies")
-            .select("*")
-            .eq("user_id", user_id)
-            .eq("review_id", reply_data["review_id"])
-            .order("created_at", desc=True)
-            .limit(1)
-            .execute()
-        )
-        return fallback.data[0] if fallback.data else None
+            
     except Exception as e:
-        log_event("insert_reply_failed", user_id=user_id, level="error", error=str(e))
+        error_str = str(e)
+        if "PGRST204" in error_str:
+            # Fallback Fetch: Retrieve the latest reply we just attempted to insert
+            try:
+                fallback = (
+                    supabase.table("replies")
+                    .select("*")
+                    .eq("user_id", user_id)
+                    .eq("review_id", reply_data["review_id"])
+                    .order("created_at", desc=True)
+                    .limit(1)
+                    .execute()
+                )
+                return fallback.data[0] if fallback.data else None
+            except Exception as e2:
+                log_event("insert_reply_fallback_failed", user_id=user_id, error=str(e2))
+                return None
+                
+        log_event("insert_reply_failed", user_id=user_id, level="error", error=error_str)
         return None
 
 
