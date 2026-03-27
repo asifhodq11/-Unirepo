@@ -6,6 +6,7 @@ from app.services.ai_engine import generate_reply
 from app.services.email_service import send_ai_reply_alert
 from app.models.review_model import insert_review
 from app.models.reply_model import insert_reply
+from app.services.usage_service import increment_usage
 from marshmallow import Schema, fields, ValidationError
 import uuid
 
@@ -100,6 +101,9 @@ def handle_inbound_email():
             "generation_ms": gen_ms
         }
         insert_reply(user_id, reply_record)
+        
+        # Increment usage quota
+        increment_usage(user_id)
         
         # Update Review state
         supabase.table("reviews").update({"status": "replied"}).eq("id", review_id).execute()

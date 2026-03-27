@@ -19,6 +19,7 @@ from app.services.mock_google import generate_fake_reviews
 from app.models.review_model import insert_review
 from app.models.reply_model import insert_reply
 from app.services.ai_engine import generate_reply
+from app.services.usage_service import increment_usage
 
 def run_simulation_poller():
     log_event("poller_started", environment="simulation")
@@ -95,15 +96,19 @@ def run_simulation_poller():
                     "model_used": "simulation_poller_auto",
                     "generation_ms": gen_ms
                 }
+                # 4. Success! Save to DB
                 insert_reply(user_id, reply_record)
+                
+                # 5. Increment usage quota
+                increment_usage(user_id)
                 
                 # Update review to 'replied' locally to show processing finished
                 supabase.table("reviews").update({"status": "replied"}).eq("id", review_db_id).execute()
                 
                 log_event("poller_success_draft_created", user_id=user_id, review_id=review_db_id)
                 
-            except Exception as e:
-                log_event("poller_error", stage="ai_generation", user_id=user_id, review_id=review_db_id, error=str(e))
+            except Exception as e_ai:
+                log_event("poller_error", stage="ai_generation", user_id=user_id, review_id=review_db_id, error=str(e_ai))
                 # Mark as failed so user knows there's a backlog
                 supabase.table("reviews").update({"status": "failed"}).eq("id", review_db_id).execute()
 
