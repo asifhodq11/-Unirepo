@@ -1,15 +1,18 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Wand2, LayoutDashboard, Settings, MessageSquarePlus } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Generate Reply', icon: '✨' },
-  { to: '/history',   label: 'History',        icon: '📋' },
-  { to: '/settings',  label: 'Settings',       icon: '⚙️' },
+  { to: '/dashboard', label: 'Generate Reply', icon: Wand2 },
+  { to: '/history',   label: 'History',        icon: LayoutDashboard },
+  { to: '/settings',  label: 'Settings',       icon: Settings },
 ];
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const plan = user?.plan ?? 'free';
   const used = user?.reply_count_this_month ?? 0;
@@ -22,17 +25,17 @@ export default function AppLayout() {
       {/* ── Sidebar ─────────────────────── */}
       <nav className="sidebar">
         <div className="sidebar-logo">
-          <div className="sidebar-logo-icon">💬</div>
+          <div className="sidebar-logo-icon"><MessageSquarePlus size={20} color="white" /></div>
           <span className="sidebar-logo-name">ReplyIQ</span>
         </div>
 
-        {NAV_ITEMS.map(({ to, label, icon }) => (
+        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
           >
-            <span className="nav-item-icon">{icon}</span>
+            <span className="nav-item-icon"><Icon size={18} strokeWidth={2.5} /></span>
             {label}
           </NavLink>
         ))}
@@ -81,7 +84,18 @@ export default function AppLayout() {
 
       {/* ── Main content ────────────────── */}
       <main className="main-content">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

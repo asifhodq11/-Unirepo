@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Star, Bot, Clock, Lightbulb, Copy, Check } from 'lucide-react';
 
 export default function ReplyCard({ reply, review }) {
   const [copied, setCopied] = useState(false);
@@ -28,16 +30,25 @@ export default function ReplyCard({ reply, review }) {
     }
   }
 
-  const starLabel = '⭐'.repeat(review.star_rating);
   const modelLabel = reply.model_used?.split('/').pop() ?? 'AI';
   const ms = reply.generation_ms ?? 0;
   const secs = (ms / 1000).toFixed(1);
 
   return (
-    <div ref={cardRef} className="t-dissolve">
+    <motion.div 
+      ref={cardRef} 
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3, type: "spring", bounce: 0.4 }}
+    >
       {/* Review context bar */}
-      <div className="flex items-center gap-3" style={{ marginBottom: 'var(--space-3)' }}>
-        <span style={{ fontSize: '1rem', letterSpacing: '-2px' }}>{starLabel}</span>
+      <div className="flex items-center gap-2" style={{ marginBottom: 'var(--space-3)' }}>
+        <div className="flex text-accent">
+          {Array.from({ length: review.star_rating }).map((_, i) => (
+            <Star key={i} size={16} fill="currentColor" />
+          ))}
+        </div>
         {review.reviewer_name && (
           <span className="text-sm text-muted">— {review.reviewer_name}</span>
         )}
@@ -49,24 +60,25 @@ export default function ReplyCard({ reply, review }) {
         <p className="reply-text" id="reply-text-output">{reply.reply_text}</p>
 
         <div className="reply-meta">
-          <div className="flex items-center gap-3">
-            <span>🤖 {modelLabel}</span>
-            <span>⏱ {secs}s</span>
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1 font-medium"><Bot size={14} /> {modelLabel}</span>
+            <span className="flex items-center gap-1"><Clock size={14} /> {secs}s</span>
           </div>
           <button
             id="copy-reply-btn"
-            className={`btn btn-sm ${copied ? 'btn-secondary' : 'btn-primary'}`}
+            className={`btn btn-sm ${copied ? 'btn-secondary text-success' : 'btn-primary'}`}
             onClick={handleCopy}
+            style={{ width: '130px' }}
           >
-            {copied ? '✓ Copied!' : '📋 Copy reply'}
+            {copied ? <><Check size={16} /> Copied!</> : <><Copy size={16} /> Copy reply</>}
           </button>
         </div>
       </div>
 
       {/* Tip */}
       <p className="text-xs text-muted" style={{ marginTop: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-        <span>💡</span> This reply passed a 3-pass humaniser pipeline — always read before posting.
+        <Lightbulb size={14} className="text-warning" /> This reply passed a 3-pass humaniser pipeline — always read before posting.
       </p>
-    </div>
+    </motion.div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Star, Wand2, Loader2 } from 'lucide-react';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -58,7 +59,7 @@ export default function ReplyGenerator({ onGenerate, loading, disabled, slow }) 
                 onClick={() => setRating(s)}
                 aria-label={`${s} star${s > 1 ? 's' : ''}`}
               >
-                ⭐
+                <Star size={24} fill={form.rating >= s ? "currentColor" : "none"} strokeWidth={1.5} />
               </button>
             ))}
           </div>
@@ -104,10 +105,10 @@ export default function ReplyGenerator({ onGenerate, loading, disabled, slow }) 
         >
           {loading ? (
             <>
-              <span className="spinner" />
+              <Loader2 className="spinner" size={16} />
               {slow ? 'Still generating…' : 'Generating…'}
             </>
-          ) : '✨ Generate Reply'}
+          ) : <><Wand2 size={16} /> Generate Reply</>}
         </button>
       </form>
     </div>

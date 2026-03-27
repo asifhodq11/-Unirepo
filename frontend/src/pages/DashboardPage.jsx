@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import ReplyGenerator from '../components/ReplyGenerator';
 import ReplyCard from '../components/ReplyCard';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Lock, AlertTriangle } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth();
@@ -45,47 +47,73 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="page-content">
+    <motion.div 
+      className="page-content"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ staggerChildren: 0.1 }}
+    >
       {/* Header — typographic anchor: dominant H1 with gradient, extra space below */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
+      <motion.div 
+        style={{ marginBottom: 'var(--space-8)' }}
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <h1 style={{ marginBottom: 'var(--space-2)' }}>
           <span className="text-gradient">Generate Reply</span>
         </h1>
         <p className="text-secondary">
           Paste a review below and get a human-sounding reply in seconds.
         </p>
-      </div>
+      </motion.div>
 
-      {/* Quota warning — smash-cut animation for urgency */}
-      {atLimit && (
-        <div className="alert alert-warning t-smash-cut" style={{ marginBottom: 'var(--space-6)' }}>
-          <span>🔒</span>
-          <div>
-            <strong>Monthly limit reached</strong>
-            <p className="text-sm" style={{ marginTop: 'var(--space-1)', color: 'inherit', opacity: 0.85 }}>
-              You've used all {limit} replies for this month.{' '}
-              {plan === 'free' && <a href="/settings">Upgrade to Starter</a>} to unlock 100 replies/month.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Quota & Error Alerts */}
+      <AnimatePresence>
+        {atLimit && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="alert alert-warning" 
+            style={{ marginBottom: 'var(--space-6)' }}
+          >
+            <Lock size={20} />
+            <div>
+              <strong>Monthly limit reached</strong>
+              <p className="text-sm" style={{ marginTop: 'var(--space-1)', color: 'inherit', opacity: 0.85 }}>
+                You've used all {limit} replies for this month.{' '}
+                {plan === 'free' && <a href="/settings">Upgrade to Starter</a>} to unlock 100 replies/month.
+              </p>
+            </div>
+          </motion.div>
+        )}
 
-      {/* Error — smash-cut for danger */}
-      {error && (
-        <div className="alert alert-error t-smash-cut" style={{ marginBottom: 'var(--space-6)' }}>
-          <span>⚠</span> {error}
-        </div>
-      )}
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="alert alert-error" 
+            style={{ marginBottom: 'var(--space-6)' }}
+          >
+            <AlertTriangle size={20} /> {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Generator form */}
-      <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} slow={slow} />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} slow={slow} />
+      </motion.div>
 
       {/* Reply output — pre-allocated region (CLS prevention) */}
       <div className="reply-output-region" style={{ marginTop: 'var(--space-8)' }}>
-        {reply && review && (
-          <ReplyCard reply={reply} review={review} />
-        )}
+        <AnimatePresence mode="wait">
+          {reply && review && (
+            <ReplyCard key={reply.id || 'new'} reply={reply} review={review} />
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </motion.div>
   );
 }

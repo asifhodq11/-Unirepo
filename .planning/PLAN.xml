@@ -23,9 +23,24 @@
     </phase>
     <phase id="4" name="Pro Max UI Polish">
         <task id="4.1">
-            <description>Overhaul the frontend visual aesthetic with Glassmorphism, Premium Typography, and Animations.</description>
-            <action>Update frontend/index.css and components (HeroComponent, Dashboard) to include subtle blurs, HSL gradients, Framer Motion interactions, and modern typography (e.g., Inter or Outfit).</action>
-            <verify>Visually inspect the frontend to confirm it feels premium, animations are smooth, and the design removes generic boilerplate.</verify>
+            <description>Inject Premium Dependencies</description>
+            <action>Run `npm install framer-motion lucide-react` in the frontend directory.</action>
+            <verify>Dependencies appear in package.json.</verify>
+        </task>
+        <task id="4.2">
+            <description>Typography and Global CSS Overhaul</description>
+            <action>Update `index.css` to import 'Outfit' for headings and 'Plus Jakarta Sans' for body. Enhance glass variables and gradients. Remove emoji overrides.</action>
+            <verify>CSS reflects the new Pro Max token values.</verify>
+        </task>
+        <task id="4.3">
+            <description>Animated Layout &amp; Premium Sidebar</description>
+            <action>Refactor `AppLayout.jsx` to replace emojis with `lucide-react` icons (Wand2, LayoutDashboard, Settings). Add `framer-motion` page transition wrappers.</action>
+            <verify>Sidebar looks sharp and pages animate in smoothly.</verify>
+        </task>
+        <task id="4.4">
+            <description>Dashboard &amp; Micro-Interactions</description>
+            <action>Upgrade `DashboardPage.jsx`, `ReplyGenerator.jsx`, and `ReplyCard.jsx` with staggered `motion.div` animations on render and premium glowing focus states.</action>
+            <verify>App feels alive and premium upon generation.</verify>
         </task>
     </phase>
 </plan>
