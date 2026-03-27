@@ -115,13 +115,21 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         user_id = session_data.get("client_reference_id")
         customer_id = session_data.get("customer")
 
+        from app.utils.logger import log_event
+        log_event("webhook_checkout_received", user_id=user_id, customer_id=customer_id)
+
         if user_id and customer_id:
-            supabase.from_("users").update(
-                {
-                    "plan": "starter",
-                    "stripe_customer_id": customer_id,
-                }
-            ).eq("id", user_id).execute()
+            try:
+                result = supabase.table("users").update(
+                    {
+                        "plan": "starter",
+                        "stripe_customer_id": customer_id,
+                    }
+                ).eq("id", user_id).execute()
+                
+                log_event("webhook_user_updated", user_id=user_id, plan="starter")
+            except Exception as e:
+                log_event("webhook_update_failed", user_id=user_id, error=str(e))
 
     elif event_type == "invoice.payment_failed":
         invoice_data = event["data"]["object"]
