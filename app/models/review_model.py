@@ -21,27 +21,30 @@ def insert_review(user_id: str, review_data: dict) -> dict | None:
         
         if result.data:
             return result.data[0]
+        
+        # Scenario: Insert succeeded but RLS returned empty list (no exception)
+        # Proceed to fallback fetch below.
             
     except Exception as e:
         error_str = str(e)
-        if "PGRST204" in error_str:
-            # Fallback Fetch: The insert succeeded, but RLS prevented the return payload.
-            # We must fetch the record manually using the unique google_review_id.
-            try:
-                fallback = (
-                    supabase.table("reviews")
-                    .select("*")
-                    .eq("user_id", user_id)
-                    .eq("google_review_id", review_data["google_review_id"])
-                    .maybe_single()
-                    .execute()
-                )
-                return fallback.data
-            except Exception as e2:
-                log_event("insert_review_fallback_failed", user_id=user_id, error=str(e2))
-                return None
-                
-        log_event("insert_review_failed", user_id=user_id, level="error", error=error_str)
+        if "PGRST204" not in error_str:
+            log_event("insert_review_failed", user_id=user_id, level="error", error=error_str)
+            return None
+        # If PGRST204, proceed to fallback fetch below.
+
+    # FALLBACK FETCH: Used when insert succeeds but no payload is returned (RLS/PostgREST 204)
+    try:
+        fallback = (
+            supabase.table("reviews")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("google_review_id", review_data["google_review_id"])
+            .maybe_single()
+            .execute()
+        )
+        return fallback.data
+    except Exception as e2:
+        log_event("insert_review_fallback_failed", user_id=user_id, error=str(e2))
         return None
 
 

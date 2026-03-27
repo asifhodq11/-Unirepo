@@ -22,26 +22,30 @@ def insert_reply(user_id: str, reply_data: dict) -> dict | None:
         if result.data:
             return result.data[0]
             
+        # Scenario: Insert succeeded but RLS returned empty list (no exception)
+        # Proceed to fallback fetch below.
+            
     except Exception as e:
         error_str = str(e)
-        if "PGRST204" in error_str:
-            # Fallback Fetch: Retrieve the latest reply we just attempted to insert
-            try:
-                fallback = (
-                    supabase.table("replies")
-                    .select("*")
-                    .eq("user_id", user_id)
-                    .eq("review_id", reply_data["review_id"])
-                    .order("created_at", desc=True)
-                    .limit(1)
-                    .execute()
-                )
-                return fallback.data[0] if fallback.data else None
-            except Exception as e2:
-                log_event("insert_reply_fallback_failed", user_id=user_id, error=str(e2))
-                return None
-                
-        log_event("insert_reply_failed", user_id=user_id, level="error", error=error_str)
+        if "PGRST204" not in error_str:
+            log_event("insert_reply_failed", user_id=user_id, level="error", error=error_str)
+            return None
+        # If PGRST204, proceed to fallback fetch below.
+
+    # FALLBACK FETCH: Used when insert succeeds but no payload is returned (RLS/PostgREST 204)
+    try:
+        fallback = (
+            supabase.table("replies")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("review_id", reply_data["review_id"])
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        return fallback.data[0] if fallback.data else None
+    except Exception as e2:
+        log_event("insert_reply_fallback_failed", user_id=user_id, error=str(e2))
         return None
 
 
