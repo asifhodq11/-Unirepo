@@ -41,6 +41,7 @@ def create_app(config_name="development"):
     from .routes.payments import payments_bp
     from .routes.health import health_bp
     from .routes.webhooks import webhooks_bp
+    from .routes.poller import poller_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(reviews_bp, url_prefix="/api/v1/reviews")
@@ -48,6 +49,7 @@ def create_app(config_name="development"):
     app.register_blueprint(settings_bp, url_prefix="/api/v1/settings")
     app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")
     app.register_blueprint(webhooks_bp, url_prefix="/api/v1/webhooks")
+    app.register_blueprint(poller_bp, url_prefix="/api/v1/poller")
 
     # Health endpoint sits at /api/v1/health
     app.register_blueprint(health_bp, url_prefix="/api/v1")
