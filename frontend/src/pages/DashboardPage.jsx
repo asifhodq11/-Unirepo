@@ -9,12 +9,28 @@ import { Lock, AlertTriangle, Activity, Zap, Cpu, Network } from 'lucide-react';
 /* ── Auxiliary Components for Bento Box Density ── */
 function LiveEngineStats({ used, limit }) {
   const [latency, setLatency] = useState(412);
+  const [running, setRunning] = useState(false);
+  const [toast, setToast] = useState('');
   
   // Simulate active telemetry tick
   useEffect(() => {
     const i = setInterval(() => setLatency(400 + Math.floor(Math.random() * 40)), 2000);
     return () => clearInterval(i);
   }, []);
+
+  async function handleTriggerPoller() {
+    setRunning(true);
+    setToast('Simulation engine started...');
+    try {
+      const response = await api.post('/poller/trigger', {});
+      setToast(response.message || 'Simulation generated 2 new replies!');
+    } catch (err) {
+      setToast('Simulation failed to run.');
+    } finally {
+      setRunning(false);
+      setTimeout(() => setToast(''), 4000);
+    }
+  }
 
   return (
     <motion.div 
@@ -61,6 +77,20 @@ function LiveEngineStats({ used, limit }) {
               <span className="badge">gemini</span>
             </div>
           </div>
+        </div>
+
+        {/* Temporary Option A Simulation Poller Trigger */}
+        <div className="mt-6 border-t border-gray-800 pt-4 flex items-center justify-between">
+            <button 
+              onClick={handleTriggerPoller} 
+              disabled={running}
+              className="btn btn-secondary text-sm" 
+              style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
+            >
+              <Cpu size={14} className="mr-2" />
+              {running ? 'Running...' : 'Run Track A Simulation'}
+            </button>
+            {toast && <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">{toast}</span>}
         </div>
       </motion.div>
     </motion.div>
