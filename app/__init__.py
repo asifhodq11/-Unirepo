@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from .config import config_map
 from .extensions import limiter, cors, talisman
 from .utils.logger import log_event
@@ -55,10 +55,21 @@ def create_app(config_name="development"):
     @app.route("/", defaults={"path": ""})
     @app.route("/<path:path>")
     def serve_frontend(path):
-        if path != "" and os.path.exists(os.path.join(app.template_folder, path)):
+        # DEBUG: Log the path and the template folder
+        print(f"DEBUG: Serving path '{path}' from {app.template_folder}")
+        
+        full_path = os.path.join(app.template_folder, path)
+        if path != "" and os.path.exists(full_path):
             return send_from_directory(app.template_folder, path)
-        else:
-            return send_from_directory(app.template_folder, "index.html")
+        
+        # Default to index.html for SPA routing or root
+        index_path = os.path.join(app.template_folder, "index.html")
+        if not os.path.exists(index_path):
+            print(f"DEBUG: index.html NOT FOUND at {index_path}")
+            # Instead of a silent 404, return a helpful error for debugging
+            return jsonify({"error": "Frontend build files (index.html) not found. Check build logs."}), 500
+            
+        return send_from_directory(app.template_folder, "index.html")
 
     # 4. Register Global Error Handlers
     from werkzeug.exceptions import HTTPException
