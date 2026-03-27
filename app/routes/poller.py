@@ -1,7 +1,7 @@
 import time
 from flask import Blueprint, jsonify
 from app.utils.logger import log_event
-from app.utils.auth_middleware import require_auth
+from app.utils.decorators import require_auth
 from run_poller import run_simulation_poller
 
 poller_bp = Blueprint("poller", __name__)
