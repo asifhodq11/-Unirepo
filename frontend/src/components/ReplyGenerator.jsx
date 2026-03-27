@@ -48,23 +48,36 @@ export default function ReplyGenerator({ onGenerate, loading, disabled, slow }) 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Star rating */}
         <div className="form-group">
-          <label className="form-label">Star rating</label>
-          <div className="star-group">
+          <label className="form-label">Review Severity Level</label>
+          <div 
+            className="flex items-center gap-1 p-1 rounded-full" 
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: 'fit-content' }}
+          >
             {STARS.map(s => (
               <button
                 type="button"
                 key={s}
                 id={`star-${s}`}
                 className={`star-btn ${form.rating >= s ? 'active' : ''}`}
+                style={{ 
+                  padding: 'var(--space-2) var(--space-3)', 
+                  borderRadius: '999px',
+                  background: form.rating >= s ? 'var(--bg-surface)' : 'transparent',
+                  color: form.rating >= s ? (s >= 4 ? 'var(--success)' : (s <= 2 ? 'var(--danger)' : 'var(--warning)')) : 'var(--text-muted)',
+                  boxShadow: form.rating >= s ? 'var(--shadow-sm)' : 'none',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
                 onClick={() => setRating(s)}
                 aria-label={`${s} star${s > 1 ? 's' : ''}`}
               >
-                <Star size={24} fill={form.rating >= s ? "currentColor" : "none"} strokeWidth={1.5} />
+                <Star size={20} fill={form.rating >= s ? "currentColor" : "none"} strokeWidth={1.5} />
               </button>
             ))}
           </div>
           {form.rating && (
-            <p className="form-hint">{STAR_HINTS[form.rating]}</p>
+            <p className="form-hint flex items-center gap-1 mt-2">
+              <span className="badge badge-muted">SYS</span> {STAR_HINTS[form.rating]}
+            </p>
           )}
         </div>
 

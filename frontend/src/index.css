@@ -6,41 +6,41 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
 
-/* ── Design Tokens (Perceptually Corrected) ─────────────── */
+/* ── Design Tokens (Premium Bento V3) ─────────────── */
 :root {
-  /* Backgrounds — 15% HSL lightness steps for visible elevation on dim screens */
-  --bg-base:        hsl(228, 22%, 5%);
-  --bg-surface:     hsla(228, 20%, 10%, 0.7); /* More transparent for glass */
-  --bg-elevated:    hsla(228, 18%, 15%, 0.6);
-  --bg-glass:       rgba(255, 255, 255, 0.03);
+  /* True Midnight Backdrops */
+  --bg-base:        #030712; /* Tailwind gray-950 */
+  --bg-surface:     rgba(9, 9, 11, 0.4); /* Extremely sheer glass */
+  --bg-elevated:    rgba(39, 39, 42, 0.3);
+  --bg-glass:       rgba(255, 255, 255, 0.02);
 
-  /* Borders */
-  --border:         rgba(255, 255, 255, 0.08);
-  --border-focus:   hsla(239, 72%, 70%, 0.6);
+  /* Precise 1px glass borders */
+  --border:         rgba(255, 255, 255, 0.06);
+  --border-focus:   rgba(139, 92, 246, 0.6); /* Violet focus */
 
-  /* Accent — desaturated 15% to fix simultaneous contrast "bloom" on dark */
-  --accent:         hsl(239, 72%, 70%);
-  --accent-hover:   hsl(239, 76%, 78%);
-  --accent-subtle:  hsla(239, 72%, 70%, 0.12);
-  --accent-glow:    hsla(239, 72%, 70%, 0.25);
+  /* Aggressive Neon Accents */
+  --accent:         #8b5cf6; /* Violet-500 */
+  --accent-hover:   #a78bfa; /* Violet-400 */
+  --accent-cyan:    #06b6d4; /* Cyan-500 */
+  --accent-glow:    rgba(139, 92, 246, 0.4);
 
-  /* Reply Output Zone — cooler teal for "Result" not "Action" */
-  --result:         hsl(190, 50%, 55%);
-  --result-subtle:  hsla(190, 50%, 55%, 0.08);
-  --result-border:  hsla(190, 50%, 55%, 0.2);
+  /* Reply Output Zone — Deep obsidian */
+  --result:         #18181b;
+  --result-subtle:  rgba(24, 24, 27, 0.7);
+  --result-border:  rgba(6, 182, 212, 0.3); /* Cyan accent */
 
   /* Semantic colours */
-  --success:        hsl(160, 84%, 39%);
-  --success-subtle: hsla(160, 84%, 39%, 0.12);
-  --warning:        hsl(38, 92%, 50%);
-  --warning-subtle: hsla(38, 92%, 50%, 0.12);
-  --danger:         hsl(0, 84%, 60%);
-  --danger-subtle:  hsla(0, 84%, 60%, 0.12);
+  --success:        #10b981;
+  --success-subtle: rgba(16, 185, 129, 0.1);
+  --warning:        #f59e0b;
+  --warning-subtle: rgba(245, 158, 11, 0.1);
+  --danger:         #ef4444;
+  --danger-subtle:  rgba(239, 68, 68, 0.1);
 
-  /* Text — APCA Lc 60+ compliant on dark backgrounds */
-  --text-primary:   #f1f5f9;
-  --text-secondary: #aab4c4;  /* brightened from #94a3b8 (APCA fix) */
-  --text-muted:     #5a6577;
+  /* Text */
+  --text-primary:   #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
 
   /* Radii */
   --radius-sm:      6px;
@@ -48,11 +48,11 @@
   --radius-lg:      16px;
   --radius-xl:      24px;
 
-  /* Shadows */
-  --shadow-sm:      0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:      0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg:      0 8px 32px rgba(0,0,0,0.6);
-  --shadow-glow:    0 0 30px hsla(239, 72%, 70%, 0.3);
+  /* Fluid Shadows */
+  --shadow-sm:      0 1px 2px rgba(0,0,0,0.5);
+  --shadow-md:      0 8px 16px rgba(0,0,0,0.6);
+  --shadow-lg:      0 16px 40px rgba(0,0,0,0.7);
+  --shadow-glow:    0 0 40px rgba(139, 92, 246, 0.2);
 
   /* Transitions */
   --transition:     all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
@@ -79,13 +79,44 @@ html { font-size: 16px; scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-body);
-  background: radial-gradient(circle at top, hsl(230, 25%, 12%), var(--bg-base) 80%);
-  background-attachment: fixed;
+  background: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── Animated Mesh Gradient Background ── */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.08), transparent 40%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.12), transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(236, 72, 153, 0.05), transparent 50%);
+  z-index: -1;
+  pointer-events: none;
+  animation: bgPulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.1) translateY(-2%); }
+}
+
+/* Noise overlay to prevent banding */
+body::after {
+  content: '';
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+  opacity: 0.03;
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* ── Typography (Weight Contrast 300 → 700 for unambiguous hierarchy) ── */
@@ -98,9 +129,15 @@ p  { color: var(--text-secondary); line-height: 1.7; font-weight: 400; letter-sp
 a  { color: var(--accent); text-decoration: none; transition: var(--transition); }
 a:hover { color: var(--accent-hover); }
 
-/* ── Gradient text ─────────────────────────────────────── */
+/* ── Gradient text ── */
 .text-gradient {
-  background: linear-gradient(135deg, var(--accent-hover), #c4b5fd, #e879f9);
+  background: linear-gradient(135deg, #fff, var(--text-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.text-gradient-accent {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -110,19 +147,19 @@ a:hover { color: var(--accent-hover); }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
 .page { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ── Cards & Surfaces (contain: layout for CLS protection) ── */
+/* ── Cards & Bento Boxes ── */
 .card {
   background: var(--bg-surface);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   transition: var(--transition);
   contain: layout;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.02);
 }
-.card:hover { border-color: rgba(255,255,255,0.12); }
+.card:hover { border-color: rgba(255,255,255,0.1); box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05); }
 
 .card-glass {
   background: var(--bg-glass);
@@ -155,15 +192,26 @@ a:hover { color: var(--accent-hover); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), hsl(265, 70%, 60%));
-  color: #fff;
-  box-shadow: 0 0 20px var(--accent-glow);
+  background: var(--text-primary);
+  color: var(--bg-base);
+  box-shadow: 0 4px 14px rgba(255,255,255,0.1);
 }
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 0 30px var(--accent-glow);
+  box-shadow: 0 6px 20px rgba(255,255,255,0.15);
+  background: #fff;
 }
 .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-accent {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent));
+  color: #fff;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-accent:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 30px var(--accent-glow);
+}
 
 .btn-secondary {
   background: var(--bg-elevated);
@@ -209,15 +257,15 @@ a:hover { color: var(--accent-hover); }
   text-transform: uppercase;
 }
 .form-input, .form-select, .form-textarea {
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
-  font-family: var(--font);
+  font-family: var(--font-body);
   font-size: 0.9rem;
   font-weight: 400;
-  padding: 0.625rem 0.875rem;
-  transition: var(--transition);
+  padding: 0.75rem 1rem;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   outline: none;
   width: 100%;
 }
@@ -226,8 +274,9 @@ a:hover { color: var(--accent-hover); }
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
+  border-color: var(--accent);
+  background: var(--bg-base);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 0 20px rgba(139, 92, 246, 0.15);
 }
 .form-textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
 .form-select { appearance: none; cursor: pointer; }
@@ -347,20 +396,29 @@ a:hover { color: var(--accent-hover); }
 }
 
 /* ── Sidebar / App Layout ────────────────────────────────── */
-.app-layout { display: flex; min-height: 100vh; }
+.app-layout { 
+  display: flex; 
+  min-height: 100vh; 
+  padding: var(--space-4);
+  gap: var(--space-4);
+}
 .sidebar {
-  width: 220px;
+  width: 240px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
   background: var(--bg-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: var(--space-6) var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: var(--space-4);
+  height: calc(100vh - var(--space-8));
   overflow-y: auto;
+  box-shadow: var(--shadow-lg);
 }
 .sidebar-logo {
   display: flex;
@@ -371,7 +429,8 @@ a:hover { color: var(--accent-hover); }
 }
 .sidebar-logo-icon {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--accent), hsl(265, 70%, 60%));
+  background: var(--text-primary);
+  color: var(--bg-base);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -397,11 +456,26 @@ a:hover { color: var(--accent-hover); }
   text-align: left;
 }
 .nav-item:hover { background: var(--bg-glass); color: var(--text-primary); }
-.nav-item.active { background: var(--accent-subtle); color: var(--accent-hover); }
-.nav-item-icon { font-size: 1rem; width: 1.25rem; text-align: center; }
+.nav-item.active { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+.nav-item-icon { font-size: 1rem; width: 1.25rem; text-align: center; color: var(--accent); }
+.nav-item.active .nav-item-icon { color: var(--accent-cyan); }
 .sidebar-footer { margin-top: auto; }
-.main-content { flex: 1; overflow-y: auto; }
-.page-content { padding: var(--space-8) var(--space-10); max-width: 900px; }
+.main-content { 
+  flex: 1; 
+  overflow-y: auto; 
+  background: var(--bg-surface);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.page-content { 
+  padding: var(--space-8); 
+  max-width: 1300px; /* Wider for Bento Grid */
+  margin: 0 auto;
+}
 
 /* ── Auth Page Layout ────────────────────────────────────── */
 .auth-page {

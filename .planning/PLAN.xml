@@ -21,26 +21,21 @@
             <verify>Simulate a completed checkout and verify in the frontend UI that the user's tier has visually shifted from Free to Pro.</verify>
         </task>
     </phase>
-    <phase id="4" name="Pro Max UI Polish">
-        <task id="4.1">
-            <description>Inject Premium Dependencies</description>
-            <action>Run `npm install framer-motion lucide-react` in the frontend directory.</action>
-            <verify>Dependencies appear in package.json.</verify>
+    <phase id="5" name="V3 Premium Bento UI Overhaul">
+        <task id="5.1">
+            <description>V3 Global Aesthetics &amp; Animated Mesh</description>
+            <action>Completely rip out the old color palette in `index.css`. Implement a deep midnight background (`#09090b`) with an animated radial mesh gradient (Cyan/Violet). Upgrade `AppLayout` to have a floating glass sidebar rather than a solid block.</action>
+            <verify>The app backdrop feels alive and premium, not flat and empty.</verify>
         </task>
-        <task id="4.2">
-            <description>Typography and Global CSS Overhaul</description>
-            <action>Update `index.css` to import 'Outfit' for headings and 'Plus Jakarta Sans' for body. Enhance glass variables and gradients. Remove emoji overrides.</action>
-            <verify>CSS reflects the new Pro Max token values.</verify>
+        <task id="5.2">
+            <description>Dashboard Bento Box Restructuring</description>
+            <action>Refactor `DashboardPage.jsx` from a top-down single column into a wide CSS Grid 'Bento Box' layout. Left side: The AI Generator. Right Side: The Result Output *plus* a 'Live Routing Engine' visualizer to fill empty space.</action>
+            <verify>The dashboard is visually dense and balanced, eliminating the 'empty' problem.</verify>
         </task>
-        <task id="4.3">
-            <description>Animated Layout &amp; Premium Sidebar</description>
-            <action>Refactor `AppLayout.jsx` to replace emojis with `lucide-react` icons (Wand2, LayoutDashboard, Settings). Add `framer-motion` page transition wrappers.</action>
-            <verify>Sidebar looks sharp and pages animate in smoothly.</verify>
-        </task>
-        <task id="4.4">
-            <description>Dashboard &amp; Micro-Interactions</description>
-            <action>Upgrade `DashboardPage.jsx`, `ReplyGenerator.jsx`, and `ReplyCard.jsx` with staggered `motion.div` animations on render and premium glowing focus states.</action>
-            <verify>App feels alive and premium upon generation.</verify>
+        <task id="5.3">
+            <description>Form &amp; Component Polishing</description>
+            <action>Upgrade `ReplyGenerator.jsx` to use glowing border interactions, segmented controls for the Star Rating instead of floating emojis, and crisp micro-typography. Add decorative animated elements.</action>
+            <verify>The inputs feel tactile and satisfying to interact with.</verify>
         </task>
     </phase>
 </plan>
