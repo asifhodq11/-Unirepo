@@ -40,12 +40,14 @@ def create_app(config_name="development"):
     from .routes.settings import settings_bp
     from .routes.payments import payments_bp
     from .routes.health import health_bp
+    from .routes.webhooks import webhooks_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(reviews_bp, url_prefix="/api/v1/reviews")
     app.register_blueprint(approvals_bp, url_prefix="/api/v1/approve")
     app.register_blueprint(settings_bp, url_prefix="/api/v1/settings")
     app.register_blueprint(payments_bp, url_prefix="/api/v1/payments")
+    app.register_blueprint(webhooks_bp, url_prefix="/api/v1/webhooks")
 
     # Health endpoint sits at /api/v1/health
     app.register_blueprint(health_bp, url_prefix="/api/v1")

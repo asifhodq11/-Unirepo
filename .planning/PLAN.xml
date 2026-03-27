@@ -50,4 +50,38 @@
             <verify>The Settings page feels like a high-tech command center.</verify>
         </task>
     </phase>
+    <phase id="7" name="V5: Dual Automation Strategy (Simulation + Email Intercept)">
+        <task id="7.1">
+            <description>Option A: The Mock Google Engine</description>
+            <action>Create `app/services/mock_google.py` with a `generate_fake_reviews(business_name)` function. It should return a list of JSON dictionaries mimicking standard Google API schemas with randomized review texts and star ratings.</action>
+            <verify>Calling the function returns 1-5 structurally sound "fake" reviews.</verify>
+        </task>
+        <task id="7.2">
+            <description>Option A: The 15-Minute Poller Service</description>
+            <action>Create a standalone Python script `run_poller.py`. It queries Supabase for all active users, calls `mock_google.generate_fake_reviews()`, deduplicates against existing records in the `reviews` table, and runs the `ai_engine.generate_reply()` pipeline for any new items.</action>
+            <verify>Running `python run_poller.py` populates the database iteratively without user interaction.</verify>
+        </task>
+        <task id="7.3">
+            <description>Option B: The Inbound Email Webhook</description>
+            <action>Create `app/routes/webhooks.py` with `POST /api/v1/webhooks/inbound-email`. It accepts raw multiparts or JSON (e.g., Sendgrid Inbound Parse format), extracts the sender address and body text (the review), looks up the user, runs the AI engine, and saves the draft.</action>
+            <verify>Targeting the endpoint with a test cURL command successfully generates an AI draft in Supabase.</verify>
+        </task>
+        <task id="7.4">
+            <description>Option B: The Dispatch Return Loop</description>
+            <action>Integrate `resend` (from Phase 2 plans) into the webhook route. After generating the AI reply, use `email_service.send_reply_email()` to immediately email the generated response back to the user's registered email with a 'Click to Copy' format.</action>
+            <verify>A triggered webhook results in a delivered standard HTML email.</verify>
+        </task>
+    </phase>
+    <phase id="8" name="V6: Advanced Analytics & Churn Shield">
+        <task id="8.1">
+            <description>3-Step Strategic Cancellation Flow</description>
+            <action>Implement a non-one-click cancellation funnel. Step 1: Show saved hours/stats. Step 2: Pitch 'Pause' or 'Downgrade'. Step 3: Collect deep-dive exit reason.</action>
+            <verify>Cancellation reduces churn by providing high-value friction as per Bible Chapter 10.</verify>
+        </task>
+        <task id="8.2">
+            <description>Telemetry Insights Dashboard</description>
+            <action>Build a new 'Analytics' page with Recharts/Framer Motion showing Star Rating trends, Reply Frequency, and Sentiment Heatmaps.</action>
+            <verify>The dashboard provides visual proof of business impact.</verify>
+        </task>
+    </phase>
 </plan>
