@@ -72,7 +72,7 @@ def get_model_for_complexity(complexity: str) -> str:
         },
         "openrouter": {
             "crisis":   "openai/gpt-4o",
-            "simple":   "google/gemini-2.0-flash-lite-preview-02-05:free",
+            "simple":   "google/gemma-3-27b-it:free",
             "standard": "openai/gpt-4o-mini",
         },
     }

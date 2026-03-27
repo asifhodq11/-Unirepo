@@ -8,6 +8,7 @@ This log tracks all major architectural shifts, feature additions, and critical 
 **Goal:** Merge separate services into a unified, one-click deployable monorepo.
 
 ### 2026-03-27
+- **[Bugfix] Exception Hierarchy Bug (BadRequest Leak):** Fixed a bug where `openai.BadRequestError` (HTTP 400) was being incorrectly trapped and re-thrown by its parent class `openai.APIStatusError`. Reordered the `except` blocks in `ai_engine.py` to ensure 400 errors properly trigger the graceful `AIBadRequestError` response instead of crashing with a 500 error.
 - **[Bugfix] OpenRouter Invalid Model Name:** Fixed a 500 crash during short 5-star reviews by updating the OpenRouter target model string to `google/gemini-2.0-flash-lite-preview-02-05:free`. Also introduced an `AIBadRequestError` (HTTP 400) interceptor to gracefully handle invalid API parameters without crashing the server.
 - **[Bugfix] Graceful AI Provider Error Handling:** Added explicit exception parsing for `openai.APIStatusError`. If the AI provider (OpenRouter/OpenAI) returns a 402 "Payment Required" due to exhausted credits, the backend now returns a structured, user-friendly `AIBillingError` instead of crashing with a raw 500 response.
 - **[Bugfix] History Dashboard Missing Replies:** Fixed an issue where the `/history` endpoint only returned customer reviews. Updated the backend query to perform a Supabase join on the `replies` table and updated the React `HistoryPage.jsx` UI to render the AI draft alongside the original review context.
