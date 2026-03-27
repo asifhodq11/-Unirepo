@@ -136,7 +136,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         customer_id = invoice_data.get("customer")
 
         if customer_id:
-            supabase.from_("users").update(
+            supabase.table("users").update(
                 {
                     "plan": "free",
                 }
@@ -176,7 +176,7 @@ def cancel_subscription(
         )
 
     # Update the user record regardless — downgrade plan immediately
-    supabase.from_("users").update(
+    supabase.table("users").update(
         {
             "plan": "free",
             "cancellation_reason": reason,
