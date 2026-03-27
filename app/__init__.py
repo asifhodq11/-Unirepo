@@ -26,8 +26,9 @@ def create_app(config_name="development"):
     # 1. Attach Extensions
     limiter.init_app(app)
 
-    # Enable CORS locked strictly to FRONTEND_URL
-    cors.init_app(app, origins=[app.config["FRONTEND_URL"]])
+    # Enable CORS
+    # If same-domain, we allow all origins from our own host
+    cors.init_app(app, origins=[app.config["FRONTEND_URL"]], supports_credentials=True)
 
     # Enforce security headers & HTTPS
     talisman.init_app(app, force_https=app.config.get("FORCE_HTTPS", False))
