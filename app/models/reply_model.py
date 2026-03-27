@@ -10,11 +10,29 @@ from app.utils.logger import log_event
 
 
 def insert_reply(user_id: str, reply_data: dict) -> dict | None:
-    """Inserts a new AI reply draft."""
+    """
+    Inserts a new AI reply draft.
+    If the insert returns no content, attempts a fallback fetch 
+    of the most recent reply for this review.
+    """
     try:
         data_to_insert = {**reply_data, "user_id": user_id}
         result = supabase.table("replies").insert(data_to_insert).execute()
-        return result.data[0] if result.data else None
+        
+        if result.data:
+            return result.data[0]
+        
+        # Fallback Fetch: Retrieve the latest reply we just attempted to insert
+        fallback = (
+            supabase.table("replies")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("review_id", reply_data["review_id"])
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        return fallback.data[0] if fallback.data else None
     except Exception as e:
         log_event("insert_reply_failed", user_id=user_id, level="error", error=str(e))
         return None

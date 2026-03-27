@@ -10,11 +10,29 @@ from app.utils.logger import log_event
 
 
 def insert_review(user_id: str, review_data: dict) -> dict | None:
-    """Inserts a new review and returns the created record."""
+    """
+    Inserts a new review and returns the created record.
+    If the insert returns no content (PGRST204), attempts a fallback fetch 
+    using the unique google_review_id to recover the created record.
+    """
     try:
         data_to_insert = {**review_data, "user_id": user_id}
         result = supabase.table("reviews").insert(data_to_insert).execute()
-        return result.data[0] if result.data else None
+        
+        if result.data:
+            return result.data[0]
+        
+        # Fallback Fetch: If no data returned (often due to DB triggers), 
+        # try to retrieve the record we just inserted.
+        fallback = (
+            supabase.table("reviews")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("google_review_id", review_data["google_review_id"])
+            .maybe_single()
+            .execute()
+        )
+        return fallback.data
     except Exception as e:
         log_event("insert_review_failed", user_id=user_id, level="error", error=str(e))
         return None
