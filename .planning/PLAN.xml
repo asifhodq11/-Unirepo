@@ -38,4 +38,16 @@
             <verify>The inputs feel tactile and satisfying to interact with.</verify>
         </task>
     </phase>
+    <phase id="6" name="V4 Universal Bento UI Upgrade">
+        <task id="6.1">
+            <description>100x History Page Layout</description>
+            <action>Refactor `HistoryPage.jsx` from a flat vertical list to a stunning Bento Grid or Masonry layout. Use `framer-motion` for staggered entries. Replace all `⭐` with `lucide-react` Star icons and swap `▲/▼` chevrons for `ChevronDown/Up` vectors.</action>
+            <verify>History looks like a premium intelligence feed, not a boring log table.</verify>
+        </task>
+        <task id="6.2">
+            <description>100x Settings Dashboard</description>
+            <action>Refactor `SettingsPage.jsx` into a 2x2 or 3x2 Bento grid. Transform the Usage stats into glowing glass telemetry metrics. Replace all emojis (`🚀`, `💳`) with premium `lucide-react` icons. Make the input focus rings inherit the V3 Cyan/Violet glow.</action>
+            <verify>The Settings page feels like a high-tech command center.</verify>
+        </task>
+    </phase>
 </plan>

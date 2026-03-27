@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
+import { MessageSquareText, AlertTriangle } from 'lucide-react';
 
 const TONE_OPTIONS = ['friendly', 'professional', 'casual'];
 const BUSINESS_TYPES = [
@@ -45,7 +46,9 @@ export default function SignupPage() {
       <div className="auth-card" style={{ maxWidth: '480px' }}>
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-icon">💬</div>
+          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: '#000', padding: '12px', borderRadius: '12px', display: 'flex' }}>
+            <MessageSquareText size={24} />
+          </div>
           <span className="auth-logo-name">ReplyIQ</span>
         </div>
 
@@ -55,8 +58,8 @@ export default function SignupPage() {
         </p>
 
         {error && (
-          <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
-            <span>⚠</span> {error}
+          <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '1rem' }}>
+            <AlertTriangle size={18} /> {error}
           </div>
         )}
 
