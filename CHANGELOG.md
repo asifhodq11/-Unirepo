@@ -8,6 +8,9 @@ This log tracks all major architectural shifts, feature additions, and critical 
 **Goal:** Merge separate services into a unified, one-click deployable monorepo.
 
 ### 2026-03-27
+- **[Bugfix] History Dashboard Missing Replies:** Fixed an issue where the `/history` endpoint only returned customer reviews. Updated the backend query to perform a Supabase join on the `replies` table and updated the React `HistoryPage.jsx` UI to render the AI draft alongside the original review context.
+- **[Architecture] Advanced Hybrid 2-Pass AI Pipeline:** Replaced the legacy 3-pass pipeline with a Context-Anchored generation pass (rules embedded) and an Adversarial Audit pass. This structural shift eliminates "Context Decay" and prevents the AI from hallucinating details (like "biriyani" for a tech store).
+- **[Feature] Emotional Energy Routing:** Upgraded the Model Router from naive keyword matching to behavioral signal analysis (punctuation density, CAPS LOCK ratio, length, and star severity). The system now accurately routes angry customers to `gpt-4o` even if they don't use typical crisis keywords.
 - **[Resiliency] Webhook Observability:** Added detailed logging to the Stripe webhook handler and aligned Supabase syntax (`table` instead of `from_`). This ensures transparent tracking of plan upgrades.
 - **[DEFINITIVE FIX] Column Name Mismatch:** The `reviews` table uses `rating` (per `002_create_reviews.sql`), but the insert payload was sending `star_rating` — a column that doesn't exist. Also removed phantom `platform` column from inserts and SELECT queries. This was the true root cause of every `PGRST204` error.
 - **[Fix] Supabase Schema Compliance:** Resolved `PGRST204` error by adding missing `platform` and `is_deleted` fields to review/reply inserts.

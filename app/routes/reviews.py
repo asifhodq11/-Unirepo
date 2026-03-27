@@ -135,10 +135,11 @@ def history():
     )
     total = count_result.count if count_result.count is not None else 0
 
-    # Fetch page of reviews
+    # Fetch page of reviews with their associated replies
+    # We use Supabase cross-table querying: replies(id, reply_text, status, generation_ms, model_used)
     rows_result = (
         supabase.from_("reviews")
-        .select("id, review_text, rating, reviewer_name, status, created_at")
+        .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, generation_ms, model_used)")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
         .order("created_at", desc=True)

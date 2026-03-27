@@ -42,11 +42,30 @@ function HistoryItem({ item }) {
         </div>
       </div>
 
-      {open && item.review_text && (
+      {open && (
         <div className="t-dissolve" style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '65ch' }}>
-            {item.review_text}
-          </p>
+          {item.review_text && (
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <span className="text-xs text-muted" style={{ display: 'block', marginBottom: 'var(--space-1)' }}>CUSTOMER REVIEW</span>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '65ch', fontStyle: 'italic' }}>
+                "{item.review_text}"
+              </p>
+            </div>
+          )}
+          
+          {item.replies && item.replies.length > 0 && (
+            <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--surface-hover)', borderRadius: 'var(--radius-md)' }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--accent)' }}>AI REPLY DRAFT</span>
+                {item.replies[0].model_used && (
+                  <span className="text-xs text-muted opacity-70">🤖 {item.replies[0].model_used.split('/').pop()}</span>
+                )}
+              </div>
+              <p className="text-sm" style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}>
+                {item.replies[0].reply_text}
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
