@@ -56,13 +56,14 @@ def run_simulation_poller():
                 continue # Already pulled
                 
             # 2c. Build the review record
+            # IMPORTANT: Column names MUST match DB schema exactly.
+            # DB uses "rating" (NOT "star_rating"), and has no "review_time" column.
             review_record = {
                 "google_review_id": google_id,
                 "reviewer_name": rev_payload["reviewer"]["displayName"],
-                "star_rating": rev_payload["numericRating"],
+                "rating": rev_payload["numericRating"],
                 "review_text": rev_payload["comment"],
-                "review_time": rev_payload["createTime"],
-                "status": "pending" # Initial status
+                "status": "pending"
             }
             
             # Insert into database
@@ -80,7 +81,7 @@ def run_simulation_poller():
                     business_name=biz_name,
                     business_type=biz_type,
                     tone_preference=tone,
-                    star_rating=review_record["star_rating"],
+                    star_rating=review_record["rating"],
                     review_text=review_record["review_text"]
                 )
                 

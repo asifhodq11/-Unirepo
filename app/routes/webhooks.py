@@ -64,7 +64,7 @@ def handle_inbound_email():
     review_record = {
         "google_review_id": google_review_id_mock,
         "reviewer_name": "Email Customer", 
-        "star_rating": 4, # Assume 4 stars for email forwards if we can't parse it
+        "rating": 4, # Assume 4 stars for email forwards if we can't parse it
         "review_text": review_text[:1000], # Cap length to prevent absurd payload attacks
         "status": "pending"
     }
@@ -85,7 +85,7 @@ def handle_inbound_email():
             business_name=biz_name,
             business_type=biz_type,
             tone_preference=tone,
-            star_rating=review_record["star_rating"],
+            star_rating=review_record["rating"],
             review_text=review_record["review_text"]
         )
         
