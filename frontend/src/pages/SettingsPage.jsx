@@ -2,9 +2,18 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap } from 'lucide-react';
+import { Rocket, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, Heart, MessageSquare } from 'lucide-react';
 
 const TONE_OPTIONS = ['friendly', 'professional', 'casual'];
+
+const CANCEL_REASONS = [
+  'Too expensive for my needs',
+  'Missing features I need',
+  'Technical issues / bugs',
+  'Switching to a competitor',
+  'Business closed / paused',
+  'Other',
+];
 
 export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -15,7 +24,10 @@ export default function SettingsPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading]     = useState(false);
   const [cancelLoading, setCancelLoading]     = useState(false);
-  const [showCancel, setShowCancel]           = useState(false);
+
+  // Churn Shield state machine
+  const [cancelStep, setCancelStep] = useState(0); // 0=hidden, 1=loss, 2=downsell, 3=survey
+  const [cancelReason, setCancelReason] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -63,18 +75,19 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleCancel() {
+  async function handleFinalCancel() {
     setCancelLoading(true); setError('');
     try {
-      await api.post('/payments/cancel', { reason: 'User initiated' });
+      await api.post('/payments/cancel', { reason: cancelReason || 'User initiated' });
       await refreshUser();
-      setShowCancel(false);
+      setCancelStep(0);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to cancel subscription.');
     } finally { setCancelLoading(false); }
   }
 
   const plan = user?.plan ?? 'free';
+  const used = user?.reply_count_this_month ?? 0;
 
   return (
     <motion.div 
@@ -164,7 +177,7 @@ export default function SettingsPage() {
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
               <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Replies Cycle</span></div>
               <div className="flex items-baseline gap-1">
-                <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{user?.reply_count_this_month ?? 0}</span>
+                <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
                 <span className="text-muted">/ {plan === 'starter' ? '100' : '3'}</span>
               </div>
             </div>
@@ -216,30 +229,154 @@ export default function SettingsPage() {
                   <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
                     {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Access Billing Portal'}
                   </button>
-                  <button id="cancel-plan-btn" className="btn btn-ghost btn-danger" onClick={() => setShowCancel(true)}>
+                  <button id="cancel-plan-btn" className="btn btn-ghost btn-danger" onClick={() => setCancelStep(1)}>
                     Terminate Plan
                   </button>
                 </div>
               </div>
             )}
 
+            {/* ═══════════════════════════════════════════════════
+                3-STEP CHURN SHIELD
+            ═══════════════════════════════════════════════════ */}
             <AnimatePresence>
-              {showCancel && (
+              {cancelStep > 0 && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   className="w-full"
+                  style={{ marginTop: 'var(--space-5)' }}
                 >
-                  <div className="alert alert-error" style={{ marginTop: 'var(--space-5)', flexDirection: 'column', alignItems: 'flex-start', gap: 'var(--space-4)' }}>
-                    <p className="text-sm"><strong>⚠️ Attention:</strong> Down-leveling to the Free Tier will restrict you to 3 operations per cycle. Your current plan stays active until cycle end.</p>
-                    <div className="flex gap-2 w-full">
-                      <button id="confirm-cancel-btn" className="btn btn-danger flex-1" disabled={cancelLoading} onClick={handleCancel}>
-                        {cancelLoading ? <><span className="spinner" /> Processing…</> : 'Confirm Termination'}
-                      </button>
-                      <button className="btn btn-secondary flex-1" onClick={() => setShowCancel(false)}>Abort</button>
-                    </div>
-                  </div>
+                  {/* Step 1: Loss Aversion */}
+                  {cancelStep === 1 && (
+                    <motion.div 
+                      className="card" 
+                      style={{ background: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 'var(--space-5)' }}
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '10px', borderRadius: '50%' }}>
+                          <Shield size={22} style={{ color: '#ef4444' }} />
+                        </div>
+                        <div>
+                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>Your Reputation Shield is Active</h4>
+                          <p className="text-xs text-muted">Cancelling will remove your AI-powered review protection</p>
+                        </div>
+                      </div>
+                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                        <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
+                          You've generated <strong style={{ color: 'var(--text-primary)' }}>{used} AI replies</strong> this month. 
+                          Without ReplyIQ, every new review will go unanswered — and unanswered reviews 
+                          reduce customer trust by up to <strong style={{ color: '#ef4444' }}>45%</strong>.
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button className="btn btn-primary flex-1" onClick={() => setCancelStep(0)}>
+                          Keep My Protection
+                        </button>
+                        <button className="btn btn-ghost text-sm" style={{ opacity: 0.6 }} onClick={() => setCancelStep(2)}>
+                          Continue anyway →
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 2: Downsell / Retention Offer */}
+                  {cancelStep === 2 && (
+                    <motion.div 
+                      className="card" 
+                      style={{ background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: 'var(--space-5)' }}
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div style={{ background: 'rgba(168, 85, 247, 0.15)', padding: '10px', borderRadius: '50%' }}>
+                          <Heart size={22} style={{ color: '#a855f7' }} />
+                        </div>
+                        <div>
+                          <h4 style={{ color: '#a855f7', marginBottom: '2px' }}>We'd hate to see you go</h4>
+                          <p className="text-xs text-muted">How about a special offer instead?</p>
+                        </div>
+                      </div>
+                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed rgba(168, 85, 247, 0.3)' }}>
+                        <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
+                          Stay on a <strong style={{ color: '#a855f7' }}>Lite Plan</strong> for just 
+                          <strong style={{ color: 'var(--text-primary)' }}> 50% off</strong> for the next 3 months. 
+                          Keep your AI protection active at a fraction of the cost.
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button 
+                          className="btn flex-1" 
+                          style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', border: 'none' }}
+                          onClick={() => setCancelStep(0)}
+                        >
+                          ✨ Accept 50% Off
+                        </button>
+                        <button className="btn btn-ghost text-sm" style={{ opacity: 0.6 }} onClick={() => setCancelStep(3)}>
+                          No thanks →
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 3: Exit Survey + Final Confirm */}
+                  {cancelStep === 3 && (
+                    <motion.div 
+                      className="card" 
+                      style={{ background: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.15)', padding: 'var(--space-5)' }}
+                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '50%' }}>
+                          <MessageSquare size={22} style={{ color: '#ef4444' }} />
+                        </div>
+                        <div>
+                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>One last thing</h4>
+                          <p className="text-xs text-muted">Help us improve — why are you leaving?</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2" style={{ marginBottom: 'var(--space-4)' }}>
+                        {CANCEL_REASONS.map(reason => (
+                          <label 
+                            key={reason} 
+                            className="flex items-center gap-3 text-sm"
+                            style={{ 
+                              padding: '10px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                              background: cancelReason === reason ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
+                              border: cancelReason === reason ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
+                              transition: 'all 0.2s',
+                              color: 'var(--text-secondary)',
+                            }}
+                          >
+                            <input 
+                              type="radio" 
+                              name="cancel-reason" 
+                              value={reason}
+                              checked={cancelReason === reason}
+                              onChange={() => setCancelReason(reason)}
+                              style={{ accentColor: '#ef4444' }}
+                            />
+                            {reason}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="flex gap-3">
+                        <button className="btn btn-secondary flex-1" onClick={() => setCancelStep(0)}>
+                          Nevermind, Keep Plan
+                        </button>
+                        <button 
+                          id="confirm-cancel-btn" 
+                          className="btn btn-danger flex-1" 
+                          disabled={cancelLoading || !cancelReason} 
+                          onClick={handleFinalCancel}
+                          style={{ opacity: cancelReason ? 1 : 0.4 }}
+                        >
+                          {cancelLoading ? <><span className="spinner" /> Processing…</> : 'Confirm Termination'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, ChevronDown, ChevronUp, Bot, History } from 'lucide-react';
+import { Star, ChevronDown, ChevronUp, Bot, History, Download, User } from 'lucide-react';
 
 const STARS = [1, 2, 3, 4, 5];
-const ITEM_HEIGHT = 80; // standardized for CLS prevention
+const ITEM_HEIGHT = 80;
 
 function HistoryItemSkeleton() {
   return (
@@ -21,6 +21,9 @@ function HistoryItem({ item }) {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 
+  const rating = item.rating ?? 0;
+  const hasName = item.reviewer_name && item.reviewer_name.trim();
+
   return (
     <motion.div
       layout
@@ -31,13 +34,24 @@ function HistoryItem({ item }) {
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex text-accent" style={{ gap: '2px' }}>
-            {Array.from({ length: item.star_rating }).map((_, i) => (
-              <Star key={i} size={14} fill="currentColor" strokeWidth={1} />
-            ))}
-          </div>
-          {item.reviewer_name && (
+          {/* Star Rating Display */}
+          {rating > 0 && (
+            <div className="flex" style={{ gap: '2px' }}>
+              {Array.from({ length: rating }).map((_, i) => (
+                <Star key={i} size={14} fill="var(--accent)" stroke="var(--accent)" strokeWidth={1} />
+              ))}
+              {Array.from({ length: 5 - rating }).map((_, i) => (
+                <Star key={`e${i}`} size={14} fill="none" stroke="var(--text-muted)" strokeWidth={1} style={{ opacity: 0.3 }} />
+              ))}
+            </div>
+          )}
+          {/* Reviewer Name */}
+          {hasName ? (
             <span className="text-sm font-medium">{item.reviewer_name}</span>
+          ) : (
+            <span className="text-sm flex items-center gap-1" style={{ fontStyle: 'italic', color: 'var(--text-muted)', opacity: 0.7 }}>
+              <User size={12} /> Anonymous Guest
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -90,15 +104,37 @@ function HistoryItem({ item }) {
   );
 }
 
+/* ── CSV Export Utility ── */
+function exportToCSV(items) {
+  const headers = ['Date', 'Reviewer', 'Rating', 'Status', 'Review Text', 'AI Reply'];
+  const rows = items.map(item => {
+    const date = new Date(item.created_at).toLocaleDateString('en-GB');
+    const name = item.reviewer_name || 'Anonymous';
+    const rating = item.rating ?? '';
+    const status = item.status ?? '';
+    const text = (item.review_text || '').replace(/"/g, '""');
+    const reply = item.replies?.[0]?.reply_text?.replace(/"/g, '""') || '';
+    return `"${date}","${name}","${rating}","${status}","${text}","${reply}"`;
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `replyiq-history-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function HistoryPage() {
-  const [items, setItems]       = useState(undefined); // undefined = uninitialized
+  const [items, setItems]       = useState(undefined);
   const [total, setTotal]       = useState(0);
   const [hasMore, setHasMore]   = useState(false);
   const [page, setPage]         = useState(1);
   const [isFetching, setIsFetching] = useState(false);
   const [filterRating, setFilterRating] = useState(null);
 
-  // Correct 4-state model: uninitialized vs empty vs loading vs loaded
   const isUninitialized = items === undefined && !isFetching;
   const isLoading       = isFetching;
   const isEmpty         = !isFetching && Array.isArray(items) && items.length === 0;
@@ -119,14 +155,14 @@ export default function HistoryPage() {
     }
   }, []);
 
-  // Start in LOADING state (not EMPTY) to prevent flash-of-wrong-state
   useEffect(() => {
     setIsFetching(true);
     fetchPage(1);
   }, [fetchPage]);
 
+  // Filter uses the correct field name: `rating` (not `star_rating`)
   const visible = filterRating && hasData
-    ? items.filter(i => i.star_rating === filterRating)
+    ? items.filter(i => i.rating === filterRating)
     : (items ?? []);
 
   return (
@@ -143,9 +179,9 @@ export default function HistoryPage() {
         <p className="text-secondary">{total} Total Processed Nodes — Click any row to expand telemetry.</p>
       </motion.div>
 
-      {/* Filter bar */}
+      {/* Filter bar + Export */}
       <motion.div 
-        className="flex items-center gap-2" 
+        className="flex items-center justify-between" 
         style={{ marginBottom: 'var(--space-5)' }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -183,9 +219,22 @@ export default function HistoryPage() {
             </button>
           ))}
         </div>
+
+        {/* Export CSV button */}
+        {hasData && (
+          <motion.button
+            className="btn btn-secondary text-sm flex items-center gap-2"
+            style={{ padding: '0.4rem 0.8rem', width: 'auto' }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={(e) => { e.stopPropagation(); exportToCSV(items); }}
+          >
+            <Download size={14} /> Export CSV
+          </motion.button>
+        )}
       </motion.div>
 
-      {/* Grid List — Masonry approximation */}
+      {/* Grid List */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 'var(--space-4)', alignItems: 'start' }}>
         {(isUninitialized || isLoading)
           ? Array.from({ length: 6 }).map((_, i) => <HistoryItemSkeleton key={i} />)
