@@ -141,6 +141,21 @@ class AIBillingError(ReplyIQError):
         )
 
 
+class AIBadRequestError(ReplyIQError):
+    """Raised when the AI provider returns a 400 Bad Request (e.g., invalid model or context too long)."""
+
+    error_code = "AI_BAD_REQUEST"
+    http_status = 400
+
+    def __init__(self, provider="AI Provider", message="Invalid request sent to AI provider"):
+        super().__init__(
+            details={
+                "message": f"{provider} rejected the request: {message}",
+                "action_required": "contact_support"
+            }
+        )
+
+
 class GooglePostError(ReplyIQError):
     """Raised when posting a reply to Google fails."""
 

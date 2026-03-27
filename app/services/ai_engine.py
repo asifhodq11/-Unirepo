@@ -115,8 +115,13 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                 provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
                 raise AIBillingError(provider=provider_name)
             raise  # Do not retry, re-raise immediately
+            
+        except openai.BadRequestError as e:
+            from app.utils.exceptions import AIBadRequestError
+            provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
+            raise AIBadRequestError(provider=provider_name, message=str(e))
 
-        except (openai.AuthenticationError, openai.BadRequestError):
+        except openai.AuthenticationError:
             raise  # do not retry — re-raise immediately
 
     raise AIServiceError(attempt=3, model=model_id)

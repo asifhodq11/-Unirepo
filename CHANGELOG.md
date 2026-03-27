@@ -8,6 +8,7 @@ This log tracks all major architectural shifts, feature additions, and critical 
 **Goal:** Merge separate services into a unified, one-click deployable monorepo.
 
 ### 2026-03-27
+- **[Bugfix] Graceful AI Provider Error Handling:** Added explicit exception parsing for `openai.APIStatusError`. If the AI provider (OpenRouter/OpenAI) returns a 402 "Payment Required" due to exhausted credits, the backend now returns a structured, user-friendly `AIBillingError` instead of crashing with a raw 500 response.
 - **[Bugfix] History Dashboard Missing Replies:** Fixed an issue where the `/history` endpoint only returned customer reviews. Updated the backend query to perform a Supabase join on the `replies` table and updated the React `HistoryPage.jsx` UI to render the AI draft alongside the original review context.
 - **[Architecture] Advanced Hybrid 2-Pass AI Pipeline:** Replaced the legacy 3-pass pipeline with a Context-Anchored generation pass (rules embedded) and an Adversarial Audit pass. This structural shift eliminates "Context Decay" and prevents the AI from hallucinating details (like "biriyani" for a tech store).
 - **[Feature] Emotional Energy Routing:** Upgraded the Model Router from naive keyword matching to behavioral signal analysis (punctuation density, CAPS LOCK ratio, length, and star severity). The system now accurately routes angry customers to `gpt-4o` even if they don't use typical crisis keywords.
