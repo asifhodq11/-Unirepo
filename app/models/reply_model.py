@@ -16,7 +16,7 @@ def insert_reply(user_id: str, reply_data: dict) -> dict | None:
         result = supabase.table("replies").insert(data_to_insert).execute()
         return result.data[0] if result.data else None
     except Exception as e:
-        log_event("error", "insert_reply_failed", user_id=user_id, error=str(e))
+        log_event("insert_reply_failed", user_id=user_id, level="error", error=str(e))
         return None
 
 
@@ -26,5 +26,5 @@ def get_replies_by_review(user_id: str, review_id: str) -> list[dict]:
         result = supabase.table("replies").select("*").eq("review_id", review_id).eq("user_id", user_id).execute()
         return result.data if result.data else []
     except Exception as e:
-        log_event("error", "get_replies_failed", user_id=user_id, review_id=review_id, error=str(e))
+        log_event("get_replies_failed", user_id=user_id, level="error", review_id=review_id, error=str(e))
         return []

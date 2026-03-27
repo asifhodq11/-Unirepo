@@ -16,7 +16,7 @@ def insert_review(user_id: str, review_data: dict) -> dict | None:
         result = supabase.table("reviews").insert(data_to_insert).execute()
         return result.data[0] if result.data else None
     except Exception as e:
-        log_event("error", "insert_review_failed", user_id=user_id, error=str(e))
+        log_event("insert_review_failed", user_id=user_id, level="error", error=str(e))
         return None
 
 
@@ -33,7 +33,7 @@ def get_review_by_id(user_id: str, review_id: str) -> dict | None:
         )
         return result.data[0] if result.data else None
     except Exception as e:
-        log_event("error", "get_review_failed", user_id=user_id, review_id=review_id, error=str(e))
+        log_event("get_review_failed", user_id=user_id, level="error", review_id=review_id, error=str(e))
         return None
 
 
@@ -44,6 +44,6 @@ def update_review_status(user_id: str, review_id: str, status: str) -> bool:
         return True
     except Exception as e:
         log_event(
-            "error", "update_review_status_failed", user_id=user_id, review_id=review_id, status=status, error=str(e)
+            "update_review_status_failed", user_id=user_id, level="error", review_id=review_id, status=status, error=str(e)
         )
         return False

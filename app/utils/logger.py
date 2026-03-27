@@ -19,10 +19,14 @@ if not logger.handlers:
     logger.addHandler(handler)
 
 
-def log_event(event_name: str, user_id=None, level="info", **kwargs):
+def log_event(event_name: str, **kwargs):
     """
     Logs a strictly formatted JSON event for Railway's log explorer.
     """
+    # Extract known keys from kwargs to avoid conflicts
+    user_id = kwargs.pop("user_id", None)
+    level = kwargs.pop("level", "info")
+
     event_data = {
         "timestamp": datetime.utcnow().isoformat() + "Z",
         "level": level,
