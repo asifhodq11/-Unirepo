@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plan>
+    <phase id="1" name="Build the Resilient Fallback (Router of Routers)">
+        <task id="1.1">
+            <description>Update call_llm to intercept expected AIBadRequest/AIBilling errors and retry with a robust fallback model (gpt-4o-mini).</description>
+            <action>Modify app/services/ai_engine.py `call_llm` function to catch AIBadRequestError and AIServiceError during the `openrouter` request. If caught, instead of crashing, attempt the request again forcing `model_id="gpt-4o-mini"` directly.</action>
+            <verify>Ensure 400 Bad Request errors trigger the fallback loop and return a successful string instead of a 500 JSON response.</verify>
+        </task>
+    </phase>
+    <phase id="2" name="Direct Google Gemini Integration">
+        <task id="2.1">
+            <description>Update the pipeline to bypass OpenRouter entirely for standard requests when GEMINI_API_KEY is present.</description>
+            <action>Modify app/services/ai_engine.py to check if AI_PROVIDER is set to native Gemini or if the router explicitly routes to Gemini SDK. Ensure the genai.Client is called directly for 5-star short reviews to eliminate OpenRouter rate limits.</action>
+            <verify>Run a 5-star review request and check logs to confirm it hit the Gemini SDK natively rather than OpenRouter.</verify>
+        </task>
+    </phase>
+    <phase id="3" name="Finalize Payment Upgrade Loop">
+        <task id="3.1">
+            <description>Review and enhance the Stripe Webhook handler to ensure database subscription state changes to "Pro" when payment succeeds.</description>
+            <action>Audit app/services/stripe_service.py for the `checkout.session.completed` event. Ensure user profile metadata is correctly updated in Supabase. Ask the user to inject STRIPE_WEBHOOK_SECRET into the deployment.</action>
+            <verify>Simulate a completed checkout and verify in the frontend UI that the user's tier has visually shifted from Free to Pro.</verify>
+        </task>
+    </phase>
+    <phase id="4" name="Pro Max UI Polish">
+        <task id="4.1">
+            <description>Overhaul the frontend visual aesthetic with Glassmorphism, Premium Typography, and Animations.</description>
+            <action>Update frontend/index.css and components (HeroComponent, Dashboard) to include subtle blurs, HSL gradients, Framer Motion interactions, and modern typography (e.g., Inter or Outfit).</action>
+            <verify>Visually inspect the frontend to confirm it feels premium, animations are smooth, and the design removes generic boilerplate.</verify>
+        </task>
+    </phase>
+</plan>

@@ -80,8 +80,20 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
 
     for attempt in range(1, 4):
         try:
-            # If using OpenRouter, we route EVERYTHING through the OpenAI SDK
-            # because OpenRouter provides a unified interface.
+            # Task 2: Direct Google Gemini Integration
+            # If it's a Gemini model and we have the native key, bypass OpenRouter entirely
+            if "gemini" in model_id.lower() and os.environ.get("GEMINI_API_KEY"):
+                clean_model_id = model_id.replace("google/", "").split(":")[0]  # Remove OR prefixes/suffixes
+                # If it's the old flash-lite preview that doesn't exist natively, map to standard flash
+                if "preview" in clean_model_id:
+                    clean_model_id = "gemini-2.5-flash"
+                
+                response = gemini_client.models.generate_content(
+                    model=clean_model_id, contents=user_prompt, config={"system_instruction": system_prompt}
+                )
+                return response.text.strip()
+            
+            # Task 1: OpenRouter / OpenAI normal routing
             if provider == "openrouter":
                 response = get_openai_client().chat.completions.create(
                     model=model_id,
@@ -89,13 +101,6 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                     temperature=0.7,
                 )
                 return response.choices[0].message.content.strip()
-            
-            # If not OpenRouter, we split between Gemini SDK and OpenAI SDK
-            if "gemini" in model_id:
-                response = gemini_client.models.generate_content(
-                    model=model_id, contents=user_prompt, config={"system_instruction": system_prompt}
-                )
-                return response.text.strip()
             else:
                 response = get_openai_client().chat.completions.create(
                     model=model_id,
@@ -110,11 +115,21 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                 time.sleep(wait)
 
         except openai.BadRequestError as e:
+            # Router of Routers: Fallback on deprecated model
+            if attempt == 1:
+                model_id = "openai/gpt-4o-mini" if provider == "openrouter" else "gpt-4o-mini"
+                continue
+                
             from app.utils.exceptions import AIBadRequestError
             provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
             raise AIBadRequestError(provider=provider_name, message=str(e))
 
         except openai.APIStatusError as e:
+            # Router of Routers: Fallback on API limits
+            if attempt == 1 and e.status_code in [402, 502, 503]:
+                model_id = "openai/gpt-4o-mini" if provider == "openrouter" else "gpt-4o-mini"
+                continue
+                
             if e.status_code == 402:
                 from app.utils.exceptions import AIBillingError
                 provider_name = "OpenRouter" if provider == "openrouter" else "OpenAI"
