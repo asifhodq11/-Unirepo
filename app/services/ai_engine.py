@@ -76,15 +76,27 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
     import openai
     from app.utils.exceptions import AIServiceError
 
+    provider = os.environ.get("AI_PROVIDER", "openrouter")
+
     for attempt in range(1, 4):
         try:
+            # If using OpenRouter, we route EVERYTHING through the OpenAI SDK
+            # because OpenRouter provides a unified interface.
+            if provider == "openrouter":
+                response = get_openai_client().chat.completions.create(
+                    model=model_id,
+                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                    temperature=0.7,
+                )
+                return response.choices[0].message.content.strip()
+            
+            # If not OpenRouter, we split between Gemini SDK and OpenAI SDK
             if "gemini" in model_id:
                 response = gemini_client.models.generate_content(
                     model=model_id, contents=user_prompt, config={"system_instruction": system_prompt}
                 )
                 return response.text.strip()
             else:
-                # GPT-4o / GPT-4o-mini
                 response = get_openai_client().chat.completions.create(
                     model=model_id,
                     messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
