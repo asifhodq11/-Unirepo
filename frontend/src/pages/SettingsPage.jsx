@@ -339,7 +339,52 @@ export default function SettingsPage() {
                     : 'You are on the Starter tier. Reviews are collected automatically — you generate replies on demand.'
                   }
                 </p>
-                <div className="flex flex-wrap gap-3 mt-auto btn-stack-mobile">
+
+                {/* Upgrade to Pro — only for Starter users */}
+                {plan === 'starter' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.08))',
+                      border: '1px solid rgba(139,92,246,0.3)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: 'var(--space-4)',
+                    }}
+                  >
+                    <div className="flex items-start gap-3" style={{ marginBottom: 'var(--space-3)' }}>
+                      <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', padding: '8px', borderRadius: '50%', flexShrink: 0 }}>
+                        <Rocket size={16} style={{ color: '#000' }} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium" style={{ marginBottom: '2px' }}>Unlock Full Autonomy</p>
+                        <p className="text-xs text-muted" style={{ lineHeight: 1.5 }}>
+                          Upgrade to Pro and let your AI Heartbeat reply 24/7 — no clicking required.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      id="upgrade-pro-btn"
+                      className="btn btn-primary w-full"
+                      style={{ background: 'linear-gradient(45deg, var(--accent), var(--accent-cyan))', fontSize: '0.9rem' }}
+                      disabled={checkoutLoading}
+                      onClick={async () => {
+                        setCheckoutLoading(true);
+                        try {
+                          const data = await api.post('/payments/checkout', { plan: 'pro' });
+                          window.location.href = data.checkout_url;
+                        } catch (err) {
+                          setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
+                          setCheckoutLoading(false);
+                        }
+                      }}
+                    >
+                      {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '🚀 Upgrade to Pro'}
+                    </button>
+                  </motion.div>
+                )}
+
+                <div className="flex flex-wrap gap-3 btn-stack-mobile">
                   <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
                     {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Access Billing Portal'}
                   </button>
