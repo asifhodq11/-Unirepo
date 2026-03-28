@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import HistoryPage  from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ApprovalPage from './pages/ApprovalPage';
+import LandingPage  from './pages/LandingPage';
 
 // Layout
 import AppLayout from './components/layout/AppLayout';
@@ -55,8 +56,8 @@ function SmartFeatures({ children }) {
 function Router() {
   return (
     <Routes>
-      {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Root Landing Page */}
+      <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
 
       {/* Public routes */}
       <Route path="/login"  element={<PublicRoute><LoginPage /></PublicRoute>} />
