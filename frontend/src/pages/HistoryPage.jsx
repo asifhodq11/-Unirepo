@@ -159,7 +159,7 @@ function exportToCSV(items) {
 
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function HistoryPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const plan = user?.plan ?? 'free';
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -256,7 +256,7 @@ export default function HistoryPage() {
       setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
       // Update modal live if it's open
       if (modalItem?.id === id) setModalItem(updatedItem);
-      user.refreshUser?.();
+      refreshUser();
     } catch {
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'failed' } : item));
     } finally {
@@ -320,7 +320,7 @@ export default function HistoryPage() {
       }
     }
 
-    user.refreshUser?.();
+    refreshUser();
     setIsProcessing(false);
   }
 

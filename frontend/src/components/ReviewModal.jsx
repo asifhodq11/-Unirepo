@@ -5,8 +5,9 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 import {
-  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft,
+  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft, Sparkles, Edit3
 } from 'lucide-react';
 
 export default function ReviewModal({
@@ -17,6 +18,7 @@ export default function ReviewModal({
   generating,    // boolean — is this review currently generating?
   readOnly,      // boolean — if true, no edit/generate actions visible
 }) {
+  const { refreshUser } = useAuth();
   const [editText, setEditText] = useState('');
   const textareaRef = useRef(null);
   const overlayRef = useRef(null);
@@ -41,6 +43,17 @@ export default function ReviewModal({
       textareaRef.current.focus();
     }
   }, [hasDraft, isPending]);
+
+  // Call refreshUser on significant actions to sync usage counters
+  async function handleInternalGenerate() {
+    await onGenerate(item.id);
+    await refreshUser();
+  }
+
+  async function handleInternalSend() {
+    await onSend(item.id, draft.id, editText);
+    await refreshUser();
+  }
 
   // Click-outside to close
   function handleOverlayClick(e) {
@@ -105,182 +118,209 @@ export default function ReviewModal({
             <button
               onClick={onClose}
               className="btn btn-ghost btn-sm flex items-center gap-2"
-              style={{ color: 'var(--text-muted)', padding: '6px 10px' }}
+              style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '6px 12px' }}
             >
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> Close
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
               <span className={`badge ${
                 isReplied ? 'badge-success' :
                 isPending ? 'badge-warning' : 'badge-muted'
-              }`}>
+              }`} style={{ letterSpacing: '0.05em', fontWeight: 700 }}>
                 {item.status?.toUpperCase()}
               </span>
               <button
                 onClick={onClose}
                 className="btn btn-ghost btn-sm"
-                style={{ color: 'var(--text-muted)', padding: '6px' }}
+                style={{ color: 'var(--text-muted)', padding: '6px', borderRadius: '50%' }}
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
           </div>
 
-          {/* ── Reviewer Info ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <div style={{
-              width: 44, height: 44, borderRadius: '50%',
-              background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <User size={20} style={{ color: 'var(--text-muted)' }} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ fontWeight: 600, fontSize: '1rem' }}>
-                {hasName ? item.reviewer_name : 'Anonymous Guest'}
-              </span>
-              <div style={{ display: 'flex', gap: '2px' }}>
-                {Array.from({ length: rating }).map((_, i) => (
-                  <Star key={i} size={14} fill="var(--accent)" stroke="var(--accent)" />
-                ))}
-                {Array.from({ length: 5 - rating }).map((_, i) => (
-                  <Star key={`e${i}`} size={14} fill="none" stroke="var(--text-muted)" style={{ opacity: 0.3 }} />
-                ))}
+          <div className="flex flex-col gap-5">
+            {/* ── Context Area (Reviewer + Star) ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+              <div style={{
+                width: 48, height: 48, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-surface))',
+                border: '1px solid var(--border)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+                <User size={22} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                  {hasName ? item.reviewer_name : 'Anonymous Guest'}
+                </span>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  {Array.from({ length: rating }).map((_, i) => (
+                    <Star key={i} size={15} fill="var(--accent)" stroke="var(--accent)" />
+                  ))}
+                  {Array.from({ length: 5 - rating }).map((_, i) => (
+                    <Star key={`e${i}`} size={15} fill="none" stroke="var(--text-muted)" style={{ opacity: 0.25 }} />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* ── Review Text ── */}
-          {item.review_text && (
-            <div style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-4)',
-            }}>
-              <span style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 'var(--space-2)', textTransform: 'uppercase' }}>
-                Customer Review
-              </span>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.75', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                "{item.review_text}"
-              </p>
-            </div>
-          )}
-
-          {/* ── Reply Section ── */}
-          {!readOnly && (
-            <>
-              {/* No draft yet: show Generate button */}
-              {isPending && !hasDraft && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: 'var(--space-4)',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
+            {/* ── Customer Review Card ── */}
+            {item.review_text && (
+              <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-5)',
+                position: 'relative',
+              }}>
+                <span style={{ 
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.12em', 
+                  color: 'var(--text-muted)', marginBottom: 'var(--space-3)', textTransform: 'uppercase' 
                 }}>
-                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    No reply generated yet
-                  </span>
-                  <button
-                    className="btn btn-secondary flex items-center gap-2"
-                    onClick={() => onGenerate(item.id)}
-                    disabled={generating}
-                    style={{ width: 'auto', padding: '8px 18px' }}
-                  >
-                    {generating
-                      ? <><Loader2 size={15} className="animate-spin" /> Generating…</>
-                      : <><Play size={15} /> Generate Reply</>
-                    }
-                  </button>
-                </div>
-              )}
+                  Customer Feedback
+                </span>
+                <p style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: 400 }}>
+                  "{item.review_text}"
+                </p>
+              </div>
+            )}
 
-              {/* Generating indicator */}
-              {isPending && !hasDraft && generating && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--accent)' }}>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span style={{ fontSize: '0.85rem' }}>AI is writing your reply…</span>
-                </div>
-              )}
-
-              {/* Draft ready: editable textarea + Send */}
-              {isPending && hasDraft && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--accent)', textTransform: 'uppercase' }}>
-                      Edit Draft
-                    </span>
-                    {draft.model_used && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Bot size={11} /> {draft.model_used.split('/').pop()}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ position: 'relative' }}>
-                    <textarea
-                      ref={textareaRef}
-                      value={editText}
-                      onChange={e => setEditText(e.target.value)}
-                      className="form-input"
-                      disabled={generating}
-                      style={{
-                        minHeight: '120px',
-                        resize: 'vertical',
-                        fontSize: '0.95rem',
-                        lineHeight: '1.65',
-                        border: '1px solid rgba(139,92,246,0.35)',
-                        background: 'rgba(139,92,246,0.04)',
-                        transition: 'border-color 0.2s',
-                      }}
-                      onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.7)'}
-                      onBlur={e => e.target.style.borderColor = 'rgba(139,92,246,0.35)'}
-                      placeholder="Edit the AI-generated reply here…"
-                    />
-                    <div style={{
-                      position: 'absolute', bottom: '10px', right: '12px',
-                      fontSize: '0.7rem', color: 'var(--text-muted)', opacity: 0.5,
-                    }}>
-                      {editText.length} chars
+            {/* ── AI Reply Section ── */}
+            {!readOnly && (
+              <div className="flex flex-col gap-4">
+                {/* No draft yet: show Generate button */}
+                {isPending && !hasDraft && (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', items: 'center', gap: 'var(--space-4)',
+                    padding: 'var(--space-8) var(--space-4)',
+                    background: 'rgba(255,255,255,0.01)',
+                    border: '1px dashed var(--border)',
+                    borderRadius: 'var(--radius-lg)',
+                    textAlign: 'center',
+                  }}>
+                    <div style={{ color: 'var(--text-muted)', opacity: 0.5 }}>
+                      <Bot size={40} style={{ margin: '0 auto var(--space-3)' }} />
+                      <p className="text-sm">Ready to generate an AI-powered response.</p>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button
                       className="btn btn-primary flex items-center gap-2"
-                      onClick={() => onSend(item.id, draft.id, editText)}
-                      disabled={generating || !editText.trim()}
-                      style={{ width: 'auto', padding: '10px 24px' }}
+                      onClick={handleInternalGenerate}
+                      disabled={generating}
+                      style={{ width: 'auto', margin: '0 auto', padding: '10px 28px', fontSize: '0.95rem' }}
                     >
                       {generating
-                        ? <><Loader2 size={15} className="animate-spin" /> Sending…</>
-                        : <><Check size={15} /> Send Reply</>
+                        ? <><Loader2 size={18} className="animate-spin" /> Analyzing Thinking…</>
+                        : <><Sparkles size={18} /> Generate AI Response</>
                       }
                     </button>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+                )}
 
-          {/* ── Read-only sent reply (for Replied items) ── */}
-          {(readOnly || isReplied) && hasDraft && (
-            <div style={{
-              background: 'rgba(16, 185, 129, 0.05)',
-              border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-4)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                <Check size={14} style={{ color: 'var(--success)' }} />
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', color: 'var(--success)', textTransform: 'uppercase' }}>
-                  Sent Reply
-                </span>
+                {/* Draft ready: prominent editable area */}
+                {isPending && hasDraft && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div className="flex items-center gap-3">
+                        <span style={{ 
+                          fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', 
+                          color: 'var(--accent)', textTransform: 'uppercase',
+                          display: 'flex', alignItems: 'center', gap: '6px'
+                        }}>
+                          <Edit3 size={13} /> Review & Edit Reply
+                        </span>
+                        <motion.span 
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                          style={{ fontSize: '0.65rem', background: 'var(--accent-subtle)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}
+                        >
+                          EDITABLE
+                        </motion.span>
+                      </div>
+                      {draft.model_used && (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: '4px' }}>
+                          <Bot size={12} /> {draft.model_used.split('/').pop()}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div style={{ 
+                      position: 'relative',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '2px',
+                      background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))',
+                      boxShadow: '0 8px 24px rgba(139,92,246,0.15)',
+                    }}>
+                      <textarea
+                        ref={textareaRef}
+                        value={editText}
+                        onChange={e => setEditText(e.target.value)}
+                        className="form-input"
+                        disabled={generating}
+                        style={{
+                          minHeight: '180px',
+                          resize: 'vertical',
+                          fontSize: '1rem',
+                          lineHeight: '1.7',
+                          border: 'none',
+                          background: 'var(--bg-surface)',
+                          padding: 'var(--space-5)',
+                          borderRadius: 'calc(var(--radius-lg) - 2px)',
+                          color: 'var(--text-primary)',
+                          transition: 'all 0.3s ease',
+                          caretColor: 'var(--accent)',
+                        }}
+                        onFocus={e => e.target.parentElement.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-cyan))'}
+                        onBlur={e => e.target.parentElement.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))'}
+                        placeholder="Customize the response to your liking…"
+                      />
+                      <div style={{
+                        position: 'absolute', bottom: '12px', right: '16px',
+                        fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600,
+                      }}>
+                        {editText.length} characters
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
+                      <button
+                        className="btn btn-primary flex items-center gap-2"
+                        onClick={handleInternalSend}
+                        disabled={generating || !editText.trim()}
+                        style={{ width: 'auto', padding: '12px 32px', fontSize: '1rem', fontWeight: 700 }}
+                      >
+                        {generating
+                          ? <><Loader2 size={18} className="animate-spin" /> Sending…</>
+                          : <><Check size={18} /> Confirm & Send Reply</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-              <p style={{ fontSize: '0.95rem', lineHeight: '1.65', color: 'var(--text-primary)' }}>
-                {draft.reply_text}
-              </p>
-            </div>
-          )}
+            )}
+
+            {/* ── Read-only sent reply (for Replied items) ── */}
+            {(readOnly || isReplied) && hasDraft && (
+              <div style={{
+                background: 'rgba(16, 185, 129, 0.04)',
+                border: '1px solid rgba(16,185,129,0.2)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-5)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                  <Check size={16} style={{ color: 'var(--success)' }} />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--success)', textTransform: 'uppercase' }}>
+                    Replied To Customer
+                  </span>
+                </div>
+                <p style={{ fontSize: '1rem', lineHeight: '1.7', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+                  {draft.reply_text}
+                </p>
+              </div>
+            )}
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
