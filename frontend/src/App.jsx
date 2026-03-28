@@ -57,7 +57,8 @@ function Router() {
   return (
     <Routes>
       {/* Root Landing Page */}
-      <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+      <Route path="/"        element={<PublicRoute><LandingPage /></PublicRoute>} />
+      <Route path="/landing" element={<PublicRoute><LandingPage /></PublicRoute>} />
 
       {/* Public routes */}
       <Route path="/login"  element={<PublicRoute><LoginPage /></PublicRoute>} />
