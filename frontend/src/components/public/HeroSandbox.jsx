@@ -36,9 +36,9 @@ export default function HeroSandbox() {
   function handleUnlock(e) {
     e.preventDefault();
     if (email) {
-      navigate(`/signup?email=${encodeURIComponent(email)}`);
+      navigate(`/?email=${encodeURIComponent(email)}`);
     } else {
-      navigate('/signup');
+      navigate('/');
     }
   }
 

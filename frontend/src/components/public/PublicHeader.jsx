@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Bot, ChevronRight } from 'lucide-react';
+import ThemeToggle from '../ThemeToggle';
 
 export default function PublicHeader() {
   const navigate = useNavigate();
@@ -16,14 +17,15 @@ export default function PublicHeader() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      // The "Vercel" floating dock look
-      background: 'rgba(9, 9, 11, 0.5)',
-      backdropFilter: 'blur(24px)',
-      WebkitBackdropFilter: 'blur(24px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '999px', // Pill shape
+      // Refined Glassmorphism
+      background: 'var(--bg-surface)',
+      backdropFilter: 'blur(32px)',
+      WebkitBackdropFilter: 'blur(32px)',
+      border: '1px solid var(--border)',
+      borderRadius: '999px',
       padding: '8px 8px 8px 20px',
-      boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+      boxShadow: 'var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05)',
+      transition: 'var(--transition)',
     }}>
       
       {/* Brand / Logo */}
@@ -57,7 +59,8 @@ export default function PublicHeader() {
       </nav>
 
       {/* CTA Section */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+        <ThemeToggle />
         <button 
           onClick={() => navigate('/login')}
           style={{ 
@@ -71,7 +74,7 @@ export default function PublicHeader() {
           Log in
         </button>
         <button 
-          onClick={() => navigate('/signup')}
+          onClick={() => navigate('/')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'var(--text-primary)', color: 'var(--bg-base)',

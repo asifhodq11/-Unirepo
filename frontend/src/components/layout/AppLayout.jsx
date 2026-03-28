@@ -4,6 +4,7 @@ import FloatingGenerator from '../FloatingGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, LayoutDashboard, Settings, MessageSquarePlus } from 'lucide-react';
 import { getPlanLimit, getPlanLimitDisplay, PLAN_LABELS } from '../../utils/plans';
+import ThemeToggle from '../ThemeToggle';
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard',  icon: Activity },
@@ -27,9 +28,12 @@ export default function AppLayout() {
     <div className="app-layout">
       {/* ── Sidebar ─────────────────────── */}
       <nav className="sidebar">
-        <div className="sidebar-logo">
-          <div className="sidebar-logo-icon"><MessageSquarePlus size={20} color="white" /></div>
-          <span className="sidebar-logo-name">ReplyIQ</span>
+        <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+            <div className="sidebar-logo-icon"><MessageSquarePlus size={20} /></div>
+            <span className="sidebar-logo-name">ReplyIQ</span>
+          </div>
+          <ThemeToggle />
         </div>
 
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (

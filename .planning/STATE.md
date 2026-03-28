@@ -1,19 +1,21 @@
-# GSD Phase 1: Research Report (AI Email Integration)
+# Project State: ReplyIQ Glass & Theme Overhaul
 
-## 🎯 Objective
-Implement automated email delivery for generated AI replies using the Resend API.
+## Current Focus
+Extending the "Pro Max" glassmorphism aesthetic across the entire application and implementing a unified Dark/Light theme system.
 
-## 🔍 Codebase Mapping
-- **Provider:** Resend (`RESEND_API_KEY` detected in `config.py`).
-- **Backend Service:** `app/services/email_service.py` (Currently empty).
-- **Backend Config:** `app/config.py` (Line 28).
-- **Frontend Trigger:** `ReplyCard.jsx` (Target for "Email this reply" button).
+## Status Summary
+- [x] **Redesign Phase 1**: Landing Page V2 (Pro Aesthetic).
+- [x] **Redesign Phase 2**: 4-Tier Pricing implementation.
+- [/] **Redesign Phase 3**: Theme Engine & App-wide Glassmorphism (In Progress).
+- [ ] **Functional Phase 1**: Lead Capture integration (Pending).
 
-## 🛠️ Tech Stack Constraints
-- Must use `resend` Python library.
-- Must handle HTML email formatting (Outfit/Plus Jakarta Sans styling to match the V4 UI).
-- Must include error handling for API failures.
+## Proposals & Decisions
+- **D-001**: Separate Marketing (`/landing`) from App (`/`). **[Approved]**
+- **D-002**: Implement global `ThemeContext` using CSS variables for runtime switching. **[Proposed]**
+- **D-003**: Apply `backdrop-filter: blur(24px)` to all dashboard layout containers. **[Proposed]**
 
-## 🏁 Handover Signal
-**Research complete.** Status saved to `.planning/STATE.md`.
-Please switch to **Claude 4.6 Sonnet** for Phase 2: Planning.
+## Active Tasks
+- [ ] Create `ThemeContext.jsx` and `useTheme.js` hook.
+- [ ] Sync `index.css` with semantic theme overrides.
+- [ ] Add `ThemeToggle` to Public Header and App Sidebar.
+- [ ] Shift Landing Page to `/landing` and App to `/`.

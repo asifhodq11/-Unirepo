@@ -56,9 +56,10 @@ function SmartFeatures({ children }) {
 function Router() {
   return (
     <Routes>
-      {/* Root Landing Page */}
-      <Route path="/"        element={<PublicRoute><LandingPage /></PublicRoute>} />
-      <Route path="/landing" element={<PublicRoute><LandingPage /></PublicRoute>} />
+      {/* Application Entry Point — Root moves into the app flow */}
+      <Route path="/"        element={<Navigate to="/dashboard" replace />} />
+      {/* Dedicated Marketing Landing Page */}
+      <Route path="/landing" element={<LandingPage />} />
 
       {/* Public routes */}
       <Route path="/login"  element={<PublicRoute><LoginPage /></PublicRoute>} />
@@ -80,16 +81,20 @@ function Router() {
   );
 }
 
+import { ThemeProvider } from './context/ThemeContext';
+
 export default function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <SmartFeatures>
-          <BrowserRouter>
-            <Router />
-          </BrowserRouter>
-        </SmartFeatures>
-      </ToastProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <SmartFeatures>
+            <BrowserRouter>
+              <Router />
+            </BrowserRouter>
+          </SmartFeatures>
+        </ToastProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
