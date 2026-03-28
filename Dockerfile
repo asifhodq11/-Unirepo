@@ -1,8 +1,8 @@
 # ReplyIQ Multi-Stage Dockerfile
-ARG CACHEBUST=2
 # Stage 1: Build the React Frontend
 # ==========================================
 FROM node:20-alpine AS build-stage
+ARG CACHEBUST=3
 WORKDIR /app/frontend
 
 # Install dependencies first (for better caching)
@@ -17,6 +17,7 @@ RUN npm run build
 # Stage 2: Build the Flask Backend
 # ==========================================
 FROM python:3.12-slim
+ARG CACHEBUST=3
 WORKDIR /app
 
 # Install system essentials
