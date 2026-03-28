@@ -44,6 +44,25 @@ function PublicRoute({ children }) {
   return children;
 }
 
+// ── Smart Root Dispatcher ──────────────────────────────────────
+function RootDispatcher() {
+  const { user, loading } = useAuth();
+  const searchParams = new URLSearchParams(window.location.search);
+  const email = searchParams.get('email');
+
+  if (loading) return <PageLoader />;
+  
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  if (email) {
+    return <Navigate to={`/signup?email=${encodeURIComponent(email)}`} replace />;
+  }
+  
+  return <Navigate to="/landing" replace />;
+}
+
 // ── Smart Features Initializer ─────────────────────────────────
 function SmartFeatures({ children }) {
   // These hooks set data-* attributes on <body> for CSS overrides
@@ -56,8 +75,8 @@ function SmartFeatures({ children }) {
 function Router() {
   return (
     <Routes>
-      {/* Application Entry Point — Root moves into the app flow */}
-      <Route path="/"        element={<Navigate to="/dashboard" replace />} />
+      {/* Application Entry Point — Solves the routing hierarchy */}
+      <Route path="/"        element={<RootDispatcher />} />
       {/* Dedicated Marketing Landing Page */}
       <Route path="/landing" element={<LandingPage />} />
 
