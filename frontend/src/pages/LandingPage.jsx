@@ -61,10 +61,10 @@ export default function LandingPage() {
             >
               <div style={{ 
                 display: 'inline-flex', alignItems: 'center', gap: 8, 
-                background: 'rgba(255, 255, 255, 0.03)', padding: '6px 16px', 
-                borderRadius: 999, border: '1px solid rgba(255, 255, 255, 0.1)', 
+                background: 'var(--bg-glass)', padding: '6px 16px', 
+                borderRadius: 999, border: '1px solid var(--border)', 
                 marginBottom: 'var(--space-8)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)'
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)'
               }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-cyan)', boxShadow: '0 0 10px var(--accent-cyan)' }} />
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -81,9 +81,9 @@ export default function LandingPage() {
               }}>
                 Silence the noise.<br/>
                 <span style={{ 
-                  background: 'linear-gradient(135deg, #fff 20%, rgba(255,255,255,0.3) 100%)',
+                  background: 'linear-gradient(135deg, var(--text-primary) 20%, var(--text-muted) 100%)',
                   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text', opacity: 0.9 
+                  backgroundClip: 'text'
                 }}>
                   Automate the reputation.
                 </span>
