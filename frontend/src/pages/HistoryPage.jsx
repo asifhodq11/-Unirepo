@@ -51,15 +51,16 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen 
         cursor: 'pointer',
         minHeight: `${ITEM_HEIGHT}px`,
         alignSelf: 'start',
-        outline: selected ? '1px solid var(--accent)' : 'none',
+        borderLeft: isPending ? '3px solid var(--accent)' : item.status === 'replied' ? '3px solid var(--success)' : `3px solid var(--border)`,
+        outline: selected ? '1px solid var(--accent)' : '1px solid transparent',
         background: isGenerating
           ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06))'
           : hasDraft
             ? 'rgba(139,92,246,0.04)'
-            : undefined,
-        transition: 'outline 0.15s ease, background 0.3s ease',
+            : 'var(--bg-glass)',
+        transition: 'outline 0.15s ease, background 0.3s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
-      whileHover={{ scale: 1.01, borderColor: 'rgba(255,255,255,0.1)' }}
+      whileHover={{ y: -2, outline: '1px solid var(--border)' }}
       onClick={handleCardClick}
     >
       <div className="flex items-center justify-between">
@@ -352,18 +353,33 @@ export default function HistoryPage() {
         </p>
       </motion.div>
 
-      {/* Filter bar */}
+      {/* Floating Filter Bar */}
       <motion.div
-        className="filter-bar"
-        style={{ marginBottom: 'var(--space-5)' }}
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
+        style={{ 
+          position: 'sticky', 
+          top: 'var(--space-3)', 
+          zIndex: 40,
+          marginBottom: 'var(--space-6)',
+          display: 'flex', 
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 'var(--space-4)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(24px)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 'var(--space-2) var(--space-4)',
+          boxShadow: 'var(--shadow-md)'
+        }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
       >
-        <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap', alignItems: 'center' }}>
           {/* Status tabs */}
           <div
             className="flex items-center gap-1 p-1 rounded-full"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: 'fit-content' }}
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
           >
             <button
               className="star-btn"
@@ -372,7 +388,7 @@ export default function HistoryPage() {
                 background: !filterStatus ? 'var(--bg-surface)' : 'transparent',
                 color: !filterStatus ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s',
-                boxShadow: !filterStatus ? 'var(--shadow-sm)' : 'none',
+                boxShadow: !filterStatus ? 'window.innerWidth > 768 ? var(--shadow-sm) : none' : 'none',
               }}
               onClick={() => setFilterStatus(null)}
             >All</button>
@@ -393,7 +409,7 @@ export default function HistoryPage() {
           {/* Star rating filter */}
           <div
             className="flex items-center gap-1 p-1 rounded-full"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', width: 'fit-content' }}
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
           >
             <button
               className="star-btn"
@@ -424,25 +440,31 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        {/* Export */}
-        {hasData && !selectionMode && (
-          <motion.button
-            className="btn btn-secondary text-sm flex items-center gap-2"
-            style={{ padding: '0.4rem 0.8rem', width: 'auto' }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={(e) => { e.stopPropagation(); exportToCSV(items); }}
-          >
-            <Download size={14} /> Export CSV
-          </motion.button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Selection count chip */}
+          {selectionMode && selectedIds.size > 0 && (
+            <span className="badge badge-accent" style={{ fontSize: '0.78rem' }}>
+              {selectedIds.size} selected
+            </span>
+          )}
 
-        {/* Selection count chip */}
-        {selectionMode && selectedIds.size > 0 && (
-          <span className="badge badge-accent" style={{ fontSize: '0.78rem' }}>
-            {selectedIds.size} selected
-          </span>
-        )}
+          {/* Export */}
+          {hasData && !selectionMode && (
+            <motion.button
+              className="btn btn-secondary text-sm flex items-center gap-2"
+              style={{ 
+                padding: 'var(--space-2) var(--space-4)', 
+                borderRadius: '999px',
+                background: 'var(--bg-elevated)'
+              }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={(e) => { e.stopPropagation(); exportToCSV(items); }}
+            >
+              <Download size={14} /> Export CSV
+            </motion.button>
+          )}
+        </div>
       </motion.div>
 
       {/* Selection mode helper */}
@@ -464,12 +486,24 @@ export default function HistoryPage() {
           : isEmpty
             ? (
               <motion.div
-                className="card card-glass text-center text-muted"
-                style={{ gridColumn: '1 / -1' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                className="card card-glass flex flex-col items-center justify-center p-8"
+                style={{ 
+                  gridColumn: '1 / -1', 
+                  minHeight: 250, 
+                  background: 'var(--bg-elevated)',
+                  border: '1px dashed var(--border)' 
+                }}
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
               >
-                No reviews found yet.
+                <div style={{
+                  width: 64, height: 64, borderRadius: '50%', background: 'rgba(139,92,246,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-4)'
+                }}>
+                  <History size={32} className="text-accent" />
+                </div>
+                <h3 style={{ marginBottom: 'var(--space-2)' }}>You're all caught up!</h3>
+                <p className="text-secondary text-sm">New reviews will appear here automatically.</p>
               </motion.div>
             )
             : visible.map(item => (
@@ -517,12 +551,12 @@ export default function HistoryPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 'var(--space-4)',
-              background: 'rgba(9, 9, 11, 0.95)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(139,92,246,0.4)',
+              background: 'var(--bg-glass)',
+              backdropFilter: 'blur(24px)',
+              border: '1px solid var(--accent)',
               borderRadius: '999px',
               padding: 'var(--space-3) var(--space-5)',
-              boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
+              boxShadow: '0 8px 32px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
             }}
           >
             <span className="text-sm text-muted">
