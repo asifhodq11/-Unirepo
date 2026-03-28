@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -20,7 +21,7 @@ function HistoryItemSkeleton() {
 }
 
 /* ── Individual History Card ──────────────────────────────── */
-function HistoryItem({ item, selectable, selected, onToggle, generating }) {
+function HistoryItem({ item, selectable, selected, onToggle, generating, onGenerate, plan }) {
   const [open, setOpen] = useState(false);
   const date  = new Date(item.created_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
@@ -139,6 +140,26 @@ function HistoryItem({ item, selectable, selected, onToggle, generating }) {
                 </div>
               )}
 
+              {/* Starter Single Generate Action */}
+              {isPending && plan === 'starter' && (!item.replies || item.replies.length === 0) && (
+                <div style={{ padding: 'var(--space-4)', backgroundColor: 'rgba(139,92,246,0.06)', borderRadius: 'var(--radius-md)', border: '1px dashed rgba(139,92,246,0.3)', marginBottom: 'var(--space-2)' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Awaiting Human Review</h4>
+                      <p className="text-xs text-muted" style={{ marginTop: '2px' }}>Review collected successfully. Click generate to create an AI draft.</p>
+                    </div>
+                    <button 
+                      className="btn btn-primary btn-sm flex items-center gap-2"
+                      style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))' }}
+                      onClick={(e) => { e.stopPropagation(); onGenerate(item.id); }}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Generating...</> : <><Sparkles size={14} /> Generate AI Reply</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {item.replies && item.replies.length > 0 && (
                 <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
                   <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
@@ -209,6 +230,9 @@ function exportToCSV(items) {
 
 /* ── Main Page ─────────────────────────────────────────────── */
 export default function HistoryPage() {
+  const { user } = useAuth();
+  const plan = user?.plan ?? 'free';
+
   const [items, setItems]           = useState(undefined);
   const [total, setTotal]           = useState(0);
   const [hasMore, setHasMore]       = useState(false);
@@ -274,6 +298,20 @@ export default function HistoryPage() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  }
+
+  // ── Single Processor ──────────────
+  async function handleSingleGenerate(id) {
+    if (isProcessing || generatingIds.has(id)) return;
+    setGeneratingIds(prev => new Set([...prev, id]));
+    try {
+      const result = await api.post(`/reviews/${id}/generate`);
+      setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'replied', replies: [result.reply] } : item));
+    } catch {
+      setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'failed' } : item));
+    } finally {
+      setGeneratingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }
   }
 
   // ── Sequential Processor (Progressive Reveal) ──────────────
@@ -474,6 +512,8 @@ export default function HistoryPage() {
                 selected={selectedIds.has(item.id)}
                 onToggle={toggleSelect}
                 generating={generatingIds.has(item.id)}
+                onGenerate={handleSingleGenerate}
+                plan={plan}
               />
             ))
         }

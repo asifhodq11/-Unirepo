@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Wand2, Clock } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Wand2, Clock, Loader2, Sparkles } from 'lucide-react';
 
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -160,7 +160,7 @@ function LiveEngineStats({ used, limit, analytics }) {
   );
 }
 
-function DashboardInsights({ activities, analytics }) {
+function DashboardInsights({ activities, analytics, onQuickGenerate, generatingIds, plan }) {
   const avgRating = analytics?.avg_rating || 0;
   const totalProcessed = analytics?.total_reviews || 0;
   
@@ -228,9 +228,21 @@ function DashboardInsights({ activities, analytics }) {
                 <span className="text-sm">{act.title}</span>
                 <span className="text-xs text-muted">{new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
-                {act.type === 'draft_created' ? 'Handled' : 'Log'}
-              </span>
+              <div className="flex items-center gap-2">
+                {act.type === 'review_found' && plan === 'starter' && (
+                  <button
+                    className="btn btn-primary btn-sm flex items-center gap-1"
+                    style={{ padding: '2px 8px', fontSize: '0.7rem', height: 'auto', background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))' }}
+                    onClick={() => onQuickGenerate(act.id)}
+                    disabled={generatingIds.has(act.id)}
+                  >
+                    {generatingIds.has(act.id) ? <><Loader2 size={12} className="animate-spin" /> ...</> : <><Sparkles size={12} /> Generate</>}
+                  </button>
+                )}
+                <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
+                  {act.type === 'draft_created' ? 'Handled' : 'Log'}
+                </span>
+              </div>
             </div>
           ))
         )}
@@ -245,6 +257,7 @@ export default function DashboardPage() {
   const [error, setError]       = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [activities, setActivities] = useState([]);
+  const [generatingIds, setGeneratingIds] = useState(new Set());
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
@@ -269,6 +282,24 @@ export default function DashboardPage() {
     }
     fetchDashboard();
   }, []);
+
+  async function handleQuickGenerate(id) {
+    if (generatingIds.has(id)) return;
+    setGeneratingIds(prev => new Set([...prev, id]));
+    try {
+      await api.post(`/reviews/${id}/generate`);
+      // Update activity locally
+      setActivities(prev => prev.map(act => 
+        act.id === id 
+          ? { ...act, type: 'draft_created', status: 'Draft Ready', title: 'Reply generated for review' } 
+          : act
+      ));
+    } catch {
+      // Ignore
+    } finally {
+      setGeneratingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }
+  }
 
   return (
     <motion.div 
@@ -335,7 +366,13 @@ export default function DashboardPage() {
                 <div className="skeleton" style={{ height: '120px' }} />
              </div>
           ) : (
-            <DashboardInsights activities={activities} analytics={analytics} />
+            <DashboardInsights 
+              activities={activities} 
+              analytics={analytics} 
+              onQuickGenerate={handleQuickGenerate}
+              generatingIds={generatingIds}
+              plan={plan}
+            />
           )}
         </motion.div>
 
