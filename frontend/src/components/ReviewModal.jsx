@@ -247,13 +247,7 @@ export default function ReviewModal({
                       )}
                     </div>
                     
-                    <div style={{ 
-                      position: 'relative',
-                      borderRadius: 'var(--radius-lg)',
-                      padding: '2px',
-                      background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))',
-                      boxShadow: '0 8px 24px rgba(139,92,246,0.15)',
-                    }}>
+                    <div style={{ position: 'relative' }}>
                       <textarea
                         ref={textareaRef}
                         value={editText}
@@ -262,19 +256,29 @@ export default function ReviewModal({
                         disabled={generating}
                         style={{
                           minHeight: '180px',
+                          width: '100%',
                           resize: 'vertical',
                           fontSize: '1rem',
                           lineHeight: '1.7',
-                          border: 'none',
-                          background: 'var(--bg-surface)',
+                          // Clean border instead of gradient wrapper
+                          border: '1px solid var(--border)',
+                          background: 'var(--bg-elevated)',
                           padding: 'var(--space-5)',
-                          borderRadius: 'calc(var(--radius-lg) - 2px)',
+                          borderRadius: 'var(--radius-lg)',
                           color: 'var(--text-primary)',
                           transition: 'all 0.3s ease',
                           caretColor: 'var(--accent)',
+                          outline: 'none',
+                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
                         }}
-                        onFocus={e => e.target.parentElement.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-cyan))'}
-                        onBlur={e => e.target.parentElement.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(6,182,212,0.2))'}
+                        onFocus={e => {
+                          e.target.style.borderColor = 'var(--accent)';
+                          e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.2)';
+                        }}
+                        onBlur={e => {
+                          e.target.style.borderColor = 'var(--border)';
+                          e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
+                        }}
                         placeholder="Customize the response to your liking…"
                       />
                       <div style={{
