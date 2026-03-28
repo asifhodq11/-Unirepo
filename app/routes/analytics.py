@@ -5,7 +5,7 @@ Lightweight analytics API for the dashboard mini-hub.
 Returns aggregated review statistics without requiring new DB tables.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, g, jsonify
 from app.utils.decorators import require_auth
 from app.extensions import supabase
@@ -58,7 +58,7 @@ def dashboard_overview():
     reply_rate = round((total_replied / total_reviews) * 100) if total_reviews else 0
 
     # 3. Build daily buckets for the last 14 days
-    cutoff = datetime.utcnow() - timedelta(days=14)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=14)
     daily_map = {}
 
     for r in reviews:
@@ -83,7 +83,7 @@ def dashboard_overview():
     # Convert to sorted list (oldest first for chart rendering)
     daily_ratings = []
     for i in range(14, -1, -1):
-        d = datetime.utcnow() - timedelta(days=i)
+        d = datetime.now(timezone.utc) - timedelta(days=i)
         key = d.strftime("%b %d")
         bucket = daily_map.get(key)
         if bucket and bucket["count"] > 0:
