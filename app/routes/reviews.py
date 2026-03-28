@@ -285,10 +285,10 @@ def activity_feed():
     user_id = g.current_user["id"]
 
     try:
-        # Fetch the 10 most recent reviews
+        # Fetch the 10 most recent reviews with full text for modal display
         rows_result = (
             supabase.from_("reviews")
-            .select("id, review_text, rating, reviewer_name, created_at, replies(id, status, model_used)")
+            .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, model_used)")
             .eq("user_id", user_id)
             .eq("is_deleted", False)
             .order("created_at", desc=True)
@@ -300,16 +300,18 @@ def activity_feed():
         for row in (rows_result.data or []):
             has_reply = bool(row.get("replies"))
             reviewer = row.get("reviewer_name") or "Anonymous Guest"
-            status = "Draft Ready" if has_reply else "Scanning..."
+            review_status = row.get("status", "pending")
             
             events.append({
                 "id": str(row["id"]),
                 "type": "draft_created" if has_reply else "review_found",
-                "title": f"Reply generated for {reviewer}" if has_reply else f"New {row['rating']}★ review detected",
+                "title": f"Reply for {reviewer}" if has_reply else f"New {row['rating']}★ review",
                 "timestamp": row["created_at"],
-                "status": status,
+                "status": review_status,
                 "rating": row["rating"],
-                "model": row["replies"][0]["model_used"] if has_reply and row["replies"] else "auto"
+                "review_text": row.get("review_text") or "",
+                "reviewer_name": reviewer,
+                "replies": row.get("replies") or [],
             })
             
         return jsonify({"events": events}), 200

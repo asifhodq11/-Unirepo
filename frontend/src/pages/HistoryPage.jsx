@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Star, ChevronDown, ChevronUp, Bot, History, Download, User,
-  Play, Check, Loader2, CheckSquare, Square, Zap,
+  Star, History, Download, User,
+  Loader2, CheckSquare, Square, Zap, ExternalLink,
 } from 'lucide-react';
+import ReviewModal from '../components/ReviewModal';
 
 const STARS = [1, 2, 3, 4, 5];
-const ITEM_HEIGHT = 80;
+const ITEM_HEIGHT = 72;
 
 /* ── Skeleton ──────────────────────────────────────────────── */
 function HistoryItemSkeleton() {
@@ -20,23 +22,16 @@ function HistoryItemSkeleton() {
   );
 }
 
-/* ── Individual History Card ──────────────────────────────── */
-function HistoryItem({ item, selectable, selected, onToggle, generating, onGenerate, onSend, plan }) {
-  const [open, setOpen] = useState(false);
-  const [editText, setEditText] = useState('');
-
-  useEffect(() => {
-    if (item.replies?.[0]?.reply_text && item.status === 'pending') {
-      setEditText(item.replies[0].reply_text);
-    }
-  }, [item.replies, item.status]);
+/* ── History Row Card — click to open modal ──────────────── */
+function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen }) {
   const date  = new Date(item.created_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 
-  const rating  = item.rating ?? 0;
-  const hasName = item.reviewer_name && item.reviewer_name.trim();
+  const rating     = item.rating ?? 0;
+  const hasName    = item.reviewer_name && item.reviewer_name.trim();
   const isPending  = item.status === 'pending';
+  const hasDraft   = isPending && item.replies?.length > 0;
   const isGenerating = generating && isPending;
 
   function handleCardClick(e) {
@@ -45,22 +40,23 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
       onToggle(item.id);
       return;
     }
-    setOpen(o => !o);
+    onOpen(item);
   }
 
   return (
     <motion.div
-      layout
+      layout="position"
       className="card card-glass"
       style={{
         cursor: 'pointer',
         minHeight: `${ITEM_HEIGHT}px`,
         alignSelf: 'start',
-        overflow: 'hidden',
         outline: selected ? '1px solid var(--accent)' : 'none',
         background: isGenerating
           ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06))'
-          : undefined,
+          : hasDraft
+            ? 'rgba(139,92,246,0.04)'
+            : undefined,
         transition: 'outline 0.15s ease, background 0.3s ease',
       }}
       whileHover={{ scale: 1.01, borderColor: 'rgba(255,255,255,0.1)' }}
@@ -68,7 +64,7 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Checkbox for selectable pending reviews */}
+          {/* Checkbox for bulk selection mode */}
           {selectable && isPending && !isGenerating && (
             <motion.button
               onClick={(e) => { e.stopPropagation(); onToggle(item.id); }}
@@ -79,7 +75,7 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
             </motion.button>
           )}
 
-          {/* Generating pulse indicator */}
+          {/* Generating pulse */}
           {isGenerating && (
             <motion.div
               animate={{ rotate: 360 }}
@@ -109,124 +105,32 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
               <User size={12} /> Anonymous Guest
             </span>
           )}
+
+          {/* Draft ready pill */}
+          {hasDraft && (
+            <span style={{
+              fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em',
+              padding: '2px 7px', borderRadius: '999px',
+              background: 'rgba(139,92,246,0.15)', color: 'var(--accent)',
+              border: '1px solid rgba(139,92,246,0.3)',
+            }}>
+              DRAFT READY
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
           <span className={`badge ${
             item.status === 'replied' ? 'badge-success' :
             item.status === 'failed' ? 'badge-muted' :
-            isGenerating ? 'badge-accent' : 'badge-muted'
+            isGenerating ? 'badge-accent' : 'badge-warning'
           }`}>
             {isGenerating ? 'Generating…' : item.status}
           </span>
           <span className="text-xs text-muted hidden sm:inline">{date}</span>
-          {!selectable && (
-            <span className="text-muted" style={{ display: 'flex' }}>
-              {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </span>
-          )}
+          <ExternalLink size={14} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
         </div>
       </div>
-
-      {/* Expandable body — only when NOT in selection mode */}
-      {!selectable && (
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}
-            >
-              {item.review_text && (
-                <div style={{ marginBottom: 'var(--space-4)' }}>
-                  <span className="text-xs text-muted" style={{ display: 'block', marginBottom: 'var(--space-1)' }}>CUSTOMER REVIEW</span>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)', lineHeight: '1.7', maxWidth: '65ch', fontStyle: 'italic' }}>
-                    "{item.review_text}"
-                  </p>
-                </div>
-              )}
-
-              {/* Starter Single Generate — slim inline action */}
-              {isPending && plan === 'starter' && (!item.replies || item.replies.length === 0) && (
-                <div className="flex items-center justify-between" style={{ padding: 'var(--space-3) var(--space-4)', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: 'var(--space-2)' }}>
-                  <span className="text-xs text-muted">No reply generated yet</span>
-                  <button 
-                    className="btn btn-secondary btn-sm flex items-center gap-2"
-                    onClick={(e) => { e.stopPropagation(); onGenerate(item.id); }}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Generating...</> : <><Play size={14} /> Generate Reply</>}
-                  </button>
-                </div>
-              )}
-
-              {item.status === 'pending' && item.replies && item.replies.length > 0 && (
-                <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-accent">EDIT DRAFT</span>
-                    {item.replies[0].model_used && (
-                      <span className="text-xs text-muted opacity-70 flex items-center gap-1">
-                        <Bot size={12} /> {item.replies[0].model_used.split('/').pop()}
-                      </span>
-                    )}
-                  </div>
-                  <textarea
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    className="form-input"
-                    style={{ minHeight: '100px', fontSize: '0.9rem', lineHeight: '1.5', resize: 'vertical' }}
-                    disabled={isGenerating}
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      className="btn btn-primary btn-sm flex items-center gap-2"
-                      onClick={(e) => { e.stopPropagation(); onSend(item.id, item.replies[0].id, editText); }}
-                      disabled={isGenerating || !editText.trim()}
-                    >
-                      {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Sending...</> : <><Check size={14} /> Send Reply</>}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {item.status !== 'pending' && item.replies && item.replies.length > 0 && (
-                <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--success)' }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
-                    <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>SENT REPLY</span>
-                  </div>
-                  <p className="text-sm" style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}>
-                    {item.replies[0].reply_text}
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-
-      {/* Inline reply reveal after bulk generation completion */}
-      {selectable && item.status !== 'pending' && item.replies && item.replies.length > 0 && (
-        <AnimatePresence>
-          <motion.div
-            key="reply-reveal"
-            initial={{ opacity: 0, y: 12, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-            style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--border)' }}
-          >
-            <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(6,182,212,0.06)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(6,182,212,0.2)' }}>
-              <div className="flex items-center gap-2" style={{ marginBottom: 'var(--space-2)' }}>
-                <Check size={14} style={{ color: 'var(--success)' }} />
-                <span className="text-xs font-medium" style={{ color: 'var(--accent-cyan)' }}>REPLY READY</span>
-              </div>
-              <p className="text-sm" style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}>
-                {item.replies[0].reply_text}
-              </p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      )}
     </motion.div>
   );
 }
@@ -257,6 +161,7 @@ function exportToCSV(items) {
 export default function HistoryPage() {
   const { user } = useAuth();
   const plan = user?.plan ?? 'free';
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [items, setItems]           = useState(undefined);
   const [total, setTotal]           = useState(0);
@@ -264,9 +169,12 @@ export default function HistoryPage() {
   const [page, setPage]             = useState(1);
   const [isFetching, setIsFetching] = useState(false);
   const [filterRating, setFilterRating] = useState(null);
-  const [filterStatus, setFilterStatus] = useState(null); // null | 'pending'
+  const [filterStatus, setFilterStatus] = useState(searchParams.get('status') ?? null);
 
-  // Selection state
+  // Modal state
+  const [modalItem, setModalItem] = useState(null);
+
+  // Bulk selection state
   const [selectedIds, setSelectedIds]     = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
   const [isProcessing, setIsProcessing]   = useState(false);
@@ -276,13 +184,12 @@ export default function HistoryPage() {
   const isEmpty         = !isFetching && Array.isArray(items) && items.length === 0;
   const hasData         = Array.isArray(items) && items.length > 0;
 
-  // Whether we are in "selection mode" (pending filter active)
+  // Whether we are in "bulk selection mode" (pending filter active)
   const selectionMode = filterStatus === 'pending';
 
   const fetchPage = useCallback(async (p) => {
     setIsFetching(true);
     try {
-      // Pass server-side status filter when in pending mode
       const statusParam = filterStatus ? `&status=${filterStatus}` : '';
       const data = await api.get(`/reviews/history?page=${p}&per_page=20${statusParam}`);
       const fetched = data.items ?? [];
@@ -291,17 +198,29 @@ export default function HistoryPage() {
       setHasMore(data.has_more ?? false);
       setPage(p);
 
-      // Auto-select first 10 pending when entering pending view
+      // Auto-select first 10 pending when in pending view
       if (filterStatus === 'pending') {
         const pending = fetched.filter(i => i.status === 'pending');
         setSelectedIds(new Set(pending.slice(0, 10).map(i => i.id)));
+      }
+
+      // Auto-open modal if URL has ?open=ID
+      const openId = searchParams.get('open');
+      if (openId) {
+        const target = fetched.find(i => i.id === openId);
+        if (target) {
+          setModalItem(target);
+          // Remove ?open from URL without navigation
+          searchParams.delete('open');
+          setSearchParams(searchParams, { replace: true });
+        }
       }
     } catch {
       setItems([]);
     } finally {
       setIsFetching(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, searchParams, setSearchParams]);
 
   useEffect(() => {
     setIsFetching(true);
@@ -327,14 +246,17 @@ export default function HistoryPage() {
     });
   }
 
-  // ── Single Processor ──────────────
+  // ── Single Generate ──────────────────────────────
   async function handleSingleGenerate(id) {
     if (isProcessing || generatingIds.has(id)) return;
     setGeneratingIds(prev => new Set([...prev, id]));
     try {
       const result = await api.post(`/reviews/${id}/generate`);
-      setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'pending', replies: [result.reply] } : item));
-      user.refreshUser?.(); // Force usage display update
+      const updatedItem = { ...items.find(i => i.id === id), status: 'pending', replies: [result.reply] };
+      setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
+      // Update modal live if it's open
+      if (modalItem?.id === id) setModalItem(updatedItem);
+      user.refreshUser?.();
     } catch {
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'failed' } : item));
     } finally {
@@ -342,7 +264,7 @@ export default function HistoryPage() {
     }
   }
 
-  // ── Manual Send Processor (Draft Confirmation) ──
+  // ── Manual Send ──────────────────────────────────
   async function handleSendReply(reviewId, draftId, newText) {
     if (generatingIds.has(reviewId)) return;
     setGeneratingIds(prev => new Set([...prev, reviewId]));
@@ -351,7 +273,14 @@ export default function HistoryPage() {
         reply_id: draftId,
         reply_text: newText
       });
-      setItems(prev => prev.map(item => item.id === reviewId ? { ...item, status: 'replied', replies: [result.reply] } : item));
+      const updatedItem = { ...items.find(i => i.id === reviewId), status: 'replied', replies: [result.reply] };
+      setItems(prev => prev.map(item => item.id === reviewId ? updatedItem : item));
+      // Update + close modal
+      if (modalItem?.id === reviewId) {
+        setModalItem(updatedItem);
+        // After a short pause to show "Replied" state, close the modal
+        setTimeout(() => setModalItem(null), 1200);
+      }
     } catch {
       setItems(prev => prev.map(item => item.id === reviewId ? { ...item, status: 'failed' } : item));
     } finally {
@@ -359,7 +288,7 @@ export default function HistoryPage() {
     }
   }
 
-  // ── Sequential Processor (Progressive Reveal) ──────────────
+  // ── Bulk Generate ─────────────────────────────────
   async function handleBulkGenerate() {
     if (isProcessing || selectedIds.size === 0) return;
     setIsProcessing(true);
@@ -370,10 +299,8 @@ export default function HistoryPage() {
 
     for (const reviewId of orderedIds) {
       setGeneratingIds(prev => new Set([...prev, reviewId]));
-
       try {
         const result = await api.post(`/reviews/${reviewId}/generate`);
-
         setItems(prev =>
           (prev ?? []).map(item =>
             item.id === reviewId
@@ -382,7 +309,7 @@ export default function HistoryPage() {
           )
         );
         setSelectedIds(prev => { const n = new Set(prev); n.delete(reviewId); return n; });
-      } catch (err) {
+      } catch {
         setItems(prev =>
           (prev ?? []).map(item =>
             item.id === reviewId ? { ...item, status: 'failed' } : item
@@ -397,7 +324,7 @@ export default function HistoryPage() {
     setIsProcessing(false);
   }
 
-  // Visible items — apply rating filter (status is now handled server-side)
+  // Visible items — apply rating filter
   let visible = items ?? [];
   if (filterRating && hasData) visible = visible.filter(i => i.rating === filterRating);
 
@@ -419,7 +346,7 @@ export default function HistoryPage() {
           {total} Total Reviews
           {pendingCount > 0 && (
             <span style={{ color: 'var(--warning)', marginLeft: 'var(--space-3)' }}>
-              · {pendingCount} awaiting generation
+              · {pendingCount} awaiting reply
             </span>
           )}
         </p>
@@ -456,7 +383,6 @@ export default function HistoryPage() {
                 background: filterStatus === 'pending' ? 'rgba(139,92,246,0.15)' : 'transparent',
                 color: filterStatus === 'pending' ? 'var(--accent)' : 'var(--text-muted)',
                 fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s',
-                boxShadow: filterStatus === 'pending' ? 'var(--shadow-sm)' : 'none',
               }}
               onClick={() => setFilterStatus(filterStatus === 'pending' ? null : 'pending')}
             >
@@ -527,7 +453,7 @@ export default function HistoryPage() {
           className="text-xs text-muted"
           style={{ marginBottom: 'var(--space-4)' }}
         >
-          First 10 selected. Check or uncheck any review below.
+          Click any review to open it, or select and bulk generate. First 10 auto-selected.
         </motion.p>
       )}
 
@@ -554,8 +480,7 @@ export default function HistoryPage() {
                 selected={selectedIds.has(item.id)}
                 onToggle={toggleSelect}
                 generating={generatingIds.has(item.id)}
-                onGenerate={handleSingleGenerate}
-                onSend={handleSendReply}
+                onOpen={setModalItem}
                 plan={plan}
               />
             ))
@@ -575,7 +500,7 @@ export default function HistoryPage() {
         </motion.div>
       )}
 
-      {/* ── Floating Generate Selected Action Bar ── */}
+      {/* ── Floating Bulk Generate Bar ── */}
       <AnimatePresence>
         {selectionMode && selectedIds.size > 0 && (
           <motion.div
@@ -601,16 +526,13 @@ export default function HistoryPage() {
             }}
           >
             <span className="text-sm text-muted">
-              {isProcessing ? 'Generating replies…' : `${selectedIds.size} review${selectedIds.size > 1 ? 's' : ''} selected`}
+              {isProcessing ? 'Generating drafts…' : `${selectedIds.size} review${selectedIds.size > 1 ? 's' : ''} selected`}
             </span>
             <motion.button
               className="btn btn-primary flex items-center gap-2"
               style={{
                 borderRadius: '999px',
                 padding: 'var(--space-2) var(--space-5)',
-                background: isProcessing
-                  ? 'var(--bg-elevated)'
-                  : 'linear-gradient(135deg, var(--accent-cyan), var(--accent))',
                 border: 'none',
               }}
               disabled={isProcessing}
@@ -634,6 +556,17 @@ export default function HistoryPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Review Modal ── */}
+      {modalItem && (
+        <ReviewModal
+          item={modalItem}
+          onClose={() => setModalItem(null)}
+          onGenerate={handleSingleGenerate}
+          onSend={handleSendReply}
+          generating={generatingIds.has(modalItem.id)}
+        />
+      )}
     </motion.div>
   );
 }

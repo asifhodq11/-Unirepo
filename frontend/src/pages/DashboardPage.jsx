@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api, ApiError } from '../api/client';
+import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Clock, Loader2, Play } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, User, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
-
+import ReviewModal from '../components/ReviewModal';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 /* ── Mini Sparkline Tooltip ── */
@@ -162,7 +162,7 @@ function LiveEngineStats({ used, limitDisplay, analytics }) {
   );
 }
 
-function DashboardInsights({ activities, analytics, plan, navigate }) {
+function DashboardInsights({ activities, analytics, plan, navigate, onOpenReview }) {
   const avgRating = analytics?.avg_rating || 0;
   const totalProcessed = analytics?.total_reviews || 0;
   
@@ -218,34 +218,74 @@ function DashboardInsights({ activities, analytics, plan, navigate }) {
         </div>
       </div>
 
-      {/* ── Row 3: Recent Activity ── */}
-      <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-1">Recent Activity</h3>
+      {/* ── Row 3: Recent Activity — Plate Cards ── */}
+      <div className="flex flex-col gap-2">
+        <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-2">Recent Activity</h3>
         {!activities.length ? (
-          <p className="text-xs text-muted italic">No activity yet. Trigger a scan or wait for the auto-poller.</p>
+          <div className="card card-glass" style={{ padding: 'var(--space-4)', textAlign: 'center' }}>
+            <p className="text-xs text-muted italic">No activity yet. Trigger a scan or wait for the auto-poller.</p>
+          </div>
         ) : (
-          activities.slice(0, 3).map(act => (
-            <div key={act.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-              <div className="flex flex-col">
-                <span className="text-sm">{act.title}</span>
-                <span className="text-xs text-muted">{new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {act.type === 'review_found' && plan === 'starter' && (
-                  <button
-                    className="btn btn-ghost btn-sm flex items-center gap-1"
-                    style={{ padding: '2px 8px', fontSize: '0.7rem', height: 'auto', color: 'var(--accent)' }}
-                    onClick={() => navigate('/history?status=pending')}
-                  >
-                    <Play size={12} /> Reply
-                  </button>
-                )}
-                <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
-                  {act.type === 'draft_created' ? 'Replied' : 'Pending'}
-                </span>
-              </div>
-            </div>
-          ))
+          activities.slice(0, 5).map(act => {
+            const isPending = act.status === 'pending';
+            const hasName = act.reviewer_name && act.reviewer_name.trim();
+            const rating = act.rating ?? 0;
+
+            return (
+              <motion.div
+                key={act.id}
+                className="card card-glass"
+                style={{
+                  cursor: 'pointer',
+                  padding: 'var(--space-3) var(--space-4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 'var(--space-3)',
+                  borderLeft: isPending ? '2px solid var(--warning)' : '2px solid var(--success)',
+                }}
+                whileHover={{ scale: 1.01, x: 2 }}
+                onClick={() => {
+                  if (isPending) {
+                    navigate(`/history?status=pending&open=${act.id}`);
+                  } else {
+                    onOpenReview(act);
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', overflow: 'hidden' }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <User size={16} style={{ color: 'var(--text-muted)' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {hasName ? act.reviewer_name : 'Anonymous Guest'}
+                    </span>
+                    <div style={{ display: 'flex', gap: '2px' }}>
+                      {Array.from({ length: rating }).map((_, i) => (
+                        <Star key={i} size={11} fill="var(--accent)" stroke="var(--accent)" />
+                      ))}
+                      {Array.from({ length: 5 - rating }).map((_, i) => (
+                        <Star key={`e${i}`} size={11} fill="none" stroke="var(--text-muted)" style={{ opacity: 0.3 }} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
+                  <span className={`badge ${isPending ? 'badge-warning' : 'badge-success'}`}>
+                    {isPending ? 'Pending' : 'Replied'}
+                  </span>
+                  <ExternalLink size={13} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                </div>
+              </motion.div>
+            );
+          })
         )}
       </div>
     </div>
@@ -259,6 +299,7 @@ export default function DashboardPage() {
   const [error, setError]       = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [activities, setActivities] = useState([]);
+  const [selectedReview, setSelectedReview] = useState(null);
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
@@ -286,6 +327,7 @@ export default function DashboardPage() {
   }, []);
 
   return (
+    <>
     <motion.div 
       className="page-content"
       initial={{ opacity: 0 }}
@@ -355,6 +397,7 @@ export default function DashboardPage() {
               analytics={analytics} 
               plan={plan}
               navigate={navigate}
+              onOpenReview={setSelectedReview}
             />
           )}
         </motion.div>
@@ -365,5 +408,14 @@ export default function DashboardPage() {
         </motion.div>
       </div>
     </motion.div>
-  );
+
+    {/* Dashboard read-only review modal */}
+    {selectedReview && (
+      <ReviewModal
+        item={selectedReview}
+        onClose={() => setSelectedReview(null)}
+        readOnly
+      />
+    )}
+  </>);
 }
