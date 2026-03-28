@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Clock, Loader2, Play } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
@@ -161,7 +162,7 @@ function LiveEngineStats({ used, limitDisplay, analytics }) {
   );
 }
 
-function DashboardInsights({ activities, analytics, onQuickGenerate, generatingIds, generateError, plan }) {
+function DashboardInsights({ activities, analytics, plan, navigate }) {
   const avgRating = analytics?.avg_rating || 0;
   const totalProcessed = analytics?.total_reviews || 0;
   
@@ -234,15 +235,10 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
                   <button
                     className="btn btn-ghost btn-sm flex items-center gap-1"
                     style={{ padding: '2px 8px', fontSize: '0.7rem', height: 'auto', color: 'var(--accent)' }}
-                    onClick={() => onQuickGenerate(act.id)}
-                    disabled={generatingIds.has(act.id)}
+                    onClick={() => navigate('/history?status=pending')}
                   >
-                    {generatingIds.has(act.id) ? <><Loader2 size={12} className="animate-spin" /> ...</> : <><Play size={12} /> Generate</>}
+                    <Play size={12} /> Reply
                   </button>
-                )}
-                {/* Show error badge if this ID had a generation failure */}
-                {generateError === act.id && (
-                  <span className="badge badge-muted text-xs" style={{ color: 'var(--danger)' }}>Failed</span>
                 )}
                 <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
                   {act.type === 'draft_created' ? 'Replied' : 'Pending'}
@@ -258,12 +254,11 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
   const [analytics, setAnalytics] = useState(null);
   const [activities, setActivities] = useState([]);
-  const [generatingIds, setGeneratingIds] = useState(new Set());
-  const [generateError, setGenerateError] = useState(null);
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
@@ -289,26 +284,6 @@ export default function DashboardPage() {
     }
     fetchDashboard();
   }, []);
-
-  async function handleQuickGenerate(id) {
-    if (generatingIds.has(id)) return;
-    setGenerateError(null);
-    setGeneratingIds(prev => new Set([...prev, id]));
-    try {
-      await api.post(`/reviews/${id}/generate`);
-      // Preserve original title but update type/status
-      setActivities(prev => prev.map(act => 
-        act.id === id 
-          ? { ...act, type: 'draft_created', status: 'Draft Ready' } 
-          : act
-      ));
-    } catch {
-      setGenerateError(id);
-      setTimeout(() => setGenerateError(null), 4000);
-    } finally {
-      setGeneratingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
-    }
-  }
 
   return (
     <motion.div 
@@ -378,10 +353,8 @@ export default function DashboardPage() {
             <DashboardInsights 
               activities={activities} 
               analytics={analytics} 
-              onQuickGenerate={handleQuickGenerate}
-              generatingIds={generatingIds}
-              generateError={generateError}
               plan={plan}
+              navigate={navigate}
             />
           )}
         </motion.div>

@@ -7,7 +7,7 @@ the AI Engine pipeline.
 
 import time
 from flask import Blueprint, g, jsonify, request
-from app.schemas.review_schema import GenerateReplySchema
+from app.schemas.review_schema import GenerateReplySchema, SendReplySchema
 
 from app.utils.decorators import require_auth, validate_request
 from app.utils.errors import build_error
@@ -15,7 +15,7 @@ from app.utils.logger import log_event
 from app.extensions import supabase, limiter
 
 from app.models.review_model import insert_review, update_review_status
-from app.models.reply_model import insert_reply
+from app.models.reply_model import insert_reply, update_reply
 
 from app.services.usage_service import check_usage_limit, increment_usage
 from app.services.model_router import classify_complexity, get_model_for_complexity
@@ -172,8 +172,8 @@ def generate_for_existing(review_id):
     if not saved_reply:
         return build_error("SERVER_ERROR", details="Reply generated but failed to save."), 500
 
-    # 6. Mark review as replied
-    update_review_status(user_id, review_id, "replied")
+    # 6. Mark review as replied (REMOVED - now waiting for user confirm)
+    # update_review_status(user_id, review_id, "replied")
 
     # 7. Increment usage
     try:
@@ -183,7 +183,7 @@ def generate_for_existing(review_id):
 
     log_event("on_demand_generation_success", user_id=user_id, review_id=review_id, ms=duration_ms)
 
-    return jsonify({"review": {**review, "status": "replied"}, "reply": saved_reply}), 201
+    return jsonify({"review": {**review, "status": "pending"}, "reply": saved_reply}), 201
 
 
 @reviews_bp.route("/history", methods=["GET"])
@@ -247,6 +247,32 @@ def history():
         ),
         200,
     )
+
+@reviews_bp.route("/<review_id>/send", methods=["POST"])
+@require_auth
+@validate_request(SendReplySchema)
+def confirm_and_send(review_id):
+    """
+    Confirms an AI draft, updates its text, marks the reply as "sent", and the review as "replied".
+    """
+    user_id = g.current_user["id"]
+    data = g.validated_data
+
+    # 1. Update the reply draft
+    updates = {
+        "reply_text": data["reply_text"],
+        "status": "sent"
+    }
+    updated_reply = update_reply(user_id, data["reply_id"], updates)
+    if not updated_reply:
+        return build_error("NOT_FOUND", details="Draft reply not found or not owned by user."), 404
+
+    # 2. Mark the review as replied
+    update_review_status(user_id, review_id, "replied")
+
+    log_event("manual_draft_sent", user_id=user_id, review_id=review_id)
+
+    return jsonify({"success": True, "reply": updated_reply}), 200
 
 
 @reviews_bp.route("/activity", methods=["GET"])

@@ -57,3 +57,18 @@ def get_replies_by_review(user_id: str, review_id: str) -> list[dict]:
     except Exception as e:
         log_event("get_replies_failed", user_id=user_id, level="error", review_id=review_id, error=str(e))
         return []
+
+def update_reply(user_id: str, reply_id: str, updates: dict) -> dict | None:
+    """Updates a specific reply ensuring user_id constraint."""
+    try:
+        result = (
+            supabase.table("replies")
+            .update(updates)
+            .eq("id", reply_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception as e:
+        log_event("update_reply_failed", reply_id=reply_id, user_id=user_id, level="error", error=str(e))
+        return None

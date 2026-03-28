@@ -21,8 +21,15 @@ function HistoryItemSkeleton() {
 }
 
 /* ── Individual History Card ──────────────────────────────── */
-function HistoryItem({ item, selectable, selected, onToggle, generating, onGenerate, plan }) {
+function HistoryItem({ item, selectable, selected, onToggle, generating, onGenerate, onSend, plan }) {
   const [open, setOpen] = useState(false);
+  const [editText, setEditText] = useState('');
+
+  useEffect(() => {
+    if (item.replies?.[0]?.reply_text && item.status === 'pending') {
+      setEditText(item.replies[0].reply_text);
+    }
+  }, [item.replies, item.status]);
   const date  = new Date(item.created_at).toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
@@ -154,15 +161,39 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
                 </div>
               )}
 
-              {item.replies && item.replies.length > 0 && (
-                <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
-                    <span className="text-xs font-medium text-accent">AI REPLY DRAFT</span>
+              {item.status === 'pending' && item.replies && item.replies.length > 0 && (
+                <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-accent">EDIT DRAFT</span>
                     {item.replies[0].model_used && (
                       <span className="text-xs text-muted opacity-70 flex items-center gap-1">
                         <Bot size={12} /> {item.replies[0].model_used.split('/').pop()}
                       </span>
                     )}
+                  </div>
+                  <textarea
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    className="form-input"
+                    style={{ minHeight: '100px', fontSize: '0.9rem', lineHeight: '1.5', resize: 'vertical' }}
+                    disabled={isGenerating}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      className="btn btn-primary btn-sm flex items-center gap-2"
+                      onClick={(e) => { e.stopPropagation(); onSend(item.id, item.replies[0].id, editText); }}
+                      disabled={isGenerating || !editText.trim()}
+                    >
+                      {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Sending...</> : <><Check size={14} /> Send Reply</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {item.status !== 'pending' && item.replies && item.replies.length > 0 && (
+                <div style={{ padding: 'var(--space-3)', backgroundColor: 'rgba(24, 24, 27, 0.4)', borderRadius: 'var(--radius-md)', border: '1px solid var(--success)' }}>
+                  <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-2)' }}>
+                    <span className="text-xs font-medium" style={{ color: 'var(--success)' }}>SENT REPLY</span>
                   </div>
                   <p className="text-sm" style={{ lineHeight: '1.6', color: 'var(--text-primary)' }}>
                     {item.replies[0].reply_text}
@@ -174,8 +205,8 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
         </AnimatePresence>
       )}
 
-      {/* Inline reply reveal after generation (when in selectable mode + just generated) */}
-      {selectable && item.replies && item.replies.length > 0 && (
+      {/* Inline reply reveal after bulk generation completion */}
+      {selectable && item.status !== 'pending' && item.replies && item.replies.length > 0 && (
         <AnimatePresence>
           <motion.div
             key="reply-reveal"
@@ -302,11 +333,29 @@ export default function HistoryPage() {
     setGeneratingIds(prev => new Set([...prev, id]));
     try {
       const result = await api.post(`/reviews/${id}/generate`);
-      setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'replied', replies: [result.reply] } : item));
+      setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'pending', replies: [result.reply] } : item));
+      user.refreshUser?.(); // Force usage display update
     } catch {
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'failed' } : item));
     } finally {
       setGeneratingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    }
+  }
+
+  // ── Manual Send Processor (Draft Confirmation) ──
+  async function handleSendReply(reviewId, draftId, newText) {
+    if (generatingIds.has(reviewId)) return;
+    setGeneratingIds(prev => new Set([...prev, reviewId]));
+    try {
+      const result = await api.post(`/reviews/${reviewId}/send`, {
+        reply_id: draftId,
+        reply_text: newText
+      });
+      setItems(prev => prev.map(item => item.id === reviewId ? { ...item, status: 'replied', replies: [result.reply] } : item));
+    } catch {
+      setItems(prev => prev.map(item => item.id === reviewId ? { ...item, status: 'failed' } : item));
+    } finally {
+      setGeneratingIds(prev => { const n = new Set(prev); n.delete(reviewId); return n; });
     }
   }
 
@@ -328,7 +377,7 @@ export default function HistoryPage() {
         setItems(prev =>
           (prev ?? []).map(item =>
             item.id === reviewId
-              ? { ...item, status: 'replied', replies: [result.reply] }
+              ? { ...item, status: 'pending', replies: [result.reply] }
               : item
           )
         );
@@ -344,6 +393,7 @@ export default function HistoryPage() {
       }
     }
 
+    user.refreshUser?.();
     setIsProcessing(false);
   }
 
@@ -505,6 +555,7 @@ export default function HistoryPage() {
                 onToggle={toggleSelect}
                 generating={generatingIds.has(item.id)}
                 onGenerate={handleSingleGenerate}
+                onSend={handleSendReply}
                 plan={plan}
               />
             ))

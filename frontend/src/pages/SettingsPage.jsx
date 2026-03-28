@@ -313,7 +313,7 @@ export default function SettingsPage() {
                   </button>
                   <button
                     id="upgrade-pro-btn"
-                    className="btn btn-accent flex-1"
+                    className="btn btn-primary flex-1"
                     disabled={checkoutLoading}
                     onClick={() => handleUpgrade('pro')}
                   >
@@ -336,26 +336,26 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      background: 'rgba(255,255,255,0.02)',
+                      background: 'var(--bg-elevated)',
                       border: '1px solid var(--border)',
                       borderRadius: 'var(--radius-md)',
                       padding: 'var(--space-4)',
                     }}
                   >
                     <div className="flex items-start gap-3" style={{ marginBottom: 'var(--space-3)' }}>
-                      <div style={{ background: 'var(--accent)', padding: '8px', borderRadius: '50%', flexShrink: 0 }}>
-                        <ArrowUpRight size={16} style={{ color: '#000' }} />
+                      <div style={{ padding: '4px', flexShrink: 0 }}>
+                        <ArrowUpRight size={18} className="text-muted" />
                       </div>
                       <div>
                         <p className="text-sm font-medium" style={{ marginBottom: '2px' }}>Upgrade to Pro</p>
                         <p className="text-xs text-muted" style={{ lineHeight: 1.5 }}>
-                          Let your auto-reply heartbeat respond 24/7 — no clicking required.
+                          Let your auto-reply respond 24/7 — no clicking required.
                         </p>
                       </div>
                     </div>
                     <button
                       id="upgrade-pro-btn"
-                      className="btn btn-accent w-full"
+                      className="btn btn-primary w-full"
                       style={{ fontSize: '0.9rem' }}
                       disabled={checkoutLoading}
                       onClick={() => handleUpgrade('pro')}
@@ -449,7 +449,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex flex-wrap gap-3 btn-stack-mobile">
                         <button 
-                          className="btn btn-accent flex-1"
+                          className="btn btn-primary flex-1"
                           onClick={() => {
                             handlePortal();
                           }}

@@ -12,3 +12,7 @@ class GenerateReplySchema(Schema):
     )
     reviewer_name = fields.Str(load_default=None, allow_none=True)
     google_review_id = fields.Str(load_default=None, allow_none=True)
+
+class SendReplySchema(Schema):
+    reply_id = fields.Str(required=True)
+    reply_text = fields.Str(required=True, validate=validate.Length(min=1, max=5000))
