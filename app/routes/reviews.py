@@ -107,6 +107,87 @@ def generate():
     return jsonify({"review": saved_review, "reply": saved_reply}), 201
 
 
+@reviews_bp.route("/<review_id>/generate", methods=["POST"])
+@require_auth
+@limiter.limit("30 per hour")
+def generate_for_existing(review_id):
+    """
+    On-demand AI generation for an already-collected pending review.
+    Used by Starter plan users (and Pro users in surge overflow).
+    Security: review must belong to the authenticated user.
+    Idempotency: only generates if review status is 'pending'.
+    """
+    user    = g.current_user
+    user_id = user["id"]
+
+    # 1. Fetch the review — MUST be scoped to this user (Security Rule 1)
+    result = (
+        supabase.from_("reviews")
+        .select("id, rating, review_text, reviewer_name, status")
+        .eq("id", review_id)
+        .eq("user_id", user_id)
+        .eq("is_deleted", False)
+        .single()
+        .execute()
+    )
+
+    if not result.data:
+        return build_error("NOT_FOUND", details="Review not found or access denied."), 404
+
+    review = result.data
+
+    # 2. Idempotency guard — do not regenerate if already replied
+    if review["status"] != "pending":
+        return build_error(
+            "CONFLICT",
+            details=f"Review is already in '{review['status']}' state. Generation skipped."
+        ), 409
+
+    # 3. Enforce monthly usage limits
+    check_usage_limit(user_id)
+
+    # 4. Run the 3-Pass AI Pipeline
+    log_event("on_demand_generation_start", user_id=user_id, review_id=review_id)
+    start_time = time.time()
+
+    reply_text = generate_reply(
+        business_name=user.get("business_name", "your business"),
+        business_type=user.get("business_type", "business"),
+        tone_preference=user.get("tone_preference", "friendly"),
+        star_rating=review["rating"],
+        review_text=review.get("review_text", ""),
+    )
+
+    duration_ms = int((time.time() - start_time) * 1000)
+    complexity  = classify_complexity(review["rating"], review.get("review_text", ""))
+    model_used  = get_model_for_complexity(complexity)
+
+    # 5. Save reply
+    reply_data = {
+        "review_id":     review_id,
+        "reply_text":    reply_text,
+        "status":        "draft",
+        "generation_ms": duration_ms,
+        "model_used":    model_used,
+    }
+    saved_reply = insert_reply(user_id, reply_data)
+    if not saved_reply:
+        return build_error("SERVER_ERROR", details="Reply generated but failed to save."), 500
+
+    # 6. Mark review as replied
+    update_review_status(user_id, review_id, "replied")
+
+    # 7. Increment usage
+    try:
+        increment_usage(user_id)
+    except Exception as e:
+        log_event("increment_usage_failed", user_id=user_id, level="error", error=str(e))
+
+    log_event("on_demand_generation_success", user_id=user_id, review_id=review_id, ms=duration_ms)
+
+    return jsonify({"review": {**review, "status": "replied"}, "reply": saved_reply}), 201
+
+
 @reviews_bp.route("/history", methods=["GET"])
 @require_auth
 def history():

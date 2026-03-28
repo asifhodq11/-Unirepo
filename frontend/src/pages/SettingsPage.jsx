@@ -26,8 +26,19 @@ export default function SettingsPage() {
   const [cancelLoading, setCancelLoading]     = useState(false);
 
   // Churn Shield state machine
-  const [cancelStep, setCancelStep] = useState(0); // 0=hidden, 1=loss, 2=downsell, 3=survey
+  const [cancelStep, setCancelStep]     = useState(0);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Autonomy Dial (Pro plan only)
+  const [autonomyLimit, setAutonomyLimit] = useState(20);
+  const [autonomySaving, setAutonomySaving] = useState(false);
+  const [autonomySaved, setAutonomySaved]   = useState(false);
+
+  useEffect(() => {
+    if (user?.daily_autonomy_limit) {
+      setAutonomyLimit(user.daily_autonomy_limit);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -84,6 +95,18 @@ export default function SettingsPage() {
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to cancel subscription.');
     } finally { setCancelLoading(false); }
+  }
+
+  async function handleSaveAutonomy() {
+    setAutonomySaving(true);
+    try {
+      await api.patch('/settings/', { daily_autonomy_limit: autonomyLimit });
+      await refreshUser();
+      setAutonomySaved(true);
+      setTimeout(() => setAutonomySaved(false), 2000);
+    } catch {
+      // fail silently — not critical
+    } finally { setAutonomySaving(false); }
   }
 
   const plan = user?.plan ?? 'free';
@@ -178,7 +201,7 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Replies Cycle</span></div>
               <div className="flex items-baseline gap-1">
                 <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
-                <span className="text-muted">/ {plan === 'starter' ? '100' : '3'}</span>
+                <span className="text-muted">/ {plan === 'pro' ? '∞' : plan === 'starter' ? '100' : '3'}</span>
               </div>
             </div>
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
@@ -191,6 +214,68 @@ export default function SettingsPage() {
               </div>
             </div>
           </motion.div>
+
+          {/* Autonomy Dial — Pro plan only */}
+          {plan === 'pro' && (
+            <motion.div
+              className="card card-glass"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
+                <h3 className="flex items-center gap-2">
+                  <Zap size={18} className="text-accent-cyan" /> Autonomy Dial
+                </h3>
+                <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}>PRO</span>
+              </div>
+              <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-4)', lineHeight: 1.6 }}>
+                Set your daily autonomous reply limit. When reached, overflow reviews are safely queued for manual review.
+              </p>
+
+              <div className="flex items-center gap-4" style={{ marginBottom: 'var(--space-3)' }}>
+                <input
+                  type="range"
+                  min={5}
+                  max={200}
+                  step={5}
+                  value={autonomyLimit}
+                  onChange={e => setAutonomyLimit(Number(e.target.value))}
+                  style={{ flex: 1, accentColor: 'var(--accent-cyan)', cursor: 'pointer' }}
+                />
+                <span style={{
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '4px 10px',
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  minWidth: '52px',
+                  textAlign: 'center',
+                  color: 'var(--accent-cyan)',
+                }}>
+                  {autonomyLimit}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted">replies / day</span>
+                <button
+                  className={`btn btn-sm ${autonomySaved ? 'btn-secondary text-success' : 'btn-primary'}`}
+                  onClick={handleSaveAutonomy}
+                  disabled={autonomySaving}
+                  style={{ minWidth: '100px' }}
+                >
+                  {autonomySaving
+                    ? <><span className="spinner" /> Saving…</>
+                    : autonomySaved
+                      ? <><span>✓</span> Saved</>
+                      : 'Save Limit'
+                  }
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Right Column: Billing & Subscription */}
@@ -200,8 +285,11 @@ export default function SettingsPage() {
               <h3 className="flex items-center gap-2">
                 <CreditCard size={18} className="text-muted" /> Active Protocol
               </h3>
-              <span className={`badge ${plan === 'starter' ? 'badge-accent' : 'badge-muted'}`} style={{ fontSize: '0.85rem' }}>
-                {plan === 'starter' ? 'STARTER TIER' : 'FREE TIER'}
+              <span className={`badge ${
+                plan === 'pro' ? 'badge-success' :
+                plan === 'starter' ? 'badge-accent' : 'badge-muted'
+              }`} style={{ fontSize: '0.85rem' }}>
+                {plan === 'pro' ? 'PRO TIER' : plan === 'starter' ? 'STARTER TIER' : 'FREE TIER'}
               </span>
             </div>
             
@@ -212,19 +300,45 @@ export default function SettingsPage() {
                     <Rocket size={24} />
                   </div>
                   <div>
-                    <h4 className="text-gradient" style={{ marginBottom: '4px' }}>Level Up to Starter</h4>
+                    <h4 className="text-gradient" style={{ marginBottom: '4px' }}>Choose Your Intelligence Protocol</h4>
                     <p className="text-sm text-secondary" style={{ lineHeight: '1.6' }}>
-                      Unlock 100 intelligent replies per month, priority queue processing, and automated approval workflows.
+                      <strong>Starter</strong> — 100 replies/mo, you click Generate.<br />
+                      <strong>Pro</strong> — Fully autonomous, 24/7 AI heartbeat.
                     </p>
                   </div>
                 </div>
-                <button id="upgrade-btn" className="btn btn-primary w-full" style={{ padding: '16px', fontSize: '1rem', background: 'linear-gradient(45deg, var(--accent), var(--accent-cyan))' }} disabled={checkoutLoading} onClick={handleUpgrade}>
-                  {checkoutLoading ? <><span className="spinner" /> Authorizing Gateway…</> : '⚡ Engage Starter Protocol'}
-                </button>
+                <div className="flex flex-wrap gap-3 btn-stack-mobile">
+                  <button id="upgrade-starter-btn" className="btn btn-secondary flex-1" disabled={checkoutLoading} onClick={handleUpgrade}>
+                    {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '⚡ Starter Protocol'}
+                  </button>
+                  <button
+                    id="upgrade-pro-btn"
+                    className="btn btn-primary flex-1"
+                    style={{ background: 'linear-gradient(45deg, var(--accent), var(--accent-cyan))' }}
+                    disabled={checkoutLoading}
+                    onClick={async () => {
+                      setCheckoutLoading(true);
+                      try {
+                        const data = await api.post('/payments/checkout', { plan: 'pro' });
+                        window.location.href = data.checkout_url;
+                      } catch (err) {
+                        setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
+                        setCheckoutLoading(false);
+                      }
+                    }}
+                  >
+                    {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '🚀 Pro Autonomous'}
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-4 w-full mt-4">
-                <p className="text-sm text-secondary mb-4">You are currently operating on the high-bandwidth Starter tier. Manage your billing details or downgrade through the secure portal.</p>
+                <p className="text-sm text-secondary mb-4">
+                  {plan === 'pro'
+                    ? 'You are on the Pro Autonomous tier. Your AI Heartbeat runs 24/7, capped by your daily Autonomy Dial in settings.'
+                    : 'You are on the Starter tier. Reviews are collected automatically — you generate replies on demand.'
+                  }
+                </p>
                 <div className="flex flex-wrap gap-3 mt-auto btn-stack-mobile">
                   <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
                     {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Access Billing Portal'}

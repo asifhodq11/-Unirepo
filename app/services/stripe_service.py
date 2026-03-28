@@ -28,31 +28,33 @@ _processed_event_ids: set[str] = set()
 
 def create_checkout_session(user_id: str, user_email: str, plan: str) -> str:
     """
-    Creates a Stripe Checkout session for the starter plan.
+    Creates a Stripe Checkout session for the given plan ('starter' or 'pro').
     Returns the session URL to redirect the user to.
     Raises ReplyIQError(SERVER_ERROR) if the Stripe call fails.
     """
     frontend_url = os.environ["FRONTEND_URL"]
 
+    # Select the correct price ID based on plan
+    price_id_map = {
+        "starter": os.environ["STRIPE_PRICE_ID_STARTER"],
+        "pro":     os.environ.get("STRIPE_PRICE_ID_PRO", os.environ["STRIPE_PRICE_ID_STARTER"]),
+    }
+    price_id = price_id_map.get(plan, os.environ["STRIPE_PRICE_ID_STARTER"])
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
             mode="subscription",
-            line_items=[
-                {
-                    "price": os.environ["STRIPE_PRICE_ID_STARTER"],
-                    "quantity": 1,
-                }
-            ],
+            line_items=[{"price": price_id, "quantity": 1}],
             client_reference_id=user_id,
             customer_email=user_email,
+            metadata={"plan": plan},  # Pass plan through for webhook detection
             success_url=f"{frontend_url}/dashboard?payment=success",
             cancel_url=f"{frontend_url}/pricing?payment=cancelled",
         )
         return session.url
     except stripe.error.StripeError as e:
         from app.utils.logger import log_event
-
         log_event("stripe_api_error", error=str(e))
         raise ReplyIQError()
 
@@ -112,22 +114,23 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
     # 3. Handle supported event types
     if event_type == "checkout.session.completed":
         session_data = event["data"]["object"]
-        user_id = session_data.get("client_reference_id")
+        user_id     = session_data.get("client_reference_id")
         customer_id = session_data.get("customer")
+        # Detect plan from metadata (set in create_checkout_session)
+        plan        = session_data.get("metadata", {}).get("plan", "starter")
+        # Validate plan — only allow known paid plans
+        if plan not in ("starter", "pro"):
+            plan = "starter"
 
         from app.utils.logger import log_event
-        log_event("webhook_checkout_received", user_id=user_id, customer_id=customer_id)
+        log_event("webhook_checkout_received", user_id=user_id, customer_id=customer_id, plan=plan)
 
         if user_id and customer_id:
             try:
-                result = supabase.table("users").update(
-                    {
-                        "plan": "starter",
-                        "stripe_customer_id": customer_id,
-                    }
+                supabase.table("users").update(
+                    {"plan": plan, "stripe_customer_id": customer_id}
                 ).eq("id", user_id).execute()
-                
-                log_event("webhook_user_updated", user_id=user_id, plan="starter")
+                log_event("webhook_user_updated", user_id=user_id, plan=plan)
             except Exception as e:
                 log_event("webhook_update_failed", user_id=user_id, error=str(e))
 

@@ -2,23 +2,29 @@
 app/services/usage_service.py
 
 Tracks and enforces monthly reply limits based on the user's plan.
-Free = 5 replies/month
-Starter = 50 replies/month
+Free     =  5 replies/month  (manual generation only)
+Starter  = 100 replies/month  (manual generation, HITL)
+Pro      = unlimited monthly  (autonomous, circuit-breaker via daily_autonomy_limit)
 """
 
 from datetime import datetime, timedelta
 
+from datetime import datetime, timedelta, timezone
 from app.extensions import supabase
 from app.utils.exceptions import ReplyLimitReached
 
 
+PLAN_LIMITS = {
+    "free":    5,
+    "starter": 100,
+    "pro":     999_999,  # Effectively unlimited — capped daily by autonomy dial
+    "growth":  999_999,
+}
+
+
 def get_plan_limit(plan: str) -> int:
-    """Returns the monthly limit for a given plan."""
-    if plan == "starter":
-        return 50
-    elif plan in ("growth", "pro"):
-        return 999999
-    return 5  # Free plan default
+    """Returns the monthly reply limit for a given plan slug."""
+    return PLAN_LIMITS.get(plan, 5)
 
 
 def check_usage_limit(user_id: str) -> None:
@@ -60,3 +66,22 @@ def increment_usage(user_id: str) -> None:
     Uses atomic RPC to prevent race conditions.
     """
     supabase.rpc("increment_reply_count", {"user_id_input": user_id}).execute()
+
+
+def get_today_reply_count(user_id: str) -> int:
+    """
+    Counts how many AI replies were generated for this user in the last 24 hours.
+    Used by the Pro-plan daily autonomy circuit breaker in run_poller.py.
+    """
+    since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    try:
+        result = (
+            supabase.from_("replies")
+            .select("id", count="exact")
+            .eq("user_id", user_id)
+            .gte("created_at", since)
+            .execute()
+        )
+        return result.count if result.count is not None else 0
+    except Exception:
+        return 0  # Fail open — do not block generation on a count error
