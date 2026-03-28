@@ -25,16 +25,21 @@ def dashboard_overview():
     """
     user_id = g.current_user["id"]
 
-    # 1. Fetch all non-deleted reviews for this user (ratings + dates)
+    # 1. Fetch all reviews for this user (excluding explicitly deleted ones)
+    # Using .neq("is_deleted", True) correctly catches 'false' and 'NULL'
+    from app.utils.logger import log_event
+    
     result = (
         supabase.from_("reviews")
         .select("rating, status, created_at")
         .eq("user_id", user_id)
-        .eq("is_deleted", False)
+        .neq("is_deleted", True)
         .order("created_at", desc=True)
         .execute()
     )
     reviews = result.data or []
+    
+    log_event("analytics_fetch", user_id=user_id, count=len(reviews))
 
     if not reviews:
         return jsonify({

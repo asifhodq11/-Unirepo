@@ -282,39 +282,45 @@ export default function SettingsPage() {
                     </motion.div>
                   )}
 
-                  {/* Step 2: Downsell / Retention Offer */}
+                  {/* Step 2: Safety Net / Downgrade Path */}
                   {cancelStep === 2 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.2)', padding: 'var(--space-5)' }}
+                      style={{ background: 'rgba(124, 58, 237, 0.06)', border: '1px solid rgba(124, 58, 237, 0.2)', padding: 'var(--space-5)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div style={{ background: 'rgba(168, 85, 247, 0.15)', padding: '10px', borderRadius: '50%' }}>
-                          <Heart size={22} style={{ color: '#a855f7' }} />
+                        <div style={{ background: 'rgba(124, 58, 237, 0.15)', padding: '10px', borderRadius: '50%' }}>
+                          <Rocket size={22} style={{ color: '#7c3aed' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#a855f7', marginBottom: '2px' }}>We'd hate to see you go</h4>
-                          <p className="text-xs text-muted">How about a special offer instead?</p>
+                          <h4 style={{ color: '#7c3aed', marginBottom: '2px' }}>Move to Free Safety Net</h4>
+                          <p className="text-xs text-muted">Keep your history alive at Zero Cost</p>
                         </div>
                       </div>
-                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed rgba(168, 85, 247, 0.3)' }}>
+                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed rgba(124, 58, 237, 0.3)' }}>
                         <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                          Stay on a <strong style={{ color: '#a855f7' }}>Lite Plan</strong> for just 
-                          <strong style={{ color: 'var(--text-primary)' }}> 50% off</strong> for the next 3 months. 
-                          Keep your AI protection active at a fraction of the cost.
+                          Instead of terminating, switch to the <strong style={{ color: '#7c3aed' }}>Free Tier ($0/mo)</strong>. 
+                          You'll keep your account data, history, and training settings active. 
+                        </p>
+                        <p className="text-xs text-muted mt-2">
+                          * Note: High-Bandwidth Automation (Track A/B) will be disabled.
                         </p>
                       </div>
                       <div className="flex gap-3">
                         <button 
                           className="btn flex-1" 
-                          style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', color: '#fff', border: 'none' }}
-                          onClick={() => setCancelStep(0)}
+                          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', border: 'none' }}
+                          onClick={() => {
+                            // Link to portal or just close. In a real system, this would trigger a plan change. 
+                            // For now, we redirect to portal so they can actually change it.
+                            handlePortal();
+                          }}
                         >
-                          ✨ Accept 50% Off
+                          Switch to Free Plan
                         </button>
                         <button className="btn btn-ghost text-sm" style={{ opacity: 0.6 }} onClick={() => setCancelStep(3)}>
-                          No thanks →
+                          Confirm Departure →
                         </button>
                       </div>
                     </motion.div>
