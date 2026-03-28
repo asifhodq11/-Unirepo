@@ -33,13 +33,26 @@ export default function HeroSandbox() {
     setIsGenerating(true);
   }
 
-  function handleUnlock(e) {
+  async function handleUnlock(e) {
     e.preventDefault();
-    if (email) {
-      navigate(`/?email=${encodeURIComponent(email)}`);
-    } else {
+    if (!email) {
       navigate('/');
+      return;
     }
+
+    // 1. Fire-and-forget Lead Capture (don't block the user's flow)
+    try {
+      fetch('/api/v1/analytics/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+    } catch (err) {
+      console.warn("Lead capture failed, continuing flow...", err);
+    }
+
+    // 2. Redirect to main app with pre-fill email param
+    navigate(`/?email=${encodeURIComponent(email)}`);
   }
 
   const showBlur = hasGenerated || (isGenerating && displayedText.length > MOCK_RESPONSE.length * 0.4);

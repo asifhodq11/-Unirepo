@@ -13,6 +13,34 @@ from app.extensions import supabase
 analytics_bp = Blueprint("analytics", __name__)
 
 
+@analytics_bp.route("/lead", methods=["POST"])
+def capture_lead():
+    """
+    Records a lead email from the public landing page sandbox.
+    Unauthenticated by design.
+    """
+    from flask import request
+    data = request.get_json() or {}
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    # Record lead in Supabase 'leads' table
+    # Using upsert so returning users don't trigger errors
+    try:
+        supabase.table("leads").upsert({
+            "email": email,
+            "source": "hero_sandbox_v2"
+        }).execute()
+        return jsonify({"status": "captured"}), 201
+    except Exception as e:
+        # Log error but return 202 to keep user flow frictionless
+        from app.utils.logger import log_event
+        log_event("lead_capture_failed", error=str(e), email=email)
+        return jsonify({"status": "accepted_for_processing"}), 202
+
+
 @analytics_bp.route("/overview", methods=["GET"])
 @require_auth
 def dashboard_overview():
