@@ -87,7 +87,7 @@ export default function ReviewModal({
           alignItems: 'center',
           justifyContent: 'center',
           padding: 'var(--space-4)',
-          background: 'rgba(3, 7, 18, 0.85)',
+          background: 'var(--modal-overlay, rgba(3, 7, 18, 0.85))',
           backdropFilter: 'blur(8px)',
         }}
       >
@@ -103,14 +103,16 @@ export default function ReviewModal({
             maxWidth: '660px',
             maxHeight: '90vh',
             overflowY: 'auto',
-            background: 'rgba(9, 9, 15, 0.97)',
+            background: 'var(--modal-bg, rgba(9, 9, 15, 0.7))',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-xl)',
             padding: 'var(--space-6)',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-5)',
-            boxShadow: '0 32px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(139,92,246,0.1)',
+            boxShadow: '0 32px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)',
           }}
         >
           {/* ── Header ── */}
@@ -118,7 +120,7 @@ export default function ReviewModal({
             <button
               onClick={onClose}
               className="btn btn-ghost btn-sm flex items-center gap-2"
-              style={{ color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '6px 12px' }}
+              style={{ color: 'var(--text-muted)', background: 'var(--bg-glass)', padding: '6px 12px' }}
             >
               <ArrowLeft size={16} /> Close
             </button>

@@ -50,7 +50,7 @@ export default function HeroSandbox() {
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }} /* Custom spring curve */
       style={{
-        background: 'rgba(9, 9, 11, 0.4)',
+        background: 'var(--sandbox-bg, rgba(9, 9, 11, 0.4))',
         backdropFilter: 'blur(40px)',
         WebkitBackdropFilter: 'blur(40px)',
         border: '1px solid rgba(255,255,255,0.08)',
@@ -191,7 +191,7 @@ export default function HeroSandbox() {
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'linear-gradient(to bottom, rgba(3,7,18,0) 0%, rgba(3,7,18,0.7) 30%, rgba(3,7,18,0.95) 80%)',
+                        background: 'linear-gradient(to bottom, transparent 0%, var(--sandbox-fade, rgba(3,7,18,0.7)) 40%, var(--sandbox-fade, rgba(3,7,18,0.95)) 80%)',
                         backdropFilter: 'blur(4px)',
                         WebkitBackdropFilter: 'blur(4px)',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end',
@@ -201,10 +201,10 @@ export default function HeroSandbox() {
                       }}
                     >
                       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-3)', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-3)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
                            <Lock size={20} style={{ color: 'var(--text-primary)' }} />
                         </div>
-                        <h4 style={{ color: '#fff', fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>Unlock Premium Reply</h4>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 4 }}>Unlock Premium Reply</h4>
                         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Sign up free to view & deploy this response instantly.</p>
                       </div>
                       
@@ -217,9 +217,9 @@ export default function HeroSandbox() {
                           value={email}
                           onChange={e => setEmail(e.target.value)}
                           style={{ 
-                            flex: 1, background: 'rgba(0,0,0,0.5)', 
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            color: '#fff', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.5)',
+                            flex: 1, background: 'var(--bg-base)', 
+                            border: '1px solid var(--border)',
+                            color: 'var(--text-primary)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)',
                             padding: '10px 14px'
                           }}
                         />
