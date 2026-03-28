@@ -6,27 +6,30 @@ export default function PublicHeader() {
   const navigate = useNavigate();
 
   return (
-    <header style={{
-      position: 'fixed',
-      top: 'calc(var(--space-4) + env(safe-area-inset-top, 0px))',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 100,
-      width: '90%',
-      maxWidth: '800px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      // Refined Glassmorphism
-      background: 'var(--bg-surface)',
-      backdropFilter: 'blur(32px)',
-      WebkitBackdropFilter: 'blur(32px)',
-      border: '1px solid var(--border)',
-      borderRadius: '999px',
-      padding: '8px 8px 8px 20px',
-      boxShadow: 'var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05)',
-      transition: 'var(--transition)',
-    }}>
+    <header 
+      className="public-header-pill"
+      style={{
+        position: 'fixed',
+        top: 'calc(var(--space-4) + env(safe-area-inset-top, 0px))',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 100,
+        width: '90%',
+        maxWidth: '800px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        // Refined Glassmorphism
+        background: 'var(--bg-surface)',
+        backdropFilter: 'blur(32px)',
+        WebkitBackdropFilter: 'blur(32px)',
+        border: '1px solid var(--border)',
+        borderRadius: '999px',
+        padding: '8px 8px 8px 20px',
+        boxShadow: 'var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,0.05)',
+        transition: 'var(--transition)',
+      }}
+    >
       
       {/* Brand / Logo */}
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
@@ -90,12 +93,6 @@ export default function PublicHeader() {
         </button>
       </div>
       
-      {/* Dynamic style for hide-on-mobile */}
-      <style>{`
-        @media (max-width: 640px) {
-          .hide-on-mobile { display: none !important; }
-        }
-      `}</style>
     </header>
   );
 }

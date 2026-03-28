@@ -97,7 +97,7 @@ export default function HeroSandbox() {
         </div>
       </div>
 
-      <div style={{ padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+      <div className="sandbox-mobile-padding" style={{ padding: 'var(--space-6)', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
         
         {/* Input Area */}
         <div style={{ position: 'relative' }}>
@@ -154,7 +154,7 @@ export default function HeroSandbox() {
               {isGenerating ? (
                 <span className="flex items-center gap-2"><div className="spinner" style={{ width: 14, height: 14, borderColor: 'var(--text-muted)', borderTopColor: 'transparent' }} /> Analyzing...</span>
               ) : (
-                <span className="flex items-center gap-2"><Sparkles size={14} /> Generate Reply <kbd style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontSize: '0.7rem', color: 'rgba(0,0,0,0.6)', marginLeft: 4 }}>⌘↵</kbd></span>
+                <span className="flex items-center gap-2"><Sparkles size={14} /> Generate Reply <kbd className="hide-on-mobile" style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 6px', borderRadius: 4, fontFamily: 'monospace', fontSize: '0.7rem', color: 'rgba(0,0,0,0.6)', marginLeft: 4 }}>⌘↵</kbd></span>
               )}
             </button>
           )}

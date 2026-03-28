@@ -157,7 +157,7 @@ export default function LandingPage() {
               style={{ 
                 gridColumn: 'span 4', gridRow: 'span 2', padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
                 position: 'relative', overflow: 'hidden',
-                background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, rgba(3,7,18,0.5) 100%)',
+                background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, var(--bg-elevated) 100%)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 0 40px rgba(139,92,246,0.03)'
               }}
             >
@@ -274,27 +274,27 @@ export default function LandingPage() {
             {/* Pro - Highlighted */}
             <div className="card-glass" style={{ 
               padding: 'var(--space-6)', 
-              border: '1px solid rgba(99,102,241,0.4)', 
-              boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(99,102,241,0.15)',
-              background: 'linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(3,7,18,0.95) 100%)',
+              border: '1px solid var(--accent)', 
+              boxShadow: '0 20px 40px var(--shadow-glow), inset 0 0 0 1px var(--accent-subtle)',
+              background: 'linear-gradient(180deg, var(--accent-subtle) 0%, var(--bg-base) 100%)',
               minHeight: '400px', display: 'flex', flexDirection: 'column',
               position: 'relative', zIndex: 10,
               transform: 'scale(1.02)'
             }}>
-               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg, transparent, #818cf8, transparent)' }} />
+               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
               
               <div className="mb-6">
-                 <h3 className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: '#818cf8' }}>Pro</h3>
+                 <h3 className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--accent)' }}>Pro</h3>
                  <p className="text-xs text-secondary mb-2">Zero-touch operations</p>
                  <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$25<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
               </div>
                <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
-                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> 100 Autonomous replies</li>
-                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> Fully automated publishing</li>
-                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> Smart circuit breakers</li>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" /> 100 Autonomous replies</li>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" /> Fully automated publishing</li>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" /> Smart circuit breakers</li>
               </ul>
-              <Link to="/signup?plan=pro" className="btn btn-full" style={{ padding: '12px', fontSize: '0.9rem', background: '#818cf8', color: '#1e1b4b', fontWeight: 700, marginTop: 'auto', borderRadius: '8px' }}>Start 14-Day Trial</Link>
+              <Link to="/signup?plan=pro" className="btn btn-full" style={{ padding: '12px', fontSize: '0.9rem', background: 'var(--accent)', color: '#fff', fontWeight: 700, marginTop: 'auto', borderRadius: '8px' }}>Start 14-Day Trial</Link>
             </div>
 
             {/* Ultra */}
