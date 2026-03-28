@@ -225,11 +225,11 @@ export default function SettingsPage() {
             ) : (
               <div className="flex flex-col gap-4 w-full mt-4">
                 <p className="text-sm text-secondary mb-4">You are currently operating on the high-bandwidth Starter tier. Manage your billing details or downgrade through the secure portal.</p>
-                <div className="flex flex-wrap gap-3 mt-auto">
-                  <button id="billing-portal-btn" className="btn btn-secondary flex-1" style={{ minWidth: '180px' }} disabled={portalLoading} onClick={handlePortal}>
+                <div className="flex flex-wrap gap-3 mt-auto btn-stack-mobile">
+                  <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
                     {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Access Billing Portal'}
                   </button>
-                  <button id="cancel-plan-btn" className="btn btn-ghost btn-danger flex-1" style={{ minWidth: '150px' }} onClick={() => setCancelStep(1)}>
+                  <button id="cancel-plan-btn" className="btn btn-ghost btn-danger flex-1" onClick={() => setCancelStep(1)}>
                     Terminate Plan
                   </button>
                 </div>
@@ -271,11 +271,11 @@ export default function SettingsPage() {
                           reduce customer trust by up to <strong style={{ color: '#ef4444' }}>45%</strong>.
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        <button className="btn btn-primary flex-1" style={{ minWidth: '200px' }} onClick={() => setCancelStep(0)}>
+                      <div className="flex flex-wrap gap-3 btn-stack-mobile">
+                        <button className="btn btn-primary flex-1" onClick={() => setCancelStep(0)}>
                           Keep My Protection
                         </button>
-                        <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6, minWidth: '150px' }} onClick={() => setCancelStep(2)}>
+                        <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6 }} onClick={() => setCancelStep(2)}>
                           Continue anyway →
                         </button>
                       </div>
@@ -307,19 +307,17 @@ export default function SettingsPage() {
                           * Note: High-Bandwidth Automation (Track A/B) will be disabled.
                         </p>
                       </div>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex flex-wrap gap-3 btn-stack-mobile">
                         <button 
                           className="btn flex-1" 
-                          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', border: 'none', minWidth: '200px' }}
+                          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', border: 'none' }}
                           onClick={() => {
-                            // Link to portal or just close. In a real system, this would trigger a plan change. 
-                            // For now, we redirect to portal so they can actually change it.
                             handlePortal();
                           }}
                         >
                           Switch to Free Plan
                         </button>
-                        <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6, minWidth: '150px' }} onClick={() => setCancelStep(3)}>
+                        <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6 }} onClick={() => setCancelStep(3)}>
                           Confirm Departure →
                         </button>
                       </div>
@@ -367,8 +365,8 @@ export default function SettingsPage() {
                           </label>
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        <button className="btn btn-secondary flex-1" style={{ minWidth: '180px' }} onClick={() => setCancelStep(0)}>
+                      <div className="flex flex-wrap gap-3 btn-stack-mobile">
+                        <button className="btn btn-secondary flex-1" onClick={() => setCancelStep(0)}>
                           Nevermind, Keep Plan
                         </button>
                         <button 
@@ -376,7 +374,7 @@ export default function SettingsPage() {
                           className="btn btn-danger flex-1" 
                           disabled={cancelLoading || !cancelReason} 
                           onClick={handleFinalCancel}
-                          style={{ opacity: cancelReason ? 1 : 0.4, minWidth: '180px' }}
+                          style={{ opacity: cancelReason ? 1 : 0.4 }}
                         >
                           {cancelLoading ? <><span className="spinner" /> Processing…</> : 'Confirm Termination'}
                         </button>
