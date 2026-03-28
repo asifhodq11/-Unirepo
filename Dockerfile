@@ -1,5 +1,5 @@
-# ==========================================
 # ReplyIQ Multi-Stage Dockerfile
+ARG CACHEBUST=2
 # Stage 1: Build the React Frontend
 # ==========================================
 FROM node:20-alpine AS build-stage
@@ -27,9 +27,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Bust cache for source code changes (Railway aggressive caching workaround)
-ARG CACHEBUST=1
 
 # Copy all source files
 COPY . .
