@@ -160,3 +160,47 @@ def history():
         ),
         200,
     )
+
+
+@reviews_bp.route("/activity", methods=["GET"])
+@require_auth
+def activity_feed():
+    """
+    Returns the latest 10 'Autonomous' events for the Dashboard Live Feed.
+    Currently maps recent review generations to activity items.
+    """
+    user_id = g.current_user["id"]
+
+    try:
+        # Fetch the 10 most recent reviews
+        rows_result = (
+            supabase.from_("reviews")
+            .select("id, review_text, rating, reviewer_name, created_at, replies(id, status, model_used)")
+            .eq("user_id", user_id)
+            .eq("is_deleted", False)
+            .order("created_at", desc=True)
+            .limit(10)
+            .execute()
+        )
+        
+        events = []
+        for row in (rows_result.data or []):
+            has_reply = bool(row.get("replies"))
+            reviewer = row.get("reviewer_name") or "Anonymous Guest"
+            status = "Draft Ready" if has_reply else "Scanning..."
+            
+            events.append({
+                "id": str(row["id"]),
+                "type": "draft_created" if has_reply else "review_found",
+                "title": f"Reply generated for {reviewer}" if has_reply else f"New {row['rating']}★ review detected",
+                "timestamp": row["created_at"],
+                "status": status,
+                "rating": row["rating"],
+                "model": row["replies"][0]["model_used"] if has_reply and row["replies"] else "auto"
+            })
+            
+        return jsonify({"events": events}), 200
+
+    except Exception as e:
+        log_event("activity_feed_error", user_id=user_id, error=str(e))
+        return build_error("SERVER_ERROR", details="Failed to fetch activity feed."), 500

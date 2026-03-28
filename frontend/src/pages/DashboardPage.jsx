@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
-import ReplyGenerator from '../components/ReplyGenerator';
-import ReplyCard from '../components/ReplyCard';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3 } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Wand2, Clock } from 'lucide-react';
+
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 /* ── Mini Sparkline Tooltip ── */
@@ -152,7 +151,7 @@ function LiveEngineStats({ used, limit, analytics }) {
               style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
             >
               <Cpu size={14} className="mr-2" />
-              {running ? 'Running...' : 'Run Track A Simulation'}
+              {running ? 'Running...' : 'Run Diagnostics'}
             </button>
             {toast && <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">{toast}</span>}
         </div>
@@ -161,55 +160,98 @@ function LiveEngineStats({ used, limit, analytics }) {
   );
 }
 
+function ActivityList({ activities, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
+        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
+        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
+      </div>
+    );
+  }
+
+  if (!activities?.length) {
+    return (
+      <div className="card text-center flex flex-col items-center justify-center p-8" style={{ minHeight: '300px' }}>
+        <Wand2 size={40} className="text-muted mb-4 opacity-50" />
+        <h3 className="text-primary mb-2">System Idling</h3>
+        <p className="text-secondary text-sm max-w-sm">
+          No automated activity detected yet. Use the Magic Wand in the bottom right to manually generate your first reply.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-muted tracking-wide flex items-center gap-2 uppercase">
+          <Activity size={14} className="text-accent-cyan" /> Live Feed
+        </h3>
+        <span className="badge badge-muted flex items-center gap-1"><Clock size={12}/> Auto-syncing</span>
+      </div>
+      
+      {activities.map(act => (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          key={act.id} 
+          className="card card-glass flex items-center justify-between" 
+          style={{ padding: 'var(--space-4)', borderLeft: act.type === 'draft_created' ? '3px solid var(--success)' : '3px solid var(--warning)' }}
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
+                {act.type === 'draft_created' ? 'Draft Ready' : 'Scanning'}
+              </span>
+              <span className="text-xs text-muted">
+                {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+            <p className="text-sm font-medium">{act.title}</p>
+          </div>
+          {act.rating && (
+            <div className="flex items-center gap-1 text-accent-cyan font-bold bg-accent/10 px-2 py-1 rounded">
+              {act.rating} <Star size={12} fill="currentColor" />
+            </div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
-  const { user, refreshUser } = useAuth();
-  const [reply, setReply]       = useState(null);
-  const [review, setReview]     = useState(null);
-  const [loading, setLoading]   = useState(false);
+  const { user } = useAuth();
+  const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
-  const [slow, setSlow]         = useState(false);
   const [analytics, setAnalytics] = useState(null);
+  const [activities, setActivities] = useState([]);
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
   const limit = plan === 'starter' ? 100 : 3;
   const atLimit = used >= limit;
 
-  // Fetch analytics on mount
   useEffect(() => {
-    api.get('/analytics/overview')
-      .then(data => setAnalytics(data))
-      .catch(() => setAnalytics(null));
-  }, []);
-
-  async function handleGenerate(formData) {
-    setError('');
-    setReply(null);
-    setReview(null);
-    setLoading(true);
-    setSlow(false);
-
-    const slowTimer = setTimeout(() => setSlow(true), 5000);
-
-    try {
-      const data = await api.post('/reviews/generate', formData, { timeout: 30_000 });
-      setReply(data.reply);
-      setReview(data.review);
-      await refreshUser();
-      // Refresh analytics after generating a new reply
-      api.get('/analytics/overview').then(d => setAnalytics(d)).catch(() => {});
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError('Monthly quota reached. Upgrade to Starter for more replies.');
-      } else {
-        setError(err instanceof ApiError ? err.message : 'Generation failed. Please try again.');
+    async function fetchDashboard() {
+      setLoading(true);
+      try {
+        const [anRes, actRes] = await Promise.all([
+          api.get('/analytics/overview').catch(() => null),
+          api.get('/reviews/activity').catch(() => ({ events: [] }))
+        ]);
+        setAnalytics(anRes);
+        setActivities(actRes.events || []);
+      } catch (err) {
+        // Soft fail
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      clearTimeout(slowTimer);
-      setSlow(false);
-      setLoading(false);
     }
-  }
+    fetchDashboard();
+  }, []);
 
   return (
     <motion.div 
@@ -225,10 +267,10 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 style={{ marginBottom: 'var(--space-2)' }}>
-          <span className="text-gradient">Generate Reply</span>
+          <span className="text-gradient">Activity Console</span>
         </h1>
         <p className="text-secondary">
-          Paste a review below and get a human-sounding reply in seconds.
+          Monitor your automated replies and overall reputation heartbeat.
         </p>
       </motion.div>
 
@@ -270,36 +312,23 @@ export default function DashboardPage() {
       <div 
         style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'minmax(380px, 1fr) minmax(400px, 1.2fr)', 
+          gridTemplateColumns: 'minmax(350px, 1.2fr) minmax(350px, 1fr)', 
           gap: 'var(--space-8)', 
           alignItems: 'start' 
         }}
       >
-        {/* Left Column: Input */}
+        {/* Left Column: Live Activity Feed */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} slow={slow} />
+          <ActivityList activities={activities} loading={loading} />
         </motion.div>
 
-        {/* Right Column: Dynamic Output / Analytics Hub */}
+        {/* Right Column: AI Analytics Hub */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <AnimatePresence mode="wait">
-            {reply && review ? (
-              <ReplyCard key={reply.id || 'new'} reply={reply} review={review} />
-            ) : (
-              <motion.div 
-                key="analytics-hub"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-              >
-                <div style={{ marginBottom: 'var(--space-4)' }}>
-                  <h3 className="text-muted">AI Command Center</h3>
-                  <p className="text-xs text-muted" style={{ opacity: 0.6 }}>Real-time intelligence & reputation analytics</p>
-                </div>
-                <LiveEngineStats used={used} limit={limit} analytics={analytics} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
+            <h3 className="text-muted">Command Center</h3>
+            <p className="text-xs text-muted" style={{ opacity: 0.6 }}>Real-time intelligence & analytics</p>
+          </div>
+          <LiveEngineStats used={used} limit={limit} analytics={analytics} />
         </motion.div>
       </div>
     </motion.div>

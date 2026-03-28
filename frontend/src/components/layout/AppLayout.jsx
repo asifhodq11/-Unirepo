@@ -1,12 +1,13 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import FloatingGenerator from '../FloatingGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, LayoutDashboard, Settings, MessageSquarePlus } from 'lucide-react';
+import { Activity, LayoutDashboard, Settings, MessageSquarePlus } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Generate Reply', icon: Wand2 },
-  { to: '/history',   label: 'History',        icon: LayoutDashboard },
-  { to: '/settings',  label: 'Settings',       icon: Settings },
+  { to: '/dashboard', label: 'Activity',  icon: Activity },
+  { to: '/history',   label: 'History',   icon: LayoutDashboard },
+  { to: '/settings',  label: 'Settings',  icon: Settings },
 ];
 
 export default function AppLayout() {
@@ -97,6 +98,23 @@ export default function AppLayout() {
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* ── Mobile Bottom Navigation ─────── */}
+      <nav className="bottom-nav">
+        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `nav-item-bottom${isActive ? ' active' : ''}`}
+          >
+            <Icon className="nav-icon" size={24} strokeWidth={2} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* ── Global Floating Magic Generator ── */}
+      <FloatingGenerator />
     </div>
   );
 }
