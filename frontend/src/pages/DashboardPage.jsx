@@ -325,16 +325,8 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* Grid Layout (Strict columns on mobile handled by CSS) */}
-      <div 
-        className="app-bento-grid"
-        style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'minmax(380px, 1fr) 380px', 
-          gap: 'var(--space-10)', 
-          alignItems: 'start' 
-        }}
-      >
+      {/* Grid Layout */}
+      <div className="app-bento-grid">
         {/* Left Column: Insight Hub */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           {loading ? (

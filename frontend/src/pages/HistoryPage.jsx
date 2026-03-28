@@ -181,7 +181,7 @@ export default function HistoryPage() {
 
       {/* Filter bar + Export */}
       <motion.div 
-        className="flex items-center justify-between" 
+        className="flex flex-wrap items-center justify-between gap-4" 
         style={{ marginBottom: 'var(--space-5)' }}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -235,7 +235,7 @@ export default function HistoryPage() {
       </motion.div>
 
       {/* Grid List */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 'var(--space-4)', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-4)', alignItems: 'start' }}>
         {(isUninitialized || isLoading)
           ? Array.from({ length: 6 }).map((_, i) => <HistoryItemSkeleton key={i} />)
           : isEmpty
