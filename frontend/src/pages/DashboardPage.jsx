@@ -160,64 +160,81 @@ function LiveEngineStats({ used, limit, analytics }) {
   );
 }
 
-function ActivityList({ activities, loading }) {
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-3">
-        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
-        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
-        <div className="skeleton" style={{ height: '70px', width: '100%' }} />
-      </div>
-    );
-  }
-
-  if (!activities?.length) {
-    return (
-      <div className="card text-center flex flex-col items-center justify-center p-8" style={{ minHeight: '300px' }}>
-        <Wand2 size={40} className="text-muted mb-4 opacity-50" />
-        <h3 className="text-primary mb-2">System Idling</h3>
-        <p className="text-secondary text-sm max-w-sm">
-          No automated activity detected yet. Use the Magic Wand in the bottom right to manually generate your first reply.
-        </p>
-      </div>
-    );
-  }
+function DashboardInsights({ activities, analytics }) {
+  const avgRating = analytics?.avg_rating || 0;
+  const totalProcessed = analytics?.total_reviews || 0;
+  
+  // Pivot: Calculate "Time Saved" - 5 mins per manual reply
+  const timeSavedLabel = totalProcessed > 0 ? `${(totalProcessed * 5 / 60).toFixed(1)}h saved` : "Ready";
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-semibold text-muted tracking-wide flex items-center gap-2 uppercase">
-          <Activity size={14} className="text-accent-cyan" /> Live Feed
-        </h3>
-        <span className="badge badge-muted flex items-center gap-1"><Clock size={12}/> Auto-syncing</span>
-      </div>
-      
-      {activities.map(act => (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          key={act.id} 
-          className="card card-glass flex items-center justify-between" 
-          style={{ padding: 'var(--space-4)', borderLeft: act.type === 'draft_created' ? '3px solid var(--success)' : '3px solid var(--warning)' }}
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
-                {act.type === 'draft_created' ? 'Draft Ready' : 'Scanning'}
-              </span>
-              <span className="text-xs text-muted">
-                {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-            <p className="text-sm font-medium">{act.title}</p>
+    <div className="flex flex-col gap-6">
+      {/* ── Row 1: AI Impact Summary ── */}
+      <div className="grid grid-2 gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <motion.div className="card card-insight p-6" whileHover={{ y: -4 }}>
+          <div className="flex items-center gap-2 text-muted mb-2 text-xs uppercase font-bold tracking-widest">
+            <Zap size={14} className="text-accent-cyan pulse-icon" /> <span>AI Efficiency</span>
           </div>
-          {act.rating && (
-            <div className="flex items-center gap-1 text-accent-cyan font-bold bg-accent/10 px-2 py-1 rounded">
-              {act.rating} <Star size={12} fill="currentColor" />
-            </div>
-          )}
+          <div className="stat-value">{timeSavedLabel}</div>
+          <p className="text-xs text-muted mt-2">Manual hours reclaimed by AI</p>
         </motion.div>
-      ))}
+
+        <motion.div className="card card-insight p-6" whileHover={{ y: -4 }}>
+          <div className="flex items-center gap-2 text-muted mb-2 text-xs uppercase font-bold tracking-widest">
+            <TrendingUp size={14} className="text-accent" /> <span>Sentiment Pulse</span>
+          </div>
+          <div className="stat-value">{avgRating || '0.0'}★</div>
+          <p className="text-xs text-muted mt-2">Overall customer reputation score</p>
+        </motion.div>
+      </div>
+
+      {/* ── Row 2: Automation Status ── */}
+      <div className="card card-glass p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity size={18} className="text-accent-cyan" />
+            <h3 className="text-sm font-bold uppercase tracking-widest">Autonomous Heartbeat</h3>
+          </div>
+          <span className="badge badge-success flex items-center gap-1">
+            <Zap size={10} fill="currentColor" /> Live
+          </span>
+        </div>
+        
+        <div className="grid-3 gap-6">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted">Next Scan</span>
+            <span className="text-sm font-medium">approx. 12m</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted">Active Nodes</span>
+            <span className="text-sm font-medium">Poller @US-West</span>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted">AI Model</span>
+            <span className="text-xs badge badge-accent">gpt-4o / gemini</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row 3: Mini Significant Events ── */}
+      <div className="flex flex-col gap-3">
+        <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-1">Significant Events</h3>
+        {!activities.length ? (
+          <p className="text-xs text-muted italic">Awaiting automated signals...</p>
+        ) : (
+          activities.slice(0, 3).map(act => (
+            <div key={act.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+              <div className="flex flex-col">
+                <span className="text-sm">{act.title}</span>
+                <span className="text-xs text-muted">{new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
+                {act.type === 'draft_created' ? 'Handled' : 'Log'}
+              </span>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -308,26 +325,30 @@ export default function DashboardPage() {
         )}
       </AnimatePresence>
 
-      {/* Bento Grid Layout */}
+      {/* Grid Layout (Strict columns on mobile handled by CSS) */}
       <div 
+        className="app-bento-grid"
         style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'minmax(350px, 1.2fr) minmax(350px, 1fr)', 
-          gap: 'var(--space-8)', 
+          gridTemplateColumns: 'minmax(380px, 1fr) 380px', 
+          gap: 'var(--space-10)', 
           alignItems: 'start' 
         }}
       >
-        {/* Left Column: Live Activity Feed */}
+        {/* Left Column: Insight Hub */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <ActivityList activities={activities} loading={loading} />
+          {loading ? (
+             <div className="flex flex-col gap-4">
+                <div className="skeleton" style={{ height: '160px' }} />
+                <div className="skeleton" style={{ height: '120px' }} />
+             </div>
+          ) : (
+            <DashboardInsights activities={activities} analytics={analytics} />
+          )}
         </motion.div>
 
-        {/* Right Column: AI Analytics Hub */}
+        {/* Right Column: Live Meter & Controls */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <div style={{ marginBottom: 'var(--space-4)' }}>
-            <h3 className="text-muted">Command Center</h3>
-            <p className="text-xs text-muted" style={{ opacity: 0.6 }}>Real-time intelligence & analytics</p>
-          </div>
           <LiveEngineStats used={used} limit={limit} analytics={analytics} />
         </motion.div>
       </div>

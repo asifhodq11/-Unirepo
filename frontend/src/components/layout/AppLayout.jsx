@@ -100,7 +100,7 @@ export default function AppLayout() {
       </main>
 
       {/* ── Mobile Bottom Navigation ─────── */}
-      <nav className="bottom-nav">
+      <nav className="bottom-nav" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
