@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowRight, Bot, Lock, Code2, Terminal, Search } from 'lucide-react';
+import { Sparkles, ArrowRight, Bot, Lock, Code2, Terminal, Search, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const MOCK_RESPONSE = `Hi there, we're extremely sorry to hear about your experience. Quality is our absolute top priority, and it sounds like we missed the mark this time. We would love the opportunity to make this right. Please reach out to our management team directly so we can resolve this for you immediately. We value your feedback and hope to see you again.`;

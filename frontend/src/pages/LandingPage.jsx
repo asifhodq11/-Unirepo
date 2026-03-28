@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Sparkles, Brain, Zap, ArrowRight, ShieldCheck, CheckCircle2, Bot, Layers, Network } from 'lucide-react';
+import { Sparkles, Brain, Zap, ArrowRight, ShieldCheck, CheckCircle2, Bot, Layers, Network, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PublicHeader from '../components/public/PublicHeader';
 import HeroSandbox from '../components/public/HeroSandbox';
@@ -14,20 +14,20 @@ function AmbientBackground() {
     }}>
       {/* Massive radial gradients to simulate a complex 3D light space */}
       <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3], x: [0, 50, 0] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+        animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15], x: [0, 30, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         style={{
-          position: 'absolute', top: '-10%', left: '-10%', width: '60vw', height: '60vw',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, rgba(3,7,18,0) 70%)',
+          position: 'absolute', top: '-10%', left: '-10%', width: '50vw', height: '50vw',
+          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(3,7,18,0) 70%)',
           filter: 'blur(100px)',
         }}
       />
       <motion.div
-        animate={{ scale: [1, 1.3, 1], opacity: [0.2, 0.4, 0.2], x: [0, -50, 0] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+        animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1], x: [0, -30, 0] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
         style={{
-          position: 'absolute', top: '20%', right: '-20%', width: '50vw', height: '50vw',
-          background: 'radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, rgba(3,7,18,0) 60%)',
+          position: 'absolute', top: '20%', right: '-20%', width: '60vw', height: '60vw',
+          background: 'radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, rgba(3,7,18,0) 60%)',
           filter: 'blur(120px)',
         }}
       />
@@ -137,7 +137,7 @@ export default function LandingPage() {
                  <Network size={300} />
               </div>
               <div style={{ position: 'absolute', top: '24px', left: '32px' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(6,182,212,0.1)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(6,182,212,0.2)' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <Brain size={24} />
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function LandingPage() {
                 width: '120%', height: '200px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 
               }} />
 
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(139,92,246,0.1)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(139,92,246,0.2)', marginBottom: 'var(--space-6)', position: 'relative', zIndex: 2 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(99,102,241,0.1)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', marginBottom: 'var(--space-6)', position: 'relative', zIndex: 2 }}>
                 <Zap size={24} />
               </div>
               <h3 style={{ fontSize: '1.75rem', letterSpacing: '-0.03em', marginBottom: 'var(--space-2)', position: 'relative', zIndex: 2 }}>Zero-Click Autopilot</h3>
@@ -199,7 +199,7 @@ export default function LandingPage() {
               style={{ gridColumn: 'span 4', padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
             >
                <div className="flex items-center gap-3 mb-4">
-                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(16,185,129,0.1)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <ShieldCheck size={20} />
                 </div>
                 <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>SEO Compounding</span>
@@ -216,7 +216,7 @@ export default function LandingPage() {
               style={{ gridColumn: 'span 4', padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
             >
                <div className="flex items-center gap-3 mb-4">
-                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(236,72,153,0.1)', color: '#ec4899', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
                   <Layers size={20} />
                 </div>
                 <span style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '-0.02em' }}>Unified Inbox</span>
@@ -238,55 +238,79 @@ export default function LandingPage() {
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Costing a fraction of a single lost customer.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 'var(--space-6)', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)', alignItems: 'center' }}>
             
-            {/* Starter */}
-            <div className="card-glass" style={{ padding: 'var(--space-8)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)' }}>
-              <div className="flex justify-between items-center mb-6">
-                 <div>
-                    <h3 className="text-muted text-sm uppercase tracking-widest font-bold mb-1">Starter</h3>
-                    <p className="text-xs text-secondary">Manual triage & drafting</p>
-                 </div>
-                 <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$29<span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
+            {/* Free Tier */}
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+              <div className="mb-6">
+                 <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1">Free Tier</h3>
+                 <p className="text-xs text-secondary mb-2">Kick the tires</p>
+                 <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$0<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
               </div>
-              
               <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
-              
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <li className="flex items-center gap-3 text-sm color: var(--text-secondary)"><CheckCircle2 size={16} className="text-muted" /> 100 Manual AI replies</li>
-                <li className="flex items-center gap-3 text-sm color: var(--text-secondary)"><CheckCircle2 size={16} className="text-muted" /> Base context routing</li>
-                <li className="flex items-center gap-3 text-sm color: var(--text-secondary)"><CheckCircle2 size={16} className="text-muted" /> History dashboard</li>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> 10 manual AI replies</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> History dashboard</li>
               </ul>
-              <Link to="/signup" className="btn btn-secondary btn-full" style={{ padding: '14px', background: 'rgba(255,255,255,0.03)' }}>Deploy Starter</Link>
+              <Link to="/signup" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.03)', marginTop: 'auto' }}>Start Free</Link>
             </div>
 
-            {/* Pro - Vercel style halo */}
-            <div className="card-glass" style={{ 
-              padding: 'var(--space-8)', 
-              border: '1px solid rgba(139,92,246,0.4)', 
-              boxShadow: '0 32px 64px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(139,92,246,0.2), 0 0 40px rgba(139,92,246,0.1)',
-              background: 'linear-gradient(180deg, rgba(139,92,246,0.08) 0%, rgba(3,7,18,0.95) 100%)',
-              position: 'relative', zIndex: 10
-            }}>
-               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg, transparent, var(--accent), transparent)' }} />
-               
-              <div className="flex justify-between items-center mb-6">
-                 <div>
-                    <h3 className="text-accent text-sm uppercase tracking-widest font-bold mb-1">Pro Max</h3>
-                    <p className="text-xs text-secondary">Absolute zero-touch autonomy</p>
-                 </div>
-                 <div style={{ fontSize: '3.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$99<span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
+            {/* Starter */}
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+              <div className="mb-6">
+                 <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1">Starter</h3>
+                 <p className="text-xs text-secondary mb-2">Semi-automation</p>
+                 <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$19<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
               </div>
-
-               <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
-              
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 size={18} className="text-accent-cyan" /> Unlimited AI Reply Generation</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 size={18} className="text-accent-cyan" /> Autonomous Circuit Breakers</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 size={18} className="text-accent-cyan" /> Deep-context Hybrid Models</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><CheckCircle2 size={18} className="text-accent-cyan" /> Multi-Platform Poller Engine</li>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> 100 AI replies/mo</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> Manual hold & review</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> Tone customization</li>
               </ul>
-              <Link to="/signup?plan=pro" className="btn btn-accent btn-full" style={{ padding: '16px', fontSize: '1rem' }}>Initialize 14-Day Free Trial</Link>
+              <Link to="/signup?plan=starter" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.05)', marginTop: 'auto' }}>Get Starter</Link>
+            </div>
+
+            {/* Pro - Highlighted */}
+            <div className="card-glass" style={{ 
+              padding: 'var(--space-6)', 
+              border: '1px solid rgba(99,102,241,0.4)', 
+              boxShadow: '0 20px 40px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(99,102,241,0.15)',
+              background: 'linear-gradient(180deg, rgba(99,102,241,0.08) 0%, rgba(3,7,18,0.95) 100%)',
+              minHeight: '400px', display: 'flex', flexDirection: 'column',
+              position: 'relative', zIndex: 10,
+              transform: 'scale(1.02)'
+            }}>
+               <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '60%', height: 1, background: 'linear-gradient(90deg, transparent, #818cf8, transparent)' }} />
+              
+              <div className="mb-6">
+                 <h3 className="text-xs uppercase tracking-widest font-bold mb-1" style={{ color: '#818cf8' }}>Pro</h3>
+                 <p className="text-xs text-secondary mb-2">Zero-touch operations</p>
+                 <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$25<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
+              </div>
+               <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> 100 Autonomous replies</li>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> Fully automated publishing</li>
+                <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} color="#818cf8" className="shrink-0 mt-0.5" /> Smart circuit breakers</li>
+              </ul>
+              <Link to="/signup?plan=pro" className="btn btn-full" style={{ padding: '12px', fontSize: '0.9rem', background: '#818cf8', color: '#1e1b4b', fontWeight: 700, marginTop: 'auto', borderRadius: '8px' }}>Start 14-Day Trial</Link>
+            </div>
+
+            {/* Ultra */}
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+              <div className="mb-6">
+                 <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--text-primary)'}}>Ultra</h3>
+                 <p className="text-xs text-secondary mb-2">Scale without limits</p>
+                 <div style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$59<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
+              </div>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
+                <li className="flex items-start gap-3 text-xs color: var(--text-primary)"><CheckCircle2 size={14} className="text-primary shrink-0 mt-0.5" /> Unlimited Auto replies</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> VIP dedicated support</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> Custom brand models</li>
+              </ul>
+              <Link to="/signup?plan=ultra" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', marginTop: 'auto' }}>Go Ultra</Link>
             </div>
 
           </div>
