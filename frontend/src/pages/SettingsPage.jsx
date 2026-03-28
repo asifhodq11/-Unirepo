@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, Heart, MessageSquare } from 'lucide-react';
-
-const TONE_OPTIONS = ['friendly', 'professional', 'casual'];
+import { ArrowUpRight, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, MessageSquare } from 'lucide-react';
+import { getPlanLimitDisplay, TONE_OPTIONS, PLAN_LABELS } from '../utils/plans';
 
 const CANCEL_REASONS = [
   'Too expensive for my needs',
@@ -64,10 +63,10 @@ export default function SettingsPage() {
     } finally { setSaving(false); }
   }
 
-  async function handleUpgrade() {
+  async function handleUpgrade(targetPlan) {
     setCheckoutLoading(true); setError('');
     try {
-      const data = await api.post('/payments/checkout', { plan: 'starter' });
+      const data = await api.post('/payments/checkout', { plan: targetPlan });
       window.location.href = data.checkout_url;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
@@ -105,12 +104,13 @@ export default function SettingsPage() {
       setAutonomySaved(true);
       setTimeout(() => setAutonomySaved(false), 2000);
     } catch {
-      // fail silently — not critical
+      setError('Failed to save daily limit.');
     } finally { setAutonomySaving(false); }
   }
 
   const plan = user?.plan ?? 'free';
   const used = user?.reply_count_this_month ?? 0;
+  const limitDisplay = getPlanLimitDisplay(plan);
 
   return (
     <motion.div 
@@ -121,9 +121,9 @@ export default function SettingsPage() {
     >
       <motion.div style={{ marginBottom: 'var(--space-8)' }} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 style={{ marginBottom: 'var(--space-2)' }} className="flex items-center gap-3">
-          <Settings size={32} className="text-accent" /> Control Center
+          <Settings size={32} className="text-accent" /> Settings
         </h1>
-        <p className="text-secondary">Manage your business profile, telemetry, and active intelligence plan.</p>
+        <p className="text-secondary">Manage your business profile, reply tone, and subscription plan.</p>
       </motion.div>
 
       <AnimatePresence>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
         )}
         {success && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="alert alert-success" style={{ marginBottom: 'var(--space-5)' }}>
-            <CheckCircle size={18} /> Settings synchronized via uplink.
+            <CheckCircle size={18} /> Settings saved successfully.
           </motion.div>
         )}
       </AnimatePresence>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
             </h3>
             <form onSubmit={handleSave} className="flex flex-col gap-4">
               <div className="form-group">
-                <label className="form-label" style={{ opacity: 0.7 }}>Business Identity</label>
+                <label className="form-label" style={{ opacity: 0.7 }}>Business Name</label>
                 <input
                   id="settings-business-name"
                   type="text"
@@ -163,7 +163,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label" style={{ opacity: 0.7 }}>Primary Personality Matrix</label>
+                <label className="form-label" style={{ opacity: 0.7 }}>Reply Tone</label>
                 <div 
                   className="flex items-center gap-1 p-1 rounded-full" 
                   style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
@@ -191,24 +191,24 @@ export default function SettingsPage() {
               </div>
 
               <button id="save-settings" type="submit" className="btn btn-primary mt-2" disabled={saving}>
-                {saving ? <><span className="spinner" /> Syncing…</> : 'Save Configuration'}
+                {saving ? <><span className="spinner" /> Saving…</> : 'Save Changes'}
               </button>
             </form>
           </motion.div>
 
           <motion.div className="grid-2 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
-              <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Replies Cycle</span></div>
+              <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage This Month</span></div>
               <div className="flex items-baseline gap-1">
                 <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
-                <span className="text-muted">/ {plan === 'pro' ? '∞' : plan === 'starter' ? '100' : '3'}</span>
+                <span className="text-muted">/ {limitDisplay}</span>
               </div>
             </div>
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
-              <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Hook</span></div>
+              <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Connection</span></div>
               <div>
                 {user?.google_connected 
-                  ? <span className="badge badge-success" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Active Sync</span> 
+                  ? <span className="badge badge-success" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Connected</span> 
                   : <span className="badge badge-muted" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Not connected</span>
                 }
               </div>
@@ -225,12 +225,12 @@ export default function SettingsPage() {
             >
               <div className="flex items-center justify-between" style={{ marginBottom: 'var(--space-3)' }}>
                 <h3 className="flex items-center gap-2">
-                  <Zap size={18} className="text-accent-cyan" /> Autonomy Dial
+                  <Zap size={18} className="text-accent-cyan" /> Daily Reply Limit
                 </h3>
                 <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}>PRO</span>
               </div>
               <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-4)', lineHeight: 1.6 }}>
-                Set your daily autonomous reply limit. When reached, overflow reviews are safely queued for manual review.
+                Set your daily auto-reply limit. When reached, overflow reviews are queued for manual review.
               </p>
 
               <div className="flex items-center gap-4" style={{ marginBottom: 'var(--space-3)' }}>
@@ -283,51 +283,41 @@ export default function SettingsPage() {
           <div className="card card-glass flex flex-col items-start justify-center" style={{ flex: 1, border: '1px solid var(--accent-subtle)' }}>
             <div className="flex items-center justify-between w-full mb-6">
               <h3 className="flex items-center gap-2">
-                <CreditCard size={18} className="text-muted" /> Active Protocol
+                <CreditCard size={18} className="text-muted" /> Subscription Plan
               </h3>
               <span className={`badge ${
                 plan === 'pro' ? 'badge-success' :
                 plan === 'starter' ? 'badge-accent' : 'badge-muted'
               }`} style={{ fontSize: '0.85rem' }}>
-                {plan === 'pro' ? 'PRO TIER' : plan === 'starter' ? 'STARTER TIER' : 'FREE TIER'}
+                {PLAN_LABELS[plan]?.toUpperCase() || plan.toUpperCase()}
               </span>
             </div>
             
             {plan === 'free' ? (
               <div className="w-full">
-                <div className="alert flex items-start gap-4" style={{ marginBottom: 'var(--space-6)', background: 'transparent', border: '1px dashed var(--accent)', padding: 'var(--space-5)' }}>
+                <div className="alert flex items-start gap-4" style={{ marginBottom: 'var(--space-6)', background: 'transparent', border: '1px dashed var(--border)', padding: 'var(--space-5)' }}>
                   <div style={{ background: 'var(--accent)', color: '#000', padding: '10px', borderRadius: '50%' }}>
-                    <Rocket size={24} />
+                    <ArrowUpRight size={24} />
                   </div>
                   <div>
-                    <h4 className="text-gradient" style={{ marginBottom: '4px' }}>Choose Your Intelligence Protocol</h4>
+                    <h4 className="text-gradient" style={{ marginBottom: '4px' }}>Choose Your Plan</h4>
                     <p className="text-sm text-secondary" style={{ lineHeight: '1.6' }}>
                       <strong>Starter</strong> — 100 replies/mo, you click Generate.<br />
-                      <strong>Pro</strong> — Fully autonomous, 24/7 AI heartbeat.
+                      <strong>Pro</strong> — Fully autonomous, 24/7 auto-reply heartbeat.
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-3 btn-stack-mobile">
-                  <button id="upgrade-starter-btn" className="btn btn-secondary flex-1" disabled={checkoutLoading} onClick={handleUpgrade}>
-                    {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '⚡ Starter Protocol'}
+                  <button id="upgrade-starter-btn" className="btn btn-secondary flex-1" disabled={checkoutLoading} onClick={() => handleUpgrade('starter')}>
+                    {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Starter Plan'}
                   </button>
                   <button
                     id="upgrade-pro-btn"
-                    className="btn btn-primary flex-1"
-                    style={{ background: 'linear-gradient(45deg, var(--accent), var(--accent-cyan))' }}
+                    className="btn btn-accent flex-1"
                     disabled={checkoutLoading}
-                    onClick={async () => {
-                      setCheckoutLoading(true);
-                      try {
-                        const data = await api.post('/payments/checkout', { plan: 'pro' });
-                        window.location.href = data.checkout_url;
-                      } catch (err) {
-                        setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
-                        setCheckoutLoading(false);
-                      }
-                    }}
+                    onClick={() => handleUpgrade('pro')}
                   >
-                    {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '🚀 Pro Autonomous'}
+                    {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Pro Plan'}
                   </button>
                 </div>
               </div>
@@ -335,8 +325,8 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-4 w-full mt-4">
                 <p className="text-sm text-secondary mb-4">
                   {plan === 'pro'
-                    ? 'You are on the Pro Autonomous tier. Your AI Heartbeat runs 24/7, capped by your daily Autonomy Dial in settings.'
-                    : 'You are on the Starter tier. Reviews are collected automatically — you generate replies on demand.'
+                    ? 'You are on the Pro plan. Your auto-reply heartbeat runs 24/7, capped by your daily limit in settings.'
+                    : 'You are on the Starter plan. Reviews are collected automatically — you generate replies on demand.'
                   }
                 </p>
 
@@ -346,50 +336,41 @@ export default function SettingsPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(6,182,212,0.08))',
-                      border: '1px solid rgba(139,92,246,0.3)',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid var(--border)',
                       borderRadius: 'var(--radius-md)',
                       padding: 'var(--space-4)',
                     }}
                   >
                     <div className="flex items-start gap-3" style={{ marginBottom: 'var(--space-3)' }}>
-                      <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', padding: '8px', borderRadius: '50%', flexShrink: 0 }}>
-                        <Rocket size={16} style={{ color: '#000' }} />
+                      <div style={{ background: 'var(--accent)', padding: '8px', borderRadius: '50%', flexShrink: 0 }}>
+                        <ArrowUpRight size={16} style={{ color: '#000' }} />
                       </div>
                       <div>
-                        <p className="text-sm font-medium" style={{ marginBottom: '2px' }}>Unlock Full Autonomy</p>
+                        <p className="text-sm font-medium" style={{ marginBottom: '2px' }}>Upgrade to Pro</p>
                         <p className="text-xs text-muted" style={{ lineHeight: 1.5 }}>
-                          Upgrade to Pro and let your AI Heartbeat reply 24/7 — no clicking required.
+                          Let your auto-reply heartbeat respond 24/7 — no clicking required.
                         </p>
                       </div>
                     </div>
                     <button
                       id="upgrade-pro-btn"
-                      className="btn btn-primary w-full"
-                      style={{ background: 'linear-gradient(45deg, var(--accent), var(--accent-cyan))', fontSize: '0.9rem' }}
+                      className="btn btn-accent w-full"
+                      style={{ fontSize: '0.9rem' }}
                       disabled={checkoutLoading}
-                      onClick={async () => {
-                        setCheckoutLoading(true);
-                        try {
-                          const data = await api.post('/payments/checkout', { plan: 'pro' });
-                          window.location.href = data.checkout_url;
-                        } catch (err) {
-                          setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
-                          setCheckoutLoading(false);
-                        }
-                      }}
+                      onClick={() => handleUpgrade('pro')}
                     >
-                      {checkoutLoading ? <><span className="spinner" /> Authorizing…</> : '🚀 Upgrade to Pro'}
+                      {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Upgrade to Pro'}
                     </button>
                   </motion.div>
                 )}
 
                 <div className="flex flex-wrap gap-3 btn-stack-mobile">
                   <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
-                    {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Access Billing Portal'}
+                    {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Billing Portal'}
                   </button>
                   <button id="cancel-plan-btn" className="btn btn-ghost btn-danger flex-1" onClick={() => setCancelStep(1)}>
-                    Terminate Plan
+                    Cancel Plan
                   </button>
                 </div>
               </div>
@@ -419,7 +400,7 @@ export default function SettingsPage() {
                           <Shield size={22} style={{ color: '#ef4444' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>Your Reputation Shield is Active</h4>
+                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>Are you sure?</h4>
                           <p className="text-xs text-muted">Cancelling will remove your AI-powered review protection</p>
                         </div>
                       </div>
@@ -432,7 +413,7 @@ export default function SettingsPage() {
                       </div>
                       <div className="flex flex-wrap gap-3 btn-stack-mobile">
                         <button className="btn btn-primary flex-1" onClick={() => setCancelStep(0)}>
-                          Keep My Protection
+                          Keep My Plan
                         </button>
                         <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6 }} onClick={() => setCancelStep(2)}>
                           Continue anyway →
@@ -450,26 +431,25 @@ export default function SettingsPage() {
                     >
                       <div className="flex items-center gap-3 mb-4">
                         <div style={{ background: 'rgba(124, 58, 237, 0.15)', padding: '10px', borderRadius: '50%' }}>
-                          <Rocket size={22} style={{ color: '#7c3aed' }} />
+                          <ArrowUpRight size={22} style={{ color: '#7c3aed', transform: 'rotate(180deg)' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#7c3aed', marginBottom: '2px' }}>Move to Free Safety Net</h4>
-                          <p className="text-xs text-muted">Keep your history alive at Zero Cost</p>
+                          <h4 style={{ color: '#7c3aed', marginBottom: '2px' }}>Switch to Free</h4>
+                          <p className="text-xs text-muted">Keep your history at zero cost</p>
                         </div>
                       </div>
                       <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed rgba(124, 58, 237, 0.3)' }}>
                         <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                          Instead of terminating, switch to the <strong style={{ color: '#7c3aed' }}>Free Tier ($0/mo)</strong>. 
-                          You'll keep your account data, history, and training settings active. 
+                          Instead of cancelling, switch to the <strong style={{ color: '#7c3aed' }}>Free plan ($0/mo)</strong>. 
+                          You'll keep your account data, history, and settings. 
                         </p>
                         <p className="text-xs text-muted mt-2">
-                          * Note: High-Bandwidth Automation (Track A/B) will be disabled.
+                          Auto-reply and bulk generation will be disabled on the free plan.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-3 btn-stack-mobile">
                         <button 
-                          className="btn flex-1" 
-                          style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', border: 'none' }}
+                          className="btn btn-accent flex-1"
                           onClick={() => {
                             handlePortal();
                           }}
@@ -477,7 +457,7 @@ export default function SettingsPage() {
                           Switch to Free Plan
                         </button>
                         <button className="btn btn-ghost text-sm flex-1" style={{ opacity: 0.6 }} onClick={() => setCancelStep(3)}>
-                          Confirm Departure →
+                          Continue cancellation →
                         </button>
                       </div>
                     </motion.div>
@@ -535,7 +515,7 @@ export default function SettingsPage() {
                           onClick={handleFinalCancel}
                           style={{ opacity: cancelReason ? 1 : 0.4 }}
                         >
-                          {cancelLoading ? <><span className="spinner" /> Processing…</> : 'Confirm Termination'}
+                          {cancelLoading ? <><span className="spinner" /> Processing…</> : 'Confirm Cancellation'}
                         </button>
                       </div>
                     </motion.div>

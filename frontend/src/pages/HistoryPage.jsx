@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Star, ChevronDown, ChevronUp, Bot, History, Download, User,
-  Sparkles, Check, Loader2, CheckSquare, Square, Zap,
+  Play, Check, Loader2, CheckSquare, Square, Zap,
 } from 'lucide-react';
 
 const STARS = [1, 2, 3, 4, 5];
@@ -33,7 +33,6 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
   const isGenerating = generating && isPending;
 
   function handleCardClick(e) {
-    // If in selectable mode, clicking the card toggles the checkbox
     if (selectable && isPending) {
       e.stopPropagation();
       onToggle(item.id);
@@ -108,9 +107,10 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
         <div className="flex items-center gap-2">
           <span className={`badge ${
             item.status === 'replied' ? 'badge-success' :
+            item.status === 'failed' ? 'badge-muted' :
             isGenerating ? 'badge-accent' : 'badge-muted'
           }`}>
-            {isGenerating ? '✨ Generating…' : item.status}
+            {isGenerating ? 'Generating…' : item.status}
           </span>
           <span className="text-xs text-muted hidden sm:inline">{date}</span>
           {!selectable && (
@@ -140,23 +140,17 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onGener
                 </div>
               )}
 
-              {/* Starter Single Generate Action */}
+              {/* Starter Single Generate — slim inline action */}
               {isPending && plan === 'starter' && (!item.replies || item.replies.length === 0) && (
-                <div style={{ padding: 'var(--space-4)', backgroundColor: 'rgba(139,92,246,0.06)', borderRadius: 'var(--radius-md)', border: '1px dashed rgba(139,92,246,0.3)', marginBottom: 'var(--space-2)' }}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-sm font-medium" style={{ color: 'var(--accent)' }}>Awaiting Human Review</h4>
-                      <p className="text-xs text-muted" style={{ marginTop: '2px' }}>Review collected successfully. Click generate to create an AI draft.</p>
-                    </div>
-                    <button 
-                      className="btn btn-primary btn-sm flex items-center gap-2"
-                      style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))' }}
-                      onClick={(e) => { e.stopPropagation(); onGenerate(item.id); }}
-                      disabled={isGenerating}
-                    >
-                      {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Generating...</> : <><Sparkles size={14} /> Generate AI Reply</>}
-                    </button>
-                  </div>
+                <div className="flex items-center justify-between" style={{ padding: 'var(--space-3) var(--space-4)', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: 'var(--space-2)' }}>
+                  <span className="text-xs text-muted">No reply generated yet</span>
+                  <button 
+                    className="btn btn-secondary btn-sm flex items-center gap-2"
+                    onClick={(e) => { e.stopPropagation(); onGenerate(item.id); }}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? <><Loader2 size={14} className="animate-spin" /> Generating...</> : <><Play size={14} /> Generate Reply</>}
+                  </button>
                 </div>
               )}
 
@@ -257,7 +251,9 @@ export default function HistoryPage() {
   const fetchPage = useCallback(async (p) => {
     setIsFetching(true);
     try {
-      const data = await api.get(`/reviews/history?page=${p}&per_page=20`);
+      // Pass server-side status filter when in pending mode
+      const statusParam = filterStatus ? `&status=${filterStatus}` : '';
+      const data = await api.get(`/reviews/history?page=${p}&per_page=20${statusParam}`);
       const fetched = data.items ?? [];
       setItems(fetched);
       setTotal(data.total ?? 0);
@@ -324,13 +320,11 @@ export default function HistoryPage() {
       .map(i => i.id);
 
     for (const reviewId of orderedIds) {
-      // Mark this card as "Generating…"
       setGeneratingIds(prev => new Set([...prev, reviewId]));
 
       try {
         const result = await api.post(`/reviews/${reviewId}/generate`);
 
-        // Inject the reply inline into the items list → triggers re-render + spring animation
         setItems(prev =>
           (prev ?? []).map(item =>
             item.id === reviewId
@@ -340,7 +334,6 @@ export default function HistoryPage() {
         );
         setSelectedIds(prev => { const n = new Set(prev); n.delete(reviewId); return n; });
       } catch (err) {
-        // Mark card as failed but continue processing the rest
         setItems(prev =>
           (prev ?? []).map(item =>
             item.id === reviewId ? { ...item, status: 'failed' } : item
@@ -354,12 +347,11 @@ export default function HistoryPage() {
     setIsProcessing(false);
   }
 
-  // Visible items — apply rating + status filters
+  // Visible items — apply rating filter (status is now handled server-side)
   let visible = items ?? [];
   if (filterRating && hasData) visible = visible.filter(i => i.rating === filterRating);
-  if (filterStatus === 'pending' && hasData) visible = visible.filter(i => i.status === 'pending');
 
-  const pendingCount = (items ?? []).filter(i => i.status === 'pending').length;
+  const pendingCount = filterStatus === 'pending' ? total : (items ?? []).filter(i => i.status === 'pending').length;
 
   return (
     <motion.div
@@ -371,10 +363,10 @@ export default function HistoryPage() {
       {/* Header */}
       <motion.div style={{ marginBottom: 'var(--space-8)' }} initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 style={{ marginBottom: 'var(--space-2)' }} className="flex items-center gap-3">
-          <History size={32} className="text-accent" /> Intelligence Feed
+          <History size={32} className="text-accent" /> Review History
         </h1>
         <p className="text-secondary">
-          {total} Total Processed Nodes
+          {total} Total Reviews
           {pendingCount > 0 && (
             <span style={{ color: 'var(--warning)', marginLeft: 'var(--space-3)' }}>
               · {pendingCount} awaiting generation
@@ -418,7 +410,7 @@ export default function HistoryPage() {
               }}
               onClick={() => setFilterStatus(filterStatus === 'pending' ? null : 'pending')}
             >
-              <Sparkles size={13} /> Pending {pendingCount > 0 && `(${pendingCount})`}
+              Pending {pendingCount > 0 && `(${pendingCount})`}
             </button>
           </div>
 
@@ -485,7 +477,7 @@ export default function HistoryPage() {
           className="text-xs text-muted"
           style={{ marginBottom: 'var(--space-4)' }}
         >
-          ✅ First 10 selected by default. Check or uncheck any review below.
+          First 10 selected. Check or uncheck any review below.
         </motion.p>
       )}
 
@@ -501,7 +493,7 @@ export default function HistoryPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
-                No data streams found. Initiate first transmission.
+                No reviews found yet.
               </motion.div>
             )
             : visible.map(item => (
@@ -523,11 +515,11 @@ export default function HistoryPage() {
       {!isLoading && (hasMore || page > 1) && (
         <motion.div className="flex items-center justify-center gap-4" style={{ marginTop: 'var(--space-8)' }} layout>
           <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => fetchPage(page - 1)}>
-            ← Previous Cycle
+            ← Previous
           </button>
           <span className="text-xs font-medium text-muted badge badge-muted">Page {page}</span>
           <button className="btn btn-secondary btn-sm" disabled={!hasMore} onClick={() => fetchPage(page + 1)}>
-            Next Cycle →
+            Next →
           </button>
         </motion.div>
       )}

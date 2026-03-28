@@ -19,12 +19,14 @@ settings_bp = Blueprint("settings", __name__)
 # Fields returned by both GET and PATCH
 SETTINGS_FIELDS = (
     "business_name",
+    "business_type",
     "tone_preference",
     "approval_tier",
     "plan",
     "google_connected",
     "google_status",
     "reply_count_this_month",
+    "daily_autonomy_limit",
 )
 
 

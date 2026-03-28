@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, X, Loader2, AlertTriangle } from 'lucide-react';
+import { MessageSquare, X, Loader2, AlertTriangle } from 'lucide-react';
 import ReplyGenerator from './ReplyGenerator';
 import ReplyCard from './ReplyCard';
 import { api, ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { getPlanLimit } from '../utils/plans';
 
 export default function FloatingGenerator() {
   const { user, refreshUser } = useAuth();
@@ -17,7 +18,7 @@ export default function FloatingGenerator() {
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
-  const limit = plan === 'starter' ? 100 : 3;
+  const limit = getPlanLimit(plan);
   const atLimit = used >= limit;
 
   async function handleGenerate(formData) {
@@ -34,10 +35,9 @@ export default function FloatingGenerator() {
       setReply(data.reply);
       setReview(data.review);
       await refreshUser();
-      // Inform parent components if needed, or just let them refetch
     } catch (err) {
       if (err instanceof ApiError && err.status === 429) {
-        setError('Monthly quota reached. Upgrade to Starter.');
+        setError('Monthly quota reached. Upgrade your plan.');
       } else {
         setError(err instanceof ApiError ? err.message : 'Generation failed. Please try again.');
       }
@@ -54,9 +54,9 @@ export default function FloatingGenerator() {
         <button 
           className="magic-fab" 
           onClick={() => setIsOpen(!isOpen)}
-          aria-label="Open Magic Generator"
+          aria-label="Open Quick Reply"
         >
-          {isOpen ? <X size={24} /> : <Wand2 size={24} />}
+          {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
         </button>
       </div>
 
@@ -71,8 +71,8 @@ export default function FloatingGenerator() {
           >
             <div className="magic-panel-header flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Wand2 size={18} className="text-accent-cyan" />
-                <h3 style={{ fontSize: '1.05rem' }}>Magic Generator</h3>
+                <MessageSquare size={18} className="text-accent-cyan" />
+                <h3 style={{ fontSize: '1.05rem' }}>Quick Reply</h3>
               </div>
               <button 
                 onClick={() => setIsOpen(false)} 

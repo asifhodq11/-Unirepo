@@ -14,7 +14,7 @@ from app.utils.errors import build_error
 from app.utils.logger import log_event
 from app.extensions import supabase, limiter
 
-from app.models.review_model import insert_review
+from app.models.review_model import insert_review, update_review_status
 from app.models.reply_model import insert_reply
 
 from app.services.usage_service import check_usage_limit, increment_usage
@@ -90,8 +90,6 @@ def generate():
         return build_error("SERVER_ERROR", details="Reply generation succeeded but failed to save to database.")
 
     # 5. Mark review as 'replied' now that reply is saved
-    from app.models.review_model import update_review_status
-
     update_review_status(user_id, saved_review["id"], "replied")
 
     # 6. Increment Usage atomically via RPC
@@ -208,21 +206,29 @@ def history():
     except (ValueError, TypeError):
         per_page = 20
 
+    # Optional status filter (e.g. ?status=pending)
+    status_filter = request.args.get("status")
+
     offset = (page - 1) * per_page
 
     # Fetch total count (non-deleted, this user only)
-    count_result = (
-        supabase.from_("reviews").select("id", count="exact").eq("user_id", user_id).eq("is_deleted", False).execute()
-    )
+    count_query = supabase.from_("reviews").select("id", count="exact").eq("user_id", user_id).eq("is_deleted", False)
+    if status_filter:
+        count_query = count_query.eq("status", status_filter)
+    count_result = count_query.execute()
     total = count_result.count if count_result.count is not None else 0
 
     # Fetch page of reviews with their associated replies
-    # We use Supabase cross-table querying: replies(id, reply_text, status, generation_ms, model_used)
-    rows_result = (
+    rows_query = (
         supabase.from_("reviews")
         .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, generation_ms, model_used)")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
+    )
+    if status_filter:
+        rows_query = rows_query.eq("status", status_filter)
+    rows_result = (
+        rows_query
         .order("created_at", desc=True)
         .range(offset, offset + per_page - 1)
         .execute()

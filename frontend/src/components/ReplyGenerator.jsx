@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Star, Wand2, Loader2 } from 'lucide-react';
+import { Star, Send, Loader2 } from 'lucide-react';
 
 const STARS = [1, 2, 3, 4, 5];
 
@@ -121,7 +121,7 @@ export default function ReplyGenerator({ onGenerate, loading, disabled, slow }) 
               <Loader2 className="spinner" size={16} />
               {slow ? 'Still generating…' : 'Generating…'}
             </>
-          ) : <><Wand2 size={16} /> Generate Reply</>}
+          ) : <><Send size={16} /> Generate Reply</>}
         </button>
       </form>
     </div>

@@ -31,9 +31,9 @@ def checkout():
     data = request.json or {}
     plan = data.get("plan")
 
-    if plan != "starter":
+    if plan not in ("starter", "pro"):
         raise ValidationError(
-            fields={"plan": ['Must be "starter".']},
+            fields={"plan": ['Must be "starter" or "pro".']},
             message="Invalid plan value.",
         )
 

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Wand2, Clock, Loader2, Sparkles } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, Clock, Loader2, Play } from 'lucide-react';
+import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
@@ -25,19 +26,19 @@ function SparkTooltip({ active, payload, label }) {
   );
 }
 
-/* ── Auxiliary Components for Bento Box Density ── */
-function LiveEngineStats({ used, limit, analytics }) {
+/* ── Live Stats Panel (Right Column) ── */
+function LiveEngineStats({ used, limitDisplay, analytics }) {
   const [running, setRunning] = useState(false);
   const [toast, setToast] = useState('');
 
   async function handleTriggerPoller() {
     setRunning(true);
-    setToast('Simulation engine started...');
+    setToast('Scanning for new reviews...');
     try {
       const response = await api.post('/poller/trigger', {});
-      setToast(response.message || 'Simulation generated 2 new replies!');
+      setToast(response.message || 'Scan complete — 2 new replies generated!');
     } catch (err) {
-      setToast('Simulation failed to run.');
+      setToast('Scan failed to run.');
     } finally {
       setRunning(false);
       setTimeout(() => setToast(''), 4000);
@@ -61,13 +62,13 @@ function LiveEngineStats({ used, limit, analytics }) {
       {/* Row 1: Usage Quota + Reputation Score */}
       <div className="grid-2 gap-4">
         <motion.div className="card card-glass flex-col justify-between" style={{ minHeight: '140px' }} whileHover={{ scale: 1.02 }}>
-          <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage Quota</span></div>
+          <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage This Month</span></div>
           <div className="flex items-baseline gap-1">
             <span style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
-            <span className="text-muted">/ {limit}</span>
+            <span className="text-muted">/ {limitDisplay}</span>
           </div>
           <div className="progress-track mt-4" style={{ height: '4px' }}>
-            <div className="progress-fill" style={{ width: `${Math.min((used/limit)*100, 100)}%` }} />
+            <div className="progress-fill" style={{ width: `${limitDisplay === '∞' ? Math.min((used / 200) * 100, 100) : Math.min((used / getPlanLimit('free')) * 100, 100)}%` }} />
           </div>
         </motion.div>
 
@@ -115,15 +116,15 @@ function LiveEngineStats({ used, limit, analytics }) {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-full text-muted text-xs" style={{ opacity: 0.5 }}>
-              <BarChart3 size={20} className="mr-2" /> Trend data will populate after reviews are processed
+              <BarChart3 size={20} className="mr-2" /> Trend data populates after reviews are processed
             </div>
           )}
         </div>
       </motion.div>
 
-      {/* Row 3: Intelligence Nodes + Simulation */}
+      {/* Row 3: AI Engine Status + Scan Trigger */}
       <motion.div className="card card-glass" whileHover={{ scale: 1.01 }}>
-        <div className="flex items-center gap-2 text-muted mb-4"><Network size={16} className="text-accent" /> <span>Active Intelligence Nodes</span></div>
+        <div className="flex items-center gap-2 text-muted mb-4"><Network size={16} className="text-accent" /> <span>AI Engine Status</span></div>
         <div className="flex gap-4">
           <div className="flex-col flex-1">
             <span className="text-xs text-muted mb-1">ROUTER</span>
@@ -142,7 +143,7 @@ function LiveEngineStats({ used, limit, analytics }) {
           </div>
         </div>
 
-        {/* Simulation Poller Trigger */}
+        {/* Scan Trigger */}
         <div className="mt-6 border-t border-gray-800 pt-4 flex items-center justify-between">
             <button 
               onClick={handleTriggerPoller} 
@@ -151,7 +152,7 @@ function LiveEngineStats({ used, limit, analytics }) {
               style={{ width: 'auto', padding: '0.4rem 0.8rem' }}
             >
               <Cpu size={14} className="mr-2" />
-              {running ? 'Running...' : 'Run Diagnostics'}
+              {running ? 'Running...' : 'Trigger Scan'}
             </button>
             {toast && <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">{toast}</span>}
         </div>
@@ -160,11 +161,11 @@ function LiveEngineStats({ used, limit, analytics }) {
   );
 }
 
-function DashboardInsights({ activities, analytics, onQuickGenerate, generatingIds, plan }) {
+function DashboardInsights({ activities, analytics, onQuickGenerate, generatingIds, generateError, plan }) {
   const avgRating = analytics?.avg_rating || 0;
   const totalProcessed = analytics?.total_reviews || 0;
   
-  // Pivot: Calculate "Time Saved" - 5 mins per manual reply
+  // Calculate "Time Saved" — 5 mins per manual reply
   const timeSavedLabel = totalProcessed > 0 ? `${(totalProcessed * 5 / 60).toFixed(1)}h saved` : "Ready";
 
   return (
@@ -173,7 +174,7 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
       <div className="grid grid-2 gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
         <motion.div className="card card-insight p-6" whileHover={{ y: -4 }}>
           <div className="flex items-center gap-2 text-muted mb-2 text-xs uppercase font-bold tracking-widest">
-            <Zap size={14} className="text-accent-cyan pulse-icon" /> <span>AI Efficiency</span>
+            <Zap size={14} className="text-accent-cyan pulse-icon" /> <span>Time Saved</span>
           </div>
           <div className="stat-value">{timeSavedLabel}</div>
           <p className="text-xs text-muted mt-2">Manual hours reclaimed by AI</p>
@@ -181,19 +182,19 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
 
         <motion.div className="card card-insight p-6" whileHover={{ y: -4 }}>
           <div className="flex items-center gap-2 text-muted mb-2 text-xs uppercase font-bold tracking-widest">
-            <TrendingUp size={14} className="text-accent" /> <span>Sentiment Pulse</span>
+            <TrendingUp size={14} className="text-accent" /> <span>Avg. Rating</span>
           </div>
           <div className="stat-value">{avgRating || '0.0'}★</div>
           <p className="text-xs text-muted mt-2">Overall customer reputation score</p>
         </motion.div>
       </div>
 
-      {/* ── Row 2: Automation Status ── */}
+      {/* ── Row 2: Auto-Reply Heartbeat ── */}
       <div className="card card-glass p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Activity size={18} className="text-accent-cyan" />
-            <h3 className="text-sm font-bold uppercase tracking-widest">Autonomous Heartbeat</h3>
+            <h3 className="text-sm font-bold uppercase tracking-widest">Auto-Reply Heartbeat</h3>
           </div>
           <span className="badge badge-success flex items-center gap-1">
             <Zap size={10} fill="currentColor" /> Live
@@ -206,7 +207,7 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
             <span className="text-sm font-medium">approx. 12m</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted">Active Nodes</span>
+            <span className="text-xs text-muted">Region</span>
             <span className="text-sm font-medium">Poller @US-West</span>
           </div>
           <div className="flex flex-col gap-1">
@@ -216,11 +217,11 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
         </div>
       </div>
 
-      {/* ── Row 3: Mini Significant Events ── */}
+      {/* ── Row 3: Recent Activity ── */}
       <div className="flex flex-col gap-3">
-        <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-1">Significant Events</h3>
+        <h3 className="text-xs font-bold text-muted uppercase tracking-widest mb-1">Recent Activity</h3>
         {!activities.length ? (
-          <p className="text-xs text-muted italic">Awaiting automated signals...</p>
+          <p className="text-xs text-muted italic">No activity yet. Trigger a scan or wait for the auto-poller.</p>
         ) : (
           activities.slice(0, 3).map(act => (
             <div key={act.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
@@ -231,16 +232,20 @@ function DashboardInsights({ activities, analytics, onQuickGenerate, generatingI
               <div className="flex items-center gap-2">
                 {act.type === 'review_found' && plan === 'starter' && (
                   <button
-                    className="btn btn-primary btn-sm flex items-center gap-1"
-                    style={{ padding: '2px 8px', fontSize: '0.7rem', height: 'auto', background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))' }}
+                    className="btn btn-ghost btn-sm flex items-center gap-1"
+                    style={{ padding: '2px 8px', fontSize: '0.7rem', height: 'auto', color: 'var(--accent)' }}
                     onClick={() => onQuickGenerate(act.id)}
                     disabled={generatingIds.has(act.id)}
                   >
-                    {generatingIds.has(act.id) ? <><Loader2 size={12} className="animate-spin" /> ...</> : <><Sparkles size={12} /> Generate</>}
+                    {generatingIds.has(act.id) ? <><Loader2 size={12} className="animate-spin" /> ...</> : <><Play size={12} /> Generate</>}
                   </button>
                 )}
+                {/* Show error badge if this ID had a generation failure */}
+                {generateError === act.id && (
+                  <span className="badge badge-muted text-xs" style={{ color: 'var(--danger)' }}>Failed</span>
+                )}
                 <span className={`badge ${act.type === 'draft_created' ? 'badge-success' : 'badge-warning'}`}>
-                  {act.type === 'draft_created' ? 'Handled' : 'Log'}
+                  {act.type === 'draft_created' ? 'Replied' : 'Pending'}
                 </span>
               </div>
             </div>
@@ -258,10 +263,12 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [activities, setActivities] = useState([]);
   const [generatingIds, setGeneratingIds] = useState(new Set());
+  const [generateError, setGenerateError] = useState(null);
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
-  const limit = plan === 'starter' ? 100 : 3;
+  const limit = getPlanLimit(plan);
+  const limitDisplay = getPlanLimitDisplay(plan);
   const atLimit = used >= limit;
 
   useEffect(() => {
@@ -285,17 +292,19 @@ export default function DashboardPage() {
 
   async function handleQuickGenerate(id) {
     if (generatingIds.has(id)) return;
+    setGenerateError(null);
     setGeneratingIds(prev => new Set([...prev, id]));
     try {
       await api.post(`/reviews/${id}/generate`);
-      // Update activity locally
+      // Preserve original title but update type/status
       setActivities(prev => prev.map(act => 
         act.id === id 
-          ? { ...act, type: 'draft_created', status: 'Draft Ready', title: 'Reply generated for review' } 
+          ? { ...act, type: 'draft_created', status: 'Draft Ready' } 
           : act
       ));
     } catch {
-      // Ignore
+      setGenerateError(id);
+      setTimeout(() => setGenerateError(null), 4000);
     } finally {
       setGeneratingIds(prev => { const n = new Set(prev); n.delete(id); return n; });
     }
@@ -315,10 +324,10 @@ export default function DashboardPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 style={{ marginBottom: 'var(--space-2)' }}>
-          <span className="text-gradient">Activity Console</span>
+          <span className="text-gradient">Dashboard</span>
         </h1>
         <p className="text-secondary">
-          Monitor your automated replies and overall reputation heartbeat.
+          Monitor your replies, reputation, and auto-reply heartbeat.
         </p>
       </motion.div>
 
@@ -336,8 +345,8 @@ export default function DashboardPage() {
             <div>
               <strong>Monthly limit reached</strong>
               <p className="text-sm" style={{ marginTop: 'var(--space-1)', color: 'inherit', opacity: 0.85 }}>
-                You've used all {limit} replies for this month.{' '}
-                {plan === 'free' && <a href="/settings">Upgrade to Starter</a>} to unlock 100 replies/month.
+                You've used all {limitDisplay} replies for this month.{' '}
+                {plan === 'free' && <a href="/settings">Upgrade your plan</a>} to unlock more replies.
               </p>
             </div>
           </motion.div>
@@ -358,7 +367,7 @@ export default function DashboardPage() {
 
       {/* Grid Layout */}
       <div className="app-bento-grid">
-        {/* Left Column: Insight Hub */}
+        {/* Left Column: Insights */}
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           {loading ? (
              <div className="flex flex-col gap-4">
@@ -371,6 +380,7 @@ export default function DashboardPage() {
               analytics={analytics} 
               onQuickGenerate={handleQuickGenerate}
               generatingIds={generatingIds}
+              generateError={generateError}
               plan={plan}
             />
           )}
@@ -378,7 +388,7 @@ export default function DashboardPage() {
 
         {/* Right Column: Live Meter & Controls */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <LiveEngineStats used={used} limit={limit} analytics={analytics} />
+          <LiveEngineStats used={used} limitDisplay={limitDisplay} analytics={analytics} />
         </motion.div>
       </div>
     </motion.div>

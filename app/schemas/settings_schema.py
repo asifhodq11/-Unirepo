@@ -19,12 +19,17 @@ class UpdateSettingsSchema(Schema):
 
     tone_preference = fields.String(
         load_default=None,
-        validate=validate.OneOf(["friendly", "formal", "casual"]),
+        validate=validate.OneOf(["friendly", "professional", "formal", "casual"]),
     )
 
     approval_tier = fields.Integer(
         load_default=None,
         validate=validate.OneOf([1, 2, 3]),
+    )
+
+    daily_autonomy_limit = fields.Integer(
+        load_default=None,
+        validate=validate.Range(min=5, max=200),
     )
 
     class Meta:
