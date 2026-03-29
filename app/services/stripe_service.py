@@ -18,9 +18,8 @@ from app.utils.exceptions import StripeWebhookInvalid, ReplyIQError
 stripe.api_key = os.environ["STRIPE_SECRET_KEY"]
 
 # ── Idempotency guard ─────────────────────────────────────────
-# Keeps track of Stripe event IDs already processed this process
-# lifetime. Prevents duplicate plan changes on replay.
-_processed_event_ids: set[str] = set()
+# Backed by Supabase processed_webhooks table to survive re-deploys.
+# In-memory fallback removed — see migration 007_processed_webhooks.sql
 
 
 # ── Function 1: create_checkout_session ──────────────────────
@@ -50,6 +49,7 @@ def create_checkout_session(user_id: str, user_email: str, plan: str) -> str:
             client_reference_id=user_id,
             customer_email=user_email,
             metadata={"plan": plan},  # Pass plan through for webhook detection
+            subscription_data={"trial_period_days": 14} if plan == "pro" else {},
             success_url=f"{frontend_url}/dashboard?payment=success",
             cancel_url=f"{frontend_url}/pricing?payment=cancelled",
         )
@@ -108,18 +108,20 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
     event_id = event["id"]
     event_type = event["type"]
 
-    # 2. Idempotency check — skip already-processed events
-    if event_id in _processed_event_ids:
-        return {"received": True}
+    # 2. Idempotency check — DB-backed so it survives re-deploys
+    try:
+        existing = supabase.table("processed_webhooks").select("stripe_event_id").eq("stripe_event_id", event_id).execute()
+        if existing.data:
+            return {"received": True}
+    except Exception:
+        pass  # If DB check fails, process the event anyway (fail open)
 
     # 3. Handle supported event types
     if event_type == "checkout.session.completed":
         session_data = event["data"]["object"]
         user_id     = session_data.get("client_reference_id")
         customer_id = session_data.get("customer")
-        # Detect plan from metadata (set in create_checkout_session)
         plan        = session_data.get("metadata", {}).get("plan", "starter")
-        # Validate plan — only allow known paid plans
         if plan not in ("starter", "pro", "ultra"):
             plan = "starter"
 
@@ -141,13 +143,29 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
 
         if customer_id:
             supabase.table("users").update(
-                {
-                    "plan": "free",
-                }
+                {"plan": "free"}
             ).eq("stripe_customer_id", customer_id).execute()
 
-    # 4. Mark event as processed
-    _processed_event_ids.add(event_id)
+    elif event_type == "customer.subscription.deleted":
+        sub_data    = event["data"]["object"]
+        customer_id = sub_data.get("customer")
+
+        from app.utils.logger import log_event
+        log_event("webhook_subscription_cancelled", customer_id=customer_id)
+
+        if customer_id:
+            try:
+                supabase.table("users").update(
+                    {"plan": "free"}
+                ).eq("stripe_customer_id", customer_id).execute()
+            except Exception as e:
+                log_event("webhook_subscription_cancel_failed", customer_id=customer_id, error=str(e))
+
+    # 4. Mark event as processed in DB
+    try:
+        supabase.table("processed_webhooks").insert({"stripe_event_id": event_id}).execute()
+    except Exception:
+        pass  # Non-fatal — event was still processed
 
     return {"received": True}
 
