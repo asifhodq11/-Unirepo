@@ -4,6 +4,7 @@ import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, MessageSquare } from 'lucide-react';
 import { getPlanLimitDisplay, TONE_OPTIONS, PLAN_LABELS } from '../utils/plans';
+import PricingModal from '../components/modals/PricingModal';
 
 const CANCEL_REASONS = [
   'Too expensive for my needs',
@@ -27,6 +28,9 @@ export default function SettingsPage() {
   // Churn Shield state machine
   const [cancelStep, setCancelStep]     = useState(0);
   const [cancelReason, setCancelReason] = useState('');
+
+  // Pricing modal
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Autonomy Dial (Pro plan only)
   const [autonomyLimit, setAutonomyLimit] = useState(20);
@@ -293,79 +297,44 @@ export default function SettingsPage() {
               </span>
             </div>
             
-            {plan === 'free' ? (
-              <div className="w-full">
-                <div className="alert flex items-start gap-4" style={{ marginBottom: 'var(--space-6)', background: 'transparent', border: '1px dashed var(--border)', padding: 'var(--space-5)' }}>
-                  <div style={{ background: 'var(--accent)', color: '#000', padding: '10px', borderRadius: '50%' }}>
-                    <ArrowUpRight size={24} />
-                  </div>
-                  <div>
-                    <h4 className="text-gradient" style={{ marginBottom: '4px' }}>Choose Your Plan</h4>
-                    <p className="text-sm text-secondary" style={{ lineHeight: '1.6' }}>
-                      <strong>Starter</strong> — 100 replies/mo, you click Generate.<br />
-                      <strong>Pro</strong> — Fully autonomous, 24/7 auto-reply heartbeat.
-                    </p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-3 btn-stack-mobile">
-                  <button id="upgrade-starter-btn" className="btn btn-secondary flex-1" disabled={checkoutLoading} onClick={() => handleUpgrade('starter')}>
-                    {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Starter Plan'}
-                  </button>
-                  <button
-                    id="upgrade-pro-btn"
-                    className="btn btn-primary flex-1"
-                    disabled={checkoutLoading}
-                    onClick={() => handleUpgrade('pro')}
-                  >
-                    {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Pro Plan'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 w-full mt-4">
-                <p className="text-sm text-secondary mb-4">
-                  {plan === 'pro'
-                    ? 'You are on the Pro plan. Your auto-reply heartbeat runs 24/7, capped by your daily limit in settings.'
-                    : 'You are on the Starter plan. Reviews are collected automatically — you generate replies on demand.'
-                  }
-                </p>
+            {/* ── Billing Actions ─────────────────────────────── */}
+            <div className="flex flex-col gap-3 w-full mt-2">
+              <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>
+                {plan === 'ultra'
+                  ? 'You are on the Ultra plan — the highest tier. Unlimited replies, VIP support, and custom brand models.'
+                  : plan === 'pro'
+                  ? 'You are on the Pro plan. Your auto-reply heartbeat runs 24/7, capped by your daily limit in settings.'
+                  : plan === 'starter'
+                  ? 'You are on the Starter plan. Reviews are collected automatically — you generate replies on demand.'
+                  : 'You are on the Free plan. Upgrade anytime to unlock automation.'
+                }
+              </p>
 
-                {/* Upgrade to Pro — only for Starter users */}
-                {plan === 'starter' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    style={{
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: 'var(--space-4)',
-                    }}
-                  >
-                    <div className="flex items-start gap-3" style={{ marginBottom: 'var(--space-3)' }}>
-                      <div style={{ padding: '4px', flexShrink: 0 }}>
-                        <ArrowUpRight size={18} className="text-muted" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium" style={{ marginBottom: '2px' }}>Upgrade to Pro</p>
-                        <p className="text-xs text-muted" style={{ lineHeight: 1.5 }}>
-                          Let your auto-reply respond 24/7 — no clicking required.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      id="upgrade-pro-btn"
-                      className="btn btn-primary w-full"
-                      style={{ fontSize: '0.9rem' }}
-                      disabled={checkoutLoading}
-                      onClick={() => handleUpgrade('pro')}
-                    >
-                      {checkoutLoading ? <><span className="spinner" /> Redirecting…</> : 'Upgrade to Pro'}
-                    </button>
-                  </motion.div>
-                )}
+              {/* Single unified upgrade / manage button */}
+              {plan !== 'ultra' ? (
+                <button
+                  id="manage-plan-btn"
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.9rem', alignSelf: 'flex-start' }}
+                  onClick={() => setShowPricingModal(true)}
+                >
+                  <ArrowUpRight size={16} style={{ marginRight: 6 }} />
+                  Upgrade Plan
+                </button>
+              ) : (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                  borderRadius: 8, padding: '8px 14px', fontSize: '0.85rem',
+                  color: 'var(--accent)', fontWeight: 600,
+                }}>
+                  ✓ You are on Ultra — the highest tier
+                </div>
+              )}
 
-                <div className="flex flex-wrap gap-3 btn-stack-mobile">
+              {/* Billing portal + cancel (for paid plans) */}
+              {plan !== 'free' && (
+                <div className="flex flex-wrap gap-3 btn-stack-mobile" style={{ marginTop: 4 }}>
                   <button id="billing-portal-btn" className="btn btn-secondary flex-1" disabled={portalLoading} onClick={handlePortal}>
                     {portalLoading ? <><span className="spinner" /> Connecting…</> : 'Billing Portal'}
                   </button>
@@ -373,8 +342,8 @@ export default function SettingsPage() {
                     Cancel Plan
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* ═══════════════════════════════════════════════════
                 3-STEP CHURN SHIELD
@@ -527,6 +496,13 @@ export default function SettingsPage() {
         </motion.div>
 
       </div>
+
+      {/* Pricing Modal — mounted at page root to avoid z-index issues */}
+      <PricingModal
+        isOpen={showPricingModal}
+        onClose={() => setShowPricingModal(false)}
+        currentPlan={plan}
+      />
     </motion.div>
   );
 }
