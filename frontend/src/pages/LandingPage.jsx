@@ -339,8 +339,8 @@ export default function LandingPage() {
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
           <span>© 2026 ReplyIQ. Engine Online.</span>
           <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-            <span style={{ cursor: 'pointer' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Privacy</span>
-            <span style={{ cursor: 'pointer' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Terms</span>
+            <Link to="/privacy" style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Privacy</Link>
+            <Link to="/terms"   style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Terms</Link>
           </div>
         </div>
       </footer>

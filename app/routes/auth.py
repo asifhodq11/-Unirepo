@@ -1,8 +1,9 @@
 from flask import Blueprint, g, make_response, current_app
+import os
 
 from app.extensions import supabase, limiter
 from app.models.user_model import create_user, get_user_by_id
-from app.schemas.auth_schema import LoginSchema, SignupSchema
+from app.schemas.auth_schema import LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema
 from app.services.gdpr_service import anonymise_user
 from app.utils.decorators import require_auth, validate_request
 from app.utils.errors import build_error
@@ -165,3 +166,59 @@ def delete_account():
     response = make_response({"status": "deleted"}, 200)
     _clear_session_cookie(response)
     return response
+
+
+# ──────────────────────────────────────────────────────────────
+# POST /api/v1/auth/forgot-password
+# ──────────────────────────────────────────────────────────────
+@auth_bp.route("/forgot-password", methods=["POST"])
+@limiter.limit("5 per hour")
+@validate_request(ForgotPasswordSchema)
+def forgot_password():
+    """
+    Sends a password reset email via Supabase.
+    SECURITY: Always returns HTTP 200 regardless of whether the email exists
+    to prevent user enumeration attacks.
+    """
+    data = g.validated_data
+    email = data["email"]
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+    try:
+        supabase.auth.reset_password_for_email(
+            email,
+            options={"redirect_to": f"{frontend_url}/reset-password"},
+        )
+        log_event("password_reset_requested", email=email)
+    except Exception as e:
+        # Log but do not expose — always return the same message
+        log_event("password_reset_error", error=str(e))
+
+    return {"message": "If that email is registered, a reset link has been sent."}, 200
+
+
+# ──────────────────────────────────────────────────────────────
+# POST /api/v1/auth/reset-password
+# ──────────────────────────────────────────────────────────────
+@auth_bp.route("/reset-password", methods=["POST"])
+@limiter.limit("5 per hour")
+@validate_request(ResetPasswordSchema)
+def reset_password():
+    """
+    Receives the access_token from the Supabase reset email link and
+    updates the user's password.
+    """
+    data = g.validated_data
+    access_token = data["access_token"]
+    new_password = data["new_password"]
+
+    try:
+        # Set the session using the token from the email link
+        supabase.auth.set_session(access_token, "")
+        supabase.auth.update_user({"password": new_password})
+        log_event("password_reset_success")
+    except Exception as e:
+        log_event("password_reset_update_failed", error=str(e))
+        return build_error("SERVER_ERROR")
+
+    return {"message": "Password updated successfully. Please log in."}, 200

@@ -12,6 +12,10 @@ import HistoryPage  from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import ApprovalPage from './pages/ApprovalPage';
 import LandingPage  from './pages/LandingPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage  from './pages/ResetPasswordPage';
+import PrivacyPolicyPage  from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 // Layout
 import AppLayout from './components/layout/AppLayout';
@@ -81,8 +85,14 @@ function Router() {
       <Route path="/landing" element={<LandingPage />} />
 
       {/* Public routes */}
-      <Route path="/login"  element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
+      <Route path="/login"           element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/signup"          element={<PublicRoute><SignupPage /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      <Route path="/reset-password"  element={<ResetPasswordPage />} />
+
+      {/* Legal pages — always public, no auth guard */}
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms"   element={<TermsOfServicePage />} />
 
       {/* Public token route — no login needed */}
       <Route path="/approve/:token" element={<ApprovalPage />} />

@@ -34,3 +34,22 @@ class LoginSchema(Schema):
         required=True, error_messages={"required": "Email is required.", "invalid": "Enter a valid email address."}
     )
     password = fields.String(required=True, error_messages={"required": "Password is required."})
+
+
+class ForgotPasswordSchema(Schema):
+    email = fields.Email(
+        required=True,
+        error_messages={"required": "Email is required.", "invalid": "Enter a valid email address."},
+    )
+
+
+class ResetPasswordSchema(Schema):
+    access_token = fields.String(
+        required=True,
+        error_messages={"required": "Reset token is required."},
+    )
+    new_password = fields.String(
+        required=True,
+        validate=validate.Length(min=8, error="Password must be at least 8 characters."),
+        error_messages={"required": "New password is required."},
+    )
