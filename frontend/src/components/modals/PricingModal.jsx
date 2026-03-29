@@ -55,15 +55,6 @@ const PLANS = [
 // ─── Plan Tier Order (for upgrade/downgrade logic) ───────────────
 const PLAN_ORDER = ['free', 'starter', 'pro', 'ultra'];
 
-function getPlanStatus(cardPlan, currentPlan) {
-  const cardIdx    = PLAN_ORDER.indexOf(cardPlan);
-  const currentIdx = PLAN_ORDER.indexOf(currentPlan || 'free');
-
-  if (cardPlan === currentPlan) return 'current';
-  if (cardPlan === 'free')      return 'downgrade';   // can't pay to downgrade to free
-  if (cardIdx > currentIdx)    return 'upgrade';
-  return 'downgrade';
-}
 
 // ─── Component ───────────────────────────────────────────────────
 export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) {
@@ -88,10 +79,12 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
     }
   }
 
-  function getButtonProps(plan) {
-    const status = getPlanStatus(plan.key, currentPlan);
+  function getButtonProps(plan, currentPlan, loadingPlan) {
+    const cardIdx    = PLAN_ORDER.indexOf(plan.key);
+    const currentIdx = PLAN_ORDER.indexOf(currentPlan || 'free');
 
-    if (status === 'current') {
+    // ── Current plan ────────────────────────────────────────────
+    if (plan.key === currentPlan) {
       return {
         label: '✓ Current Plan',
         disabled: true,
@@ -105,20 +98,22 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
       };
     }
 
-    if (status === 'downgrade' || plan.key === 'free') {
+    // ── Lower tier — cannot downgrade, show grayed out ──────────
+    if (cardIdx < currentIdx) {
       return {
-        label: plan.key === 'free' ? 'Free (Current if downgraded)' : 'Contact Support',
+        label: plan.name,          // just the plan name, no confusing text
         disabled: true,
         style: {
           background: 'rgba(255,255,255,0.03)',
           color: 'var(--text-muted)',
           border: '1px solid rgba(255,255,255,0.06)',
           cursor: 'not-allowed',
+          opacity: 0.5,
         },
       };
     }
 
-    // upgrade path
+    // ── Higher tier — upgrade path ──────────────────────────────
     const isLoading = loadingPlan === plan.key;
     return {
       label: isLoading ? 'Redirecting…' : plan.buttonLabel,
@@ -220,10 +215,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
                 alignItems: 'stretch',
               }}>
                 {PLANS.map((plan) => {
-                  const status = getPlanStatus(plan.key, currentPlan);
-                  const btnProps = getButtonProps(plan);
-                  const isCurrent = status === 'current';
-                  const isHighlight = plan.highlight && status !== 'current';
+                  const cardIdx    = PLAN_ORDER.indexOf(plan.key);
+                  const currentIdx = PLAN_ORDER.indexOf(currentPlan || 'free');
+                  const btnProps = getButtonProps(plan, currentPlan, loadingPlan);
+                  const isCurrent   = plan.key === currentPlan;
+                  const isHighlight = plan.highlight && !isCurrent && cardIdx > currentIdx;
 
                   return (
                     <motion.div
