@@ -12,7 +12,7 @@ const PLANS = [
     tagline: 'Kick the tires',
     price: '$0',
     period: '/mo',
-    features: ['10 manual AI replies', 'History dashboard'],
+    features: ['5 manual AI replies', 'History dashboard'],
     buttonLabel: 'Current Plan',
     highlight: false,
     icon: <Star size={18} />,
