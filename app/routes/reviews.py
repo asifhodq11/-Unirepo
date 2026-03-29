@@ -61,7 +61,7 @@ def generate():
     log_event("ai_generation_start", user_id=user_id, review_id=saved_review["id"])
     start_time = time.time()
 
-    reply_text = generate_reply(
+    ai_result = generate_reply(
         business_name=user.get("business_name", "your business"),
         business_type=user.get("business_type", "business"),
         tone_preference=user.get("tone_preference", "friendly"),
@@ -79,10 +79,12 @@ def generate():
     # Column names match 003_create_replies.sql; is_deleted has DB DEFAULT
     reply_data = {
         "review_id": saved_review["id"],
-        "reply_text": reply_text,
+        "reply_text": ai_result["text"],
         "status": "draft",
         "generation_ms": duration_ms,
-        "model_used": model_used,
+        "model_used": ai_result.get("model_used", model_used),
+        "tokens_used": ai_result["tokens"],
+        "cost_usd": ai_result["cost_usd"],
     }
 
     saved_reply = insert_reply(user_id, reply_data)
@@ -148,7 +150,7 @@ def generate_for_existing(review_id):
     log_event("on_demand_generation_start", user_id=user_id, review_id=review_id)
     start_time = time.time()
 
-    reply_text = generate_reply(
+    ai_result = generate_reply(
         business_name=user.get("business_name", "your business"),
         business_type=user.get("business_type", "business"),
         tone_preference=user.get("tone_preference", "friendly"),
@@ -163,10 +165,12 @@ def generate_for_existing(review_id):
     # 5. Save reply
     reply_data = {
         "review_id":     review_id,
-        "reply_text":    reply_text,
+        "reply_text":    ai_result["text"],
         "status":        "draft",
         "generation_ms": duration_ms,
-        "model_used":    model_used,
+        "model_used":    ai_result.get("model_used", model_used),
+        "tokens_used":   ai_result["tokens"],
+        "cost_usd":      ai_result["cost_usd"],
     }
     saved_reply = insert_reply(user_id, reply_data)
     if not saved_reply:

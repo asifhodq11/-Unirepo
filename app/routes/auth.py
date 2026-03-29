@@ -3,7 +3,14 @@ import os
 
 from app.extensions import supabase, limiter
 from app.models.user_model import create_user, get_user_by_id
-from app.schemas.auth_schema import LoginSchema, SignupSchema, ForgotPasswordSchema, ResetPasswordSchema
+from app.schemas.auth_schema import (
+    LoginSchema,
+    SignupSchema,
+    ForgotPasswordSchema,
+    ResetPasswordSchema,
+    ResendVerificationSchema,
+    VerifyEmailSchema,
+)
 from app.services.gdpr_service import anonymise_user
 from app.utils.decorators import require_auth, validate_request
 from app.utils.errors import build_error
@@ -96,9 +103,13 @@ def signup():
 
     log_event("user_signup", user_id=user_id, plan="free")
 
+    # If Supabase has email confirmation enabled, session will be None.
+    # Return 202 Accepted so the frontend can show "check your inbox" UI.
+    if not auth_response.session:
+        return {"status": "verification_required", "message": "Check your inbox to verify your email address."}, 202
+
     response = make_response({"user": user}, 201)
-    if auth_response.session:
-        _set_session_cookie(response, auth_response.session.access_token)
+    _set_session_cookie(response, auth_response.session.access_token)
     return response
 
 
@@ -118,7 +129,11 @@ def login():
                 "password": data["password"],
             }
         )
-    except Exception:
+    except Exception as e:
+        error_msg = str(e).lower()
+        # Supabase raises an exception (not just returns null session) when email isn't confirmed.
+        if "email not confirmed" in error_msg or "not confirmed" in error_msg:
+            return build_error("EMAIL_NOT_VERIFIED")
         return build_error("INVALID_CREDENTIALS")
 
     if not auth_response.user or not auth_response.session:
@@ -127,7 +142,6 @@ def login():
     user = get_user_by_id(auth_response.user.id)
     if not user:
         # Auth succeeded but no profile row exists — the account was never fully created.
-        # Guide the user to sign up instead.
         return build_error("INVALID_CREDENTIALS")
 
     response = make_response({"user": user}, 200)
@@ -222,3 +236,66 @@ def reset_password():
         return build_error("SERVER_ERROR")
 
     return {"message": "Password updated successfully. Please log in."}, 200
+
+
+# ──────────────────────────────────────────────────────────────
+# POST /api/v1/auth/resend-verification
+# ──────────────────────────────────────────────────────────────
+@auth_bp.route("/resend-verification", methods=["POST"])
+@limiter.limit("3 per hour")
+@validate_request(ResendVerificationSchema)
+def resend_verification():
+    """
+    Resends the email verification link.
+    SECURITY: Always returns HTTP 200 to prevent email enumeration.
+    """
+    data = g.validated_data
+    email = data["email"]
+    frontend_url = os.environ.get("FRONTEND_URL", "http://localhost:5173")
+
+    try:
+        supabase.auth.resend({
+            "type": "signup",
+            "email": email,
+            "options": {"email_redirect_to": f"{frontend_url}/auth/callback"},
+        })
+        log_event("verification_resent", email=email)
+    except Exception as e:
+        log_event("verification_resend_error", error=str(e))
+
+    return {"message": "If that email is registered and unverified, a new link has been sent."}, 200
+
+
+# ──────────────────────────────────────────────────────────────
+# POST /api/v1/auth/verify-email
+# ──────────────────────────────────────────────────────────────
+@auth_bp.route("/verify-email", methods=["POST"])
+@limiter.limit("10 per hour")
+@validate_request(VerifyEmailSchema)
+def verify_email():
+    """
+    Exchanges the access_token from the email confirmation magic link for a
+    real session. Sets the httpOnly session cookie and returns the user object.
+    Called by AuthCallbackPage.jsx after Supabase redirects the user to /auth/callback.
+    """
+    data = g.validated_data
+    access_token = data["access_token"]
+
+    try:
+        # Exchange the OTP / one-time token for a live session
+        session_response = supabase.auth.set_session(access_token, "")
+        if not session_response or not session_response.user:
+            return build_error("TOKEN_INVALID")
+
+        user = get_user_by_id(session_response.user.id)
+        if not user:
+            return build_error("INVALID_CREDENTIALS")
+
+        log_event("email_verified", user_id=session_response.user.id)
+    except Exception as e:
+        log_event("email_verify_error", error=str(e))
+        return build_error("TOKEN_INVALID")
+
+    response = make_response({"user": user}, 200)
+    _set_session_cookie(response, access_token)
+    return response

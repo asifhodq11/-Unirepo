@@ -2,15 +2,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import FloatingGenerator from '../FloatingGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, LayoutDashboard, Settings, MessageSquarePlus } from 'lucide-react';
+import { Activity, LayoutDashboard, Settings, MessageSquarePlus, Shield } from 'lucide-react';
 import { getPlanLimit, getPlanLimitDisplay, PLAN_LABELS } from '../../utils/plans';
 import ThemeToggle from '../ThemeToggle';
-
-const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard',  icon: Activity },
-  { to: '/history',   label: 'History',   icon: LayoutDashboard },
-  { to: '/settings',  label: 'Settings',  icon: Settings },
-];
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
@@ -24,6 +18,16 @@ export default function AppLayout() {
   const pct = plan === 'pro' ? Math.min(100, Math.round((used / 200) * 100)) : Math.min(100, Math.round((used / limit) * 100));
   const progressClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warning' : '';
 
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard',  icon: Activity },
+    { to: '/history',   label: 'History',   icon: LayoutDashboard },
+    { to: '/settings',  label: 'Settings',  icon: Settings },
+  ];
+
+  if (user?.is_admin) {
+    navItems.push({ to: '/admin', label: 'Admin Panel', icon: Shield });
+  }
+
   return (
     <div className="app-layout">
       {/* ── Sidebar ─────────────────────── */}
@@ -36,7 +40,7 @@ export default function AppLayout() {
           <ThemeToggle />
         </div>
 
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -110,7 +114,7 @@ export default function AppLayout() {
 
       {/* ── Mobile Bottom Navigation ─────── */}
       <nav className="bottom-nav" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

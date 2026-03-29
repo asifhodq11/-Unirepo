@@ -110,7 +110,7 @@ def run_simulation_poller():
             # 2d. Trigger the AI Pipeline (Pro plan under daily limit)
             start_time = time.time()
             try:
-                ai_text = generate_reply(
+                ai_result = generate_reply(
                     business_name=biz_name,
                     business_type=biz_type,
                     tone_preference=tone,
@@ -122,10 +122,12 @@ def run_simulation_poller():
                 
                 reply_record = {
                     "review_id":     review_db_id,
-                    "reply_text":    ai_text,
+                    "reply_text":    ai_result["text"],
                     "status":        "draft",
-                    "model_used":    "simulation_poller_auto",
+                    "model_used":    ai_result.get("model_used", "simulation_poller_auto"),
                     "generation_ms": gen_ms,
+                    "tokens_used":   ai_result["tokens"],
+                    "cost_usd":      ai_result["cost_usd"],
                 }
                 insert_reply(user_id, reply_record)
                 increment_usage(user_id)

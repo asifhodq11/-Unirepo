@@ -39,6 +39,22 @@ def require_auth(f):
     return decorated
 
 
+def require_admin(f):
+    """
+    Extends require_auth to ensure the user has the is_admin boolean set to TRUE.
+    Returns 403 FORBIDDEN if the user is authenticated but not an admin.
+    """
+    @wraps(f)
+    @require_auth
+    def decorated(*args, **kwargs):
+        if not g.current_user.get("is_admin", False):
+            from app.utils.errors import build_error
+            return build_error("FORBIDDEN", details="You do not have permission to access the admin panel."), 403
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def validate_request(schema_class):
     """
     Validates request.json against the given Marshmallow schema.

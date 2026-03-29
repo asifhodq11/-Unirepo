@@ -1,87 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plan>
-    <phase id="1" name="Build the Resilient Fallback (Router of Routers)">
-        <task id="1.1">
-            <description>Update call_llm to intercept expected AIBadRequest/AIBilling errors and retry with a robust fallback model (gpt-4o-mini).</description>
-            <action>Modify app/services/ai_engine.py `call_llm` function to catch AIBadRequestError and AIServiceError during the `openrouter` request. If caught, instead of crashing, attempt the request again forcing `model_id="gpt-4o-mini"` directly.</action>
-            <verify>Ensure 400 Bad Request errors trigger the fallback loop and return a successful string instead of a 500 JSON response.</verify>
-        </task>
-    </phase>
-    <phase id="2" name="Direct Google Gemini Integration">
-        <task id="2.1">
-            <description>Update the pipeline to bypass OpenRouter entirely for standard requests when GEMINI_API_KEY is present.</description>
-            <action>Modify app/services/ai_engine.py to check if AI_PROVIDER is set to native Gemini or if the router explicitly routes to Gemini SDK. Ensure the genai.Client is called directly for 5-star short reviews to eliminate OpenRouter rate limits.</action>
-            <verify>Run a 5-star review request and check logs to confirm it hit the Gemini SDK natively rather than OpenRouter.</verify>
-        </task>
-    </phase>
-    <phase id="3" name="Finalize Payment Upgrade Loop">
-        <task id="3.1">
-            <description>Review and enhance the Stripe Webhook handler to ensure database subscription state changes to "Pro" when payment succeeds.</description>
-            <action>Audit app/services/stripe_service.py for the `checkout.session.completed` event. Ensure user profile metadata is correctly updated in Supabase. Ask the user to inject STRIPE_WEBHOOK_SECRET into the deployment.</action>
-            <verify>Simulate a completed checkout and verify in the frontend UI that the user's tier has visually shifted from Free to Pro.</verify>
-        </task>
-    </phase>
-    <phase id="5" name="V3 Premium Bento UI Overhaul">
-        <task id="5.1">
-            <description>V3 Global Aesthetics &amp; Animated Mesh</description>
-            <action>Completely rip out the old color palette in `index.css`. Implement a deep midnight background (`#09090b`) with an animated radial mesh gradient (Cyan/Violet). Upgrade `AppLayout` to have a floating glass sidebar rather than a solid block.</action>
-            <verify>The app backdrop feels alive and premium, not flat and empty.</verify>
-        </task>
-        <task id="5.2">
-            <description>Dashboard Bento Box Restructuring</description>
-            <action>Refactor `DashboardPage.jsx` from a top-down single column into a wide CSS Grid 'Bento Box' layout. Left side: The AI Generator. Right Side: The Result Output *plus* a 'Live Routing Engine' visualizer to fill empty space.</action>
-            <verify>The dashboard is visually dense and balanced, eliminating the 'empty' problem.</verify>
-        </task>
-        <task id="5.3">
-            <description>Form &amp; Component Polishing</description>
-            <action>Upgrade `ReplyGenerator.jsx` to use glowing border interactions, segmented controls for the Star Rating instead of floating emojis, and crisp micro-typography. Add decorative animated elements.</action>
-            <verify>The inputs feel tactile and satisfying to interact with.</verify>
-        </task>
-    </phase>
-    <phase id="6" name="V4 Universal Bento UI Upgrade">
-        <task id="6.1">
-            <description>100x History Page Layout</description>
-            <action>Refactor `HistoryPage.jsx` from a flat vertical list to a stunning Bento Grid or Masonry layout. Use `framer-motion` for staggered entries. Replace all `⭐` with `lucide-react` Star icons and swap `▲/▼` chevrons for `ChevronDown/Up` vectors.</action>
-            <verify>History looks like a premium intelligence feed, not a boring log table.</verify>
-        </task>
-        <task id="6.2">
-            <description>100x Settings Dashboard</description>
-            <action>Refactor `SettingsPage.jsx` into a 2x2 or 3x2 Bento grid. Transform the Usage stats into glowing glass telemetry metrics. Replace all emojis (`🚀`, `💳`) with premium `lucide-react` icons. Make the input focus rings inherit the V3 Cyan/Violet glow.</action>
-            <verify>The Settings page feels like a high-tech command center.</verify>
-        </task>
-    </phase>
-    <phase id="7" name="V5: Dual Automation Strategy (Simulation + Email Intercept)">
-        <task id="7.1">
-            <description>Option A: The Mock Google Engine</description>
-            <action>Create `app/services/mock_google.py` with a `generate_fake_reviews(business_name)` function. It should return a list of JSON dictionaries mimicking standard Google API schemas with randomized review texts and star ratings.</action>
-            <verify>Calling the function returns 1-5 structurally sound "fake" reviews.</verify>
-        </task>
-        <task id="7.2">
-            <description>Option A: The 15-Minute Poller Service</description>
-            <action>Create a standalone Python script `run_poller.py`. It queries Supabase for all active users, calls `mock_google.generate_fake_reviews()`, deduplicates against existing records in the `reviews` table, and runs the `ai_engine.generate_reply()` pipeline for any new items.</action>
-            <verify>Running `python run_poller.py` populates the database iteratively without user interaction.</verify>
-        </task>
-        <task id="7.3">
-            <description>Option B: The Inbound Email Webhook</description>
-            <action>Create `app/routes/webhooks.py` with `POST /api/v1/webhooks/inbound-email`. It accepts raw multiparts or JSON (e.g., Sendgrid Inbound Parse format), extracts the sender address and body text (the review), looks up the user, runs the AI engine, and saves the draft.</action>
-            <verify>Targeting the endpoint with a test cURL command successfully generates an AI draft in Supabase.</verify>
-        </task>
-        <task id="7.4">
-            <description>Option B: The Dispatch Return Loop</description>
-            <action>Integrate `resend` (from Phase 2 plans) into the webhook route. After generating the AI reply, use `email_service.send_reply_email()` to immediately email the generated response back to the user's registered email with a 'Click to Copy' format.</action>
-            <verify>A triggered webhook results in a delivered standard HTML email.</verify>
-        </task>
-    </phase>
-    <phase id="8" name="V6: Advanced Analytics & Churn Shield">
-        <task id="8.1">
-            <description>3-Step Strategic Cancellation Flow</description>
-            <action>Implement a non-one-click cancellation funnel. Step 1: Show saved hours/stats. Step 2: Pitch 'Pause' or 'Downgrade'. Step 3: Collect deep-dive exit reason.</action>
-            <verify>Cancellation reduces churn by providing high-value friction as per Bible Chapter 10.</verify>
-        </task>
-        <task id="8.2">
-            <description>Telemetry Insights Dashboard</description>
-            <action>Build a new 'Analytics' page with Recharts/Framer Motion showing Star Rating trends, Reply Frequency, and Sentiment Heatmaps.</action>
-            <verify>The dashboard provides visual proof of business impact.</verify>
-        </task>
-    </phase>
-</plan>
+<PLAN version="1.0" objective="Internal Admin Panel">
+
+  <context>
+    <stack>
+      <backend>Flask / Python</backend>
+      <database>Supabase (PostgreSQL)</database>
+      <frontend>React / Vite / Tailwind</frontend>
+    </stack>
+    <problem>
+      We possess granular AI cost and usage metrics in the database, but no internal UI to visualize business health (MRR, Total Cost, User Activity).
+      Without a proper Admin dashboard, evaluating the profitability of the SaaS requires manual SQL querying.
+    </problem>
+  </context>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       WAVE 1 — Database & Authentication
+       ═══════════════════════════════════════════════════════════ -->
+  <wave id="1" label="Admin Role Schema">
+    <task id="1.1" file="supabase/migrations/011_admin_role.sql" type="NEW">
+      Create migration adding `is_admin BOOLEAN DEFAULT false` to `public.users`.
+    </task>
+
+    <task id="1.2" file="app/utils/decorators.py">
+      Create a new `@require_admin` decorator that extends `@require_auth`
+      to verify `g.current_user["is_admin"]` is True.
+    </task>
+
+    <task id="1.3" file="app/routes/auth.py">
+      Update login/signup/me routes to include the `is_admin` flag in the returned user object.
+      Update `user_schema.py` if necessary over the API interface.
+    </task>
+  </wave>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       WAVE 2 — Backend Admin API
+       ═══════════════════════════════════════════════════════════ -->
+  <wave id="2" label="Admin Metrics Endpoints">
+    <task id="2.1" file="app/routes/admin.py" type="NEW">
+      Create a new Blueprint for admin endpoints. Guarded by `@require_admin`.
+      Route `GET /api/v1/admin/stats`:
+      - Calculate Total Users, Total MRR (estimated off plans), Total API Cost, Total Replies.
+      Route `GET /api/v1/admin/users`:
+      - Paginated list of all users, their plan, their used quota, and cost generated.
+    </task>
+
+    <task id="2.2" file="app/main.py">
+      Register the `admin_bp` under `/api/v1/admin`.
+    </task>
+  </wave>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       WAVE 3 — Frontend Internal UI
+       ═══════════════════════════════════════════════════════════ -->
+  <wave id="3" label="React Admin Dashboard">
+    <task id="3.1" file="frontend/src/pages/AdminPage.jsx" type="NEW">
+      Create a strictly gated Admin page fetching the new endpoints.
+      Design a 4-card metric layout (Users, Total MRR, AI Cost, Margin %) and a table for user management.
+    </task>
+
+    <task id="3.2" file="frontend/src/components/layout/Sidebar.jsx">
+      Conditionally render an "Admin Panel" sidebar link only if `user?.is_admin` is true.
+    </task>
+
+    <task id="3.3" file="frontend/src/App.jsx">
+      Register the `<Route path="/admin" element={<AdminPage />} />` under the Protected Route structure.
+    </task>
+  </wave>
+
+</PLAN>

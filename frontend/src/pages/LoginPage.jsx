@@ -1,29 +1,42 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ApiError } from '../api/client';
-import { MessageSquareText, AlertTriangle } from 'lucide-react';
+import { api, ApiError } from '../api/client';
+import { MessageSquareText, AlertTriangle, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const [form, setForm]   = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]           = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [resendSent, setResendSent]     = useState(false);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setEmailNotVerified(false);
     setLoading(true);
     try {
       await login(form.email, form.password);
-      // AuthContext redirects via router — no need to navigate manually
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Login failed. Please try again.');
+      if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED') {
+        setEmailNotVerified(true);
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleResendFromLogin() {
+    try {
+      await api.post('/auth/resend-verification', { email: form.email });
+    } catch { /* silent fail */ }
+    setResendSent(true);
   }
 
   return (
@@ -45,6 +58,32 @@ export default function LoginPage() {
         {error && (
           <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '1rem' }}>
             <AlertTriangle size={18} /> {error}
+          </div>
+        )}
+
+        {emailNotVerified && (
+          <div style={{
+            marginBottom: '1rem', padding: '0.85rem 1rem', borderRadius: '10px',
+            background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)',
+            display: 'flex', flexDirection: 'column', gap: '0.4rem',
+          }}>
+            <div className="flex items-center gap-2" style={{ color: '#eab308', fontSize: '0.875rem', fontWeight: 600 }}>
+              <Mail size={16} /> Email not verified
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
+              Please click the link we sent to <strong>{form.email || 'your inbox'}</strong>.
+            </p>
+            {!resendSent ? (
+              <button
+                type="button"
+                onClick={handleResendFromLogin}
+                style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, padding: 0, textAlign: 'left', marginTop: '0.15rem' }}
+              >
+                Resend verification email →
+              </button>
+            ) : (
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>✓ Verification email sent. Check your inbox.</span>
+            )}
           </div>
         )}
 

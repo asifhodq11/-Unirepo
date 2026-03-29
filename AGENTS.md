@@ -1,16 +1,30 @@
-# 🚀 ReplyIQ: Antigravity Agent Orchestration Rules
+# 🚀 ReplyIQ: GSD 100x Orchestration Rules
 
-This file defines the project vision and model routing preferences for the Antigravity Agent Manager.
+This file defines the project vision and model selection preferences for a high-performance, manual-handover experience.
 
-## 🎯 Model Routing Preferences (Automatic Handover)
-Antigravity should prefer these models based on the `task_boundary` name:
+## 🎯 Manual Model Preferences (GSD 100x)
+When prompts ask for a handover, the user should manually select these models:
 
-- **Researching/Searching/Analyzing:** `Gemini 3.1 Pro` (2M Context)
-- **Architecture/Discussing/Trade-offs:** `Gemini 3 Pro`
-- **Planning/Designing/Spec-Writing:** `Claude 4.6 Sonnet (Thinking Mode)`
-- **Implementing/Coding/Bug-fixing:** `Claude 4.6 Opus`
-- **Verifying/Testing/Checking:** `Gemini 3 Flash`
-- **Auditing/Summarizing/Documentation:** `GPT-OSS-120B`
+- **Phase 1 (Research):** `Gemini 3.1 Pro` -> **[DEEP RESEARCH MODE]**
+- **Phase 2 (Planning):** `Claude 4.6 Sonnet` -> **[SYSTEM / EXECUTION MODE]**
+- **Phase 3 (Execution):** `Claude 4.6 Sonnet` -> **[PRECISION / NON-GENERIC MODE]** + **[RALPH / CLOSURE LOOP]**
+- **Phase 4 (Verification):** `Gemini 3 Flash` -> **[CODERABBIT / AUDITOR MODE]**
+
+---
+
+## 🛠️ The "Right Brain" Audit
+Every model in this workspace MUST check its suitability before starting:
+- **Badge:** `🤖 [MODEL]: I am the [CORRECT/FALLBACK/WRONG] brain for Phase [N].`
+- **Advice:** If the wrong model is selected, the model must advise a switch before proceeding.
+
+---
+
+## 🆘 Claude Quota Fallback
+If the user specifies **"Claude quota over"**:
+- **Substitute:** `Gemini 3.1 Pro` becomes the primary brain for Phase 2 & 3.
+- **Logic:** Gemini must adopt a **High Reasoning** persona using recursive thinking to match Claude-level quality.
+
+---
 
 ## 🏗️ Project Architecture: ReplyIQ
 - **Framework:** Flask (Backend) + React (Frontend - Vite)
@@ -18,11 +32,6 @@ Antigravity should prefer these models based on the `task_boundary` name:
 - **Payments:** Stripe (Usage-based billing)
 - **Deployment:** Railway / Docker Monorepo
 
-## 🛠️ State Protocols
-- Always check `.planning/STATE.md` before starting a new `task_boundary`.
-- Every major architectural decision must be logged in `DECISIONS.md`.
-- All model handovers MUST preserve the session context via the `.planning/` buffer.
-
 ---
 > [!NOTE]
-> These rules are active for all agents working in the `replyiq-monorepo` workspace.
+> These rules are active for all models working in the `replyiq-monorepo` workspace.

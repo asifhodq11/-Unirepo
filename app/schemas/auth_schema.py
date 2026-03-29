@@ -53,3 +53,17 @@ class ResetPasswordSchema(Schema):
         validate=validate.Length(min=8, error="Password must be at least 8 characters."),
         error_messages={"required": "New password is required."},
     )
+
+
+class ResendVerificationSchema(Schema):
+    email = fields.Email(
+        required=True,
+        error_messages={"required": "Email is required.", "invalid": "Enter a valid email address."},
+    )
+
+
+class VerifyEmailSchema(Schema):
+    access_token = fields.String(
+        required=True,
+        error_messages={"required": "Verification token is required."},
+    )

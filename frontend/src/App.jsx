@@ -16,6 +16,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage  from './pages/ResetPasswordPage';
 import PrivacyPolicyPage  from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import AuthCallbackPage  from './pages/AuthCallbackPage';
+import AdminPage from './pages/AdminPage';
 
 // Layout
 import AppLayout from './components/layout/AppLayout';
@@ -89,6 +91,7 @@ function Router() {
       <Route path="/signup"          element={<PublicRoute><SignupPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/reset-password"  element={<ResetPasswordPage />} />
+      <Route path="/auth/callback"   element={<AuthCallbackPage />} />
 
       {/* Legal pages — always public, no auth guard */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -102,6 +105,7 @@ function Router() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="history"   element={<HistoryPage />} />
         <Route path="settings"  element={<SettingsPage />} />
+        <Route path="admin"     element={<AdminPage />} />
       </Route>
 
       {/* 404 fallback */}

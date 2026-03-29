@@ -79,6 +79,31 @@ export const api = {
   post:   (path, body, opts) => request('POST',   path, { body, ...opts }),
   patch:  (path, body, opts) => request('PATCH',  path, { body, ...opts }),
   delete: (path, opts)       => request('DELETE', path, opts),
+
+  /**
+   * rawPost — like post() but resolves with { status, data } for any 2xx.
+   * Use this when you need to branch on the HTTP status code (e.g. 201 vs 202).
+   * Still throws ApiError on 4xx/5xx.
+   */
+  rawPost: async (path, body, opts = {}) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), opts.timeout ?? DEFAULT_TIMEOUT_MS);
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify(body),
+    }).finally(() => clearTimeout(timer));
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+    if (!res.ok) {
+      const errCode = data?.code ?? 'SERVER_ERROR';
+      const errMsg  = data?.message ?? `Request failed (${res.status})`;
+      throw new ApiError(errCode, errMsg, res.status);
+    }
+    return { status: res.status, data };
+  },
 };
 
 export { ApiError };

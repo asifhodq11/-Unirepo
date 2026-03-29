@@ -43,6 +43,7 @@ def create_app(config_name="development"):
     from .routes.webhooks import webhooks_bp
     from .routes.poller import poller_bp
     from .routes.analytics import analytics_bp
+    from .routes.admin import admin_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(reviews_bp, url_prefix="/api/v1/reviews")
@@ -52,6 +53,7 @@ def create_app(config_name="development"):
     app.register_blueprint(webhooks_bp, url_prefix="/api/v1/webhooks")
     app.register_blueprint(poller_bp, url_prefix="/api/v1/poller")
     app.register_blueprint(analytics_bp, url_prefix="/api/v1/analytics")
+    app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
 
     # Health endpoint sits at /api/v1/health
     app.register_blueprint(health_bp, url_prefix="/api/v1")

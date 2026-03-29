@@ -4,10 +4,19 @@ This log tracks all major architectural shifts, feature additions, and critical 
 
 ---
 
-## 🚀 Phase 4: Monorepo & Deterministic Deployment (Current)
-**Goal:** Merge separate services into a unified, one-click deployable monorepo.
+## 🚀 Phase 11-12: The "Pro Max" Polish & Unification (Current)
+**Goal:** Perfecting the UI, Mobile optimization, and Unified Documentation.
+
+### 2026-03-28
+- **[Docs] Master Project Evolution Log:** Created `MASTER_PROJECT_LOG.md` as the definitive, unified chronological source for the entire history from Mar 10. Corrected "false logs" in `DECISIONS.md` where completion was prematurely claimed.
+- **[Mobile] Global Fluid Spacing:** Added media query overrides to `index.css` to compress large padding/margin scales on small viewports.
+- **[Mobile] Typography Scaling:** Implemented `clamp()` font scaling and reduced Hero `h1` line-heights for portrait mobile screens.
+- **[UI] Light Mode Refinement:** Replaced hardcoded near-black background gradients on pricing cards with theme-adaptive CSS variables.
+- **[Security] Root Dispatcher Lock:** Implemented `RootDispatcher` in `App.jsx` to prevent unauthorized users from manually skipping the Landing Page to the Dashboard.
+- **[Growth] Lead Capture Interceptor:** Updated `HeroSandbox.jsx` to background-POST user emails to the Supabase `leads` table before redirecting to Signup.
 
 ### 2026-03-27
+- **[Architecture] Phase 10: Monorepo & Deterministic Deployment:** 
 - **[Bugfix] Exception Hierarchy Bug (BadRequest Leak):** Fixed a bug where `openai.BadRequestError` (HTTP 400) was being incorrectly trapped and re-thrown by its parent class `openai.APIStatusError`. Reordered the `except` blocks in `ai_engine.py` to ensure 400 errors properly trigger the graceful `AIBadRequestError` response instead of crashing with a 500 error.
 - **[Bugfix] OpenRouter Invalid Model Name:** Fixed a 500 crash during short 5-star reviews by updating the OpenRouter target model string to `google/gemini-2.0-flash-lite-preview-02-05:free`. Also introduced an `AIBadRequestError` (HTTP 400) interceptor to gracefully handle invalid API parameters without crashing the server.
 - **[Bugfix] Graceful AI Provider Error Handling:** Added explicit exception parsing for `openai.APIStatusError`. If the AI provider (OpenRouter/OpenAI) returns a 402 "Payment Required" due to exhausted credits, the backend now returns a structured, user-friendly `AIBillingError` instead of crashing with a raw 500 response.

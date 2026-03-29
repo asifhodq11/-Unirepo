@@ -66,9 +66,10 @@ TWENTY_FOUR_PATTERNS = """
 """
 
 
-def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
+def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> tuple[str, int]:
     """
     Unified abstract caller. Routes execution dynamically to the right SDK based on model_id prefix.
+    Returns a tuple of (response_text: str, total_tokens_used: int).
     Retries up to 3 times on transient OpenAI errors (rate limit, timeout) with exponential backoff.
     Raises AIServiceError after all attempts are exhausted.
     """
@@ -91,7 +92,8 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                 response = gemini_client.models.generate_content(
                     model=clean_model_id, contents=user_prompt, config={"system_instruction": system_prompt}
                 )
-                return response.text.strip()
+                tokens = response.usage_metadata.total_token_count if response.usage_metadata else 0
+                return response.text.strip(), tokens
             
             # Task 1: OpenRouter / OpenAI normal routing
             if provider == "openrouter":
@@ -100,14 +102,16 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str) -> str:
                     messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                     temperature=0.7,
                 )
-                return response.choices[0].message.content.strip()
+                tokens = response.usage.total_tokens if hasattr(response, 'usage') and response.usage else 0
+                return response.choices[0].message.content.strip(), tokens
             else:
                 response = get_openai_client().chat.completions.create(
                     model=model_id,
                     messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
                     temperature=0.7,
                 )
-                return response.choices[0].message.content.strip()
+                tokens = response.usage.total_tokens if hasattr(response, 'usage') and response.usage else 0
+                return response.choices[0].message.content.strip(), tokens
 
         except (openai.RateLimitError, openai.APITimeoutError):
             if attempt < 3:
@@ -148,7 +152,7 @@ def generate_reply(
     tone_preference: str,
     star_rating: int,
     review_text: str,
-) -> str:
+) -> dict:
     """
     The 3-Pass Pipeline implementation.
     Determines complexity, chooses model, and runs Generate -> Humanise -> Audit.
@@ -189,7 +193,7 @@ def generate_reply(
         f"Write the reply:"
     )
 
-    pass1_output = call_llm(sys_prompt_1, user_prompt_1, model)
+    pass1_output, pass1_tokens = call_llm(sys_prompt_1, user_prompt_1, model)
 
     # ==========================================
     # PASS 2: Adversarial Audit
@@ -218,6 +222,16 @@ def generate_reply(
     # Use a lower temperature for the audit pass to keep it grounded
     # Note: call_llm currently hardcodes temp=0.7. We update the model_id with a string signal if needed, 
     # but for now, we pass the same parameters.
-    final_output = call_llm(sys_prompt_2, user_prompt_2, model)
+    final_output, pass2_tokens = call_llm(sys_prompt_2, user_prompt_2, model)
 
-    return final_output
+    total_tokens = pass1_tokens + pass2_tokens
+    
+    from app.utils.pricing import calculate_cost_usd
+    cost = calculate_cost_usd(model, total_tokens)
+
+    return {
+        "text": final_output,
+        "tokens": total_tokens,
+        "cost_usd": cost,
+        "model_used": model
+    }
