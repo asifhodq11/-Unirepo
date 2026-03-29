@@ -57,8 +57,18 @@ def signup():
                 "password": data["password"],
             }
         )
-    except Exception:
-        return build_error("EMAIL_EXISTS")
+    except Exception as e:
+        error_message = str(e).lower()
+        log_event("signup_auth_error", error=str(e), email=data["email"])
+        
+        if "rate limit" in error_message:
+            return build_error("RATE_LIMIT_EXCEEDED")
+        elif "already registered" in error_message or "already exists" in error_message:
+            return build_error("EMAIL_EXISTS")
+        elif "password" in error_message:
+            return build_error("VALIDATION_ERROR", details={"password": [str(e)]})
+        else:
+            return build_error("SERVER_ERROR", details={"auth_service_error": str(e)})
 
     if not auth_response.user:
         return build_error("EMAIL_EXISTS")
