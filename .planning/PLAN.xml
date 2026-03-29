@@ -1,70 +1,213 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<PLAN version="1.0" objective="Internal Admin Panel">
+<plan version="2.0" objective="Ultimate AI Intelligence: Human-Indistinguishable Review Responses">
 
+  <!-- ============================================================ -->
+  <!-- CONTEXT                                                        -->
+  <!-- ============================================================ -->
   <context>
-    <stack>
-      <backend>Flask / Python</backend>
-      <database>Supabase (PostgreSQL)</database>
-      <frontend>React / Vite / Tailwind</frontend>
-    </stack>
-    <problem>
-      We possess granular AI cost and usage metrics in the database, but no internal UI to visualize business health (MRR, Total Cost, User Activity).
-      Without a proper Admin dashboard, evaluating the profitability of the SaaS requires manual SQL querying.
-    </problem>
+    <current_state>
+      - ai_engine.py has a 2-pass pipeline (Generate + Audit). No temperature control, no signal extraction, no burstiness engineering.
+      - call_llm() hardcodes temperature=0.7 for ALL passes.
+      - STAR_INSTRUCTIONS are shallow strings with no psychological architecture.
+      - No Signal Extraction pass (Pass 0) exists.
+      - No Variance Engine exists (opener_type, structure_tag not in DB).
+      - TWENTY_FOUR_PATTERNS exist but do not include the new Layer 3 / Layer 5 patterns.
+    </current_state>
+    <target_state>
+      - A 4-Pass pipeline: Signal Extraction → Weighted Generation → Burstiness Humaniser → Cognitive Audit.
+      - Per-pass temperature matrix (0.6 to 0.9) based on star_rating and pass number.
+      - Structural Variance Engine: DB tracks last 5 opener_types and structure_tags per user to force rotation.
+      - Amygdala Scan hard-wired into Pass 3 for 1-2 star reviews.
+      - Advanced Persona Injection (small business owner, not corporate manager).
+      - Register Library (Restaurants, Salons, Medical, Gyms, etc.) for tonal permissions.
+      - 3 few-shot examples (varied tone, length, structure) in Pass 1.
+      - Subjectivity Injection mandatory in Pass 2.
+      - Quality Score (1-24) computed in Pass 3 and stored on the reply record.
+    </target_state>
   </context>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       WAVE 1 — Database & Authentication
-       ═══════════════════════════════════════════════════════════ -->
-  <wave id="1" label="Admin Role Schema">
-    <task id="1.1" file="supabase/migrations/011_admin_role.sql" type="NEW">
-      Create migration adding `is_admin BOOLEAN DEFAULT false` to `public.users`.
-    </task>
-
-    <task id="1.2" file="app/utils/decorators.py">
-      Create a new `@require_admin` decorator that extends `@require_auth`
-      to verify `g.current_user["is_admin"]` is True.
-    </task>
-
-    <task id="1.3" file="app/routes/auth.py">
-      Update login/signup/me routes to include the `is_admin` flag in the returned user object.
-      Update `user_schema.py` if necessary over the API interface.
+  <!-- ============================================================ -->
+  <!-- WAVE 1: DATABASE FOUNDATION                                   -->
+  <!-- ============================================================ -->
+  <wave id="1" name="Database Foundation">
+    <description>Add variance tracking columns to replies and business_register to users. This is the foundation the Variance Engine depends on.</description>
+    
+    <task id="1.1" file="supabase/migrations/012_intelligence_v2.sql" action="CREATE">
+      Add to public.replies:
+        - opener_type TEXT (e.g. 'name', 'experience', 'item', 'reaction', 'question')
+        - structure_tag TEXT (e.g. 'A', 'B', 'C', 'D')
+        - quality_score SMALLINT (0-24, computed by Pass 3)
+      Add to public.users:
+        - business_register TEXT DEFAULT 'restaurant' 
+          (allowed values: restaurant, salon, gym, medical, automotive, hotel)
     </task>
   </wave>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       WAVE 2 — Backend Admin API
-       ═══════════════════════════════════════════════════════════ -->
-  <wave id="2" label="Admin Metrics Endpoints">
-    <task id="2.1" file="app/routes/admin.py" type="NEW">
-      Create a new Blueprint for admin endpoints. Guarded by `@require_admin`.
-      Route `GET /api/v1/admin/stats`:
-      - Calculate Total Users, Total MRR (estimated off plans), Total API Cost, Total Replies.
-      Route `GET /api/v1/admin/users`:
-      - Paginated list of all users, their plan, their used quota, and cost generated.
+  <!-- ============================================================ -->
+  <!-- WAVE 2: AI ENGINE CORE OVERHAUL                              -->
+  <!-- ============================================================ -->
+  <wave id="2" name="AI Engine Core Overhaul">
+    <description>The complete re-architecture of ai_engine.py into a 4-pass pipeline.</description>
+
+    <task id="2.1" file="app/services/ai_engine.py" action="MODIFY" section="call_llm">
+      Add temperature parameter to call_llm(). 
+      For Gemini native calls: pass temperature via config dict.
+      For OpenAI/OpenRouter calls: pass temperature in create() call.
+      Default = 0.75. Each pass will pass its own temperature value.
     </task>
 
-    <task id="2.2" file="app/main.py">
-      Register the `admin_bp` under `/api/v1/admin`.
+    <task id="2.2" file="app/services/ai_engine.py" action="MODIFY" section="constants">
+      REPLACE STAR_INSTRUCTIONS with STAR_CONTRACTS dict containing:
+        - approach (string)
+        - emotional_contract (string explaining WHY)
+        - required_elements (list)
+        - forbidden (list)
+        - temperature (float: 0.6-0.9)
+        - word_target (tuple: min, max)
+      
+      ADD REGISTER_LIBRARY dict for 6 business types:
+        - restaurant, salon, gym, medical, automotive, hotel
+        - Each has: permission_level, forbidden_phrases, ideal_tone, sample_voice
+      
+      ADD OPENER_TYPES list ['name','experience','item','reaction','question']
+      ADD STRUCTURE_TAGS list ['A','B','C','D'] with template strings
+      
+      EXTEND TWENTY_FOUR_PATTERNS with 5 new patterns from the Intelligence doc:
+        25. Symmetry openers (using the same word 3+ times)
+        26. Topic Echo (repeating reviewer's exact phrase verbatim)
+        27. "Ensuring" passive (we will ensure vs we will)
+        28. Platform clichés (hope this review helps)
+        29. Hollow superlatives in closers (best regards ever)
+    </task>
+
+    <task id="2.3" file="app/services/ai_engine.py" action="ADD" section="pass0">
+      ADD extract_review_signals(review_text, reviewer_name) -> dict
+      Implements:
+        - specific_items: regex extraction of quoted nouns and food/service items
+        - staff_names: capitalised proper nouns after role-indicator words
+        - occasion: keyword matching (birthday, anniversary, first visit, regular, special)
+        - emotional_register: detection of formality (lowercase/emoji = casual; full sentences = formal)
+        - word_count: len(text.split())
+        - has_complaint: any negative sentiment word detected
+        - review_formality: 'casual' | 'formal'
+      Returns context_dict used to inject into Pass 1 prompt.
+    </task>
+
+    <task id="2.4" file="app/services/ai_engine.py" action="ADD" section="variance_engine">
+      ADD get_variance_context(user_id) -> dict
+      Queries supabase for last 5 replies for this user_id.
+      Returns:
+        - recent_openers: list of last 5 opener_type values
+        - recent_structures: list of last 5 structure_tag values  
+        - suggested_opener: first opener_type NOT in recent_openers (or least used)
+        - suggested_structure: first structure_tag NOT in recent_structures
+      
+      ADD get_word_target(star_rating, variance_context) -> tuple[int, int]
+      Rotates through Short/Medium/Long bands per the variance engine rules.
+    </task>
+
+    <task id="2.5" file="app/services/ai_engine.py" action="MODIFY" section="generate_reply_signature">
+      EXTEND generate_reply() signature to accept:
+        - reviewer_name: str = ""
+        - user_id: str = ""         (for variance engine lookup)
+        - business_register: str = "restaurant"  (from user profile)
+      
+      CHANGE internal flow to 4 passes:
+        Pass 0: extract_review_signals() + get_variance_context()
+        Pass 1: Weighted Generation (temperature from star contract)
+        Pass 2: Burstiness Humaniser (temperature 0.75)
+        Pass 3: Cognitive Audit (temperature 0.5)
+      
+      CHANGE return dict to include:
+        - text, tokens, cost_usd, model_used (existing)
+        - opener_type (from Pass 3 response parsing)
+        - structure_tag (from Pass 3 response parsing)
+        - quality_score (from Pass 3 scoring matrix)
+    </task>
+
+    <task id="2.6" file="app/services/ai_engine.py" action="MODIFY" section="pass1_prompt">
+      BUILD new Pass 1 system prompt using:
+        - Advanced Persona ("You are the owner of {business_name}...")
+        - REGISTER_LIBRARY voice for this business_register
+        - Context injection from Pass 0 signals
+        - STAR_CONTRACTS[star_rating] full instruction block
+        - Variance context injection ("Do NOT use opener type X, recent structures were A,C,A")
+        - 3 few-shot examples (hardcoded, varied by star: 5-star casual, 4-star professional, 2-star empathetic)
+        - Burstiness requirement (min 1 sentence under 8 words, min 1 over 18 words)
+        - Word target from variance engine
+        - Security delimiter between review text and prompt
+    </task>
+
+    <task id="2.7" file="app/services/ai_engine.py" action="MODIFY" section="pass2_prompt">
+      BUILD new Pass 2 Burstiness Humaniser prompt:
+        - Structural fixes (rhythm, opener, closer)
+        - Word-level fixes (full banned word list)
+        - Subjectivity Injection (mandatory 1 new subjectivity marker)
+        - Strategic Imperfection (1 deliberate human irregularity)
+        - Emotional Temperature Check
+        - OUTPUT: revised reply ONLY
+    </task>
+
+    <task id="2.8" file="app/services/ai_engine.py" action="MODIFY" section="pass3_prompt">
+      BUILD new Pass 3 Cognitive Audit prompt:
+        - Specificity Test
+        - Opener Test (no "Thank you" or name as first word)
+        - Closer Test (no generic closers)
+        - Rhythm Test (metronome check)
+        - Amygdala Scan (for star_rating ≤ 2): ban defensive first-sentence words
+        - AI Vocabulary Final Check
+        - Cross-Review Uniformity Flag
+        - Quality Score matrix (8 dimensions, 1-3 each = max 24)
+        - OUTPUT FORMAT: reply text + JSON metadata block:
+          {"opener_type": "...", "structure_tag": "...", "quality_score": N, "changes": "..."}
     </task>
   </wave>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       WAVE 3 — Frontend Internal UI
-       ═══════════════════════════════════════════════════════════ -->
-  <wave id="3" label="React Admin Dashboard">
-    <task id="3.1" file="frontend/src/pages/AdminPage.jsx" type="NEW">
-      Create a strictly gated Admin page fetching the new endpoints.
-      Design a 4-card metric layout (Users, Total MRR, AI Cost, Margin %) and a table for user management.
-    </task>
+  <!-- ============================================================ -->
+  <!-- WAVE 3: ROUTE INTEGRATION                                     -->
+  <!-- ============================================================ -->
+  <wave id="3" name="Route Integration">
+    <description>Update the replies route to pass new parameters and persist new fields.</description>
 
-    <task id="3.2" file="frontend/src/components/layout/Sidebar.jsx">
-      Conditionally render an "Admin Panel" sidebar link only if `user?.is_admin` is true.
-    </task>
-
-    <task id="3.3" file="frontend/src/App.jsx">
-      Register the `<Route path="/admin" element={<AdminPage />} />` under the Protected Route structure.
+    <task id="3.1" file="app/routes/replies.py" action="MODIFY">
+      In the generate endpoint:
+        - Extract reviewer_name from request body (already in reviews table, pass through)
+        - Extract user_id from JWT
+        - Fetch business_register from users table
+        - Pass all 3 new params to generate_reply()
+        - Persist opener_type, structure_tag, quality_score to the replies record on INSERT
     </task>
   </wave>
 
-</PLAN>
+  <!-- ============================================================ -->
+  <!-- WAVE 4: VERIFICATION                                          -->
+  <!-- ============================================================ -->
+  <wave id="4" name="Verification">
+    <description>Manual smoke test of the new pipeline.</description>
+
+    <task id="4.1" type="manual_test">
+      Test Case A: 5-star restaurant review ("Best biryani in town!")
+        - Expected: Warm, short (40-65 words), item-specific, no "Thank you" opener
+        - Check quality_score >= 18
+      
+      Test Case B: 1-star review with complaint ("Waited 40 minutes, food was cold")
+        - Expected: Empathy-first first sentence, zero defensive words, offline path included
+        - Check Amygdala words absent from sentence 1
+      
+      Test Case C: 4-star salon review mentioning "Sophie"
+        - Expected: Sophie mentioned naturally, service acknowledged, gap mentioned honestly
+        - Check business_register='salon' voice applied
+      
+      Test Case D: 3-star mixed review
+        - Expected: Both sides held, no tipping to positive or negative
+        - Check both positive and negative acknowledgment present
+    </task>
+
+    <task id="4.2" type="variance_test">
+      Generate 3 sequential replies for same user.
+      Verify opener_type rotates (not same value 3x in a row).
+      Verify structure_tag rotates.
+    </task>
+  </wave>
+
+</plan>

@@ -57,7 +57,7 @@ def generate():
     if not saved_review:
         return build_error("SERVER_ERROR", details="Failed to persist review.")
 
-    # 3. Generate the AI Reply
+    # 3. Generate the AI Reply (v2.0 — 4-pass Intelligence Pipeline)
     log_event("ai_generation_start", user_id=user_id, review_id=saved_review["id"])
     start_time = time.time()
 
@@ -67,6 +67,9 @@ def generate():
         tone_preference=user.get("tone_preference", "friendly"),
         star_rating=data["rating"],
         review_text=data.get("review_text", ""),
+        reviewer_name=data.get("reviewer_name", "") or "",
+        user_id=user_id,
+        business_register=user.get("business_register", "restaurant"),
     )
 
     duration_ms = int((time.time() - start_time) * 1000)
@@ -75,16 +78,18 @@ def generate():
     complexity = classify_complexity(data["rating"], data.get("review_text", ""))
     model_used = get_model_for_complexity(complexity)
 
-    # 4. Save the generated reply to DB
-    # Column names match 003_create_replies.sql; is_deleted has DB DEFAULT
+    # 4. Save the generated reply to DB (including Intelligence v2.0 variance/quality fields)
     reply_data = {
-        "review_id": saved_review["id"],
-        "reply_text": ai_result["text"],
-        "status": "draft",
+        "review_id":     saved_review["id"],
+        "reply_text":    ai_result["text"],
+        "status":        "draft",
         "generation_ms": duration_ms,
-        "model_used": ai_result.get("model_used", model_used),
-        "tokens_used": ai_result["tokens"],
-        "cost_usd": ai_result["cost_usd"],
+        "model_used":    ai_result.get("model_used", model_used),
+        "tokens_used":   ai_result["tokens"],
+        "cost_usd":      ai_result["cost_usd"],
+        "opener_type":   ai_result.get("opener_type"),
+        "structure_tag": ai_result.get("structure_tag"),
+        "quality_score": ai_result.get("quality_score", 0),
     }
 
     saved_reply = insert_reply(user_id, reply_data)
@@ -101,7 +106,13 @@ def generate():
         log_event("increment_usage_failed", user_id=user_id, level="error", error=str(e))
         # We don't fail the request here, but we log the usage drift.
 
-    log_event("ai_generation_success", user_id=user_id, review_id=saved_review["id"], ms=duration_ms)
+    log_event(
+        "ai_generation_success",
+        user_id=user_id,
+        review_id=saved_review["id"],
+        ms=duration_ms,
+        quality_score=ai_result.get("quality_score", 0),
+    )
 
     # Standard success
     return jsonify({"review": saved_review, "reply": saved_reply}), 201
@@ -146,7 +157,7 @@ def generate_for_existing(review_id):
     # 3. Enforce monthly usage limits
     check_usage_limit(user_id)
 
-    # 4. Run the 3-Pass AI Pipeline
+    # 4. Run the 4-Pass AI Intelligence Pipeline (v2.0)
     log_event("on_demand_generation_start", user_id=user_id, review_id=review_id)
     start_time = time.time()
 
@@ -156,13 +167,16 @@ def generate_for_existing(review_id):
         tone_preference=user.get("tone_preference", "friendly"),
         star_rating=review["rating"],
         review_text=review.get("review_text", ""),
+        reviewer_name=review.get("reviewer_name", "") or "",
+        user_id=user_id,
+        business_register=user.get("business_register", "restaurant"),
     )
 
     duration_ms = int((time.time() - start_time) * 1000)
     complexity  = classify_complexity(review["rating"], review.get("review_text", ""))
     model_used  = get_model_for_complexity(complexity)
 
-    # 5. Save reply
+    # 5. Save reply (including Intelligence v2.0 variance/quality fields)
     reply_data = {
         "review_id":     review_id,
         "reply_text":    ai_result["text"],
@@ -171,6 +185,9 @@ def generate_for_existing(review_id):
         "model_used":    ai_result.get("model_used", model_used),
         "tokens_used":   ai_result["tokens"],
         "cost_usd":      ai_result["cost_usd"],
+        "opener_type":   ai_result.get("opener_type"),
+        "structure_tag": ai_result.get("structure_tag"),
+        "quality_score": ai_result.get("quality_score", 0),
     }
     saved_reply = insert_reply(user_id, reply_data)
     if not saved_reply:
@@ -185,7 +202,13 @@ def generate_for_existing(review_id):
     except Exception as e:
         log_event("increment_usage_failed", user_id=user_id, level="error", error=str(e))
 
-    log_event("on_demand_generation_success", user_id=user_id, review_id=review_id, ms=duration_ms)
+    log_event(
+        "on_demand_generation_success",
+        user_id=user_id,
+        review_id=review_id,
+        ms=duration_ms,
+        quality_score=ai_result.get("quality_score", 0),
+    )
 
     return jsonify({"review": {**review, "status": "pending"}, "reply": saved_reply}), 201
 

@@ -1,30 +1,32 @@
-# ReplyIQ — Current State & Action Pathway (GSD Phase 1)
+# STATE: ReplyIQ Monorepo
 
-## System Overview
-- **Backend:** Flask / Python
-- **Frontend:** React / Vite (Glassmorphic UI)
-- **Database / Auth:** Supabase (PostgreSQL)
-- **Billing:** Stripe
-- **AI Engine:** Gemini/OpenAI (Two-pass architecture with de-botting)
+## Overview
+- **Project**: ReplyIQ (B2B SaaS for Automated Review Responses)
+- **Current Objective**: Implement the "Ultimate AI Training Intelligence (v2.0)" upgrade and begin architecture planning for the "Knowledge & Context" (V3) Layer.
 
-## Context from `competitive_analysis.md` & Recent Work
-The project has successfully completed a massive execution wave (Phase 3) that shipped Auth completeness (Password Reset), Legal Pages, Billing Integrity (14-day trials, idempotency), and a 3-Step Onboarding Wizard.
+## Tech Stack
+- **Frontend**: React (Vite), Tailwind CSS, Framer Motion, Lucide React
+- **Backend**: Python (Flask)
+- **Database**: Supabase (PostgreSQL)
+- **AI Core**: Google Gemini (orchestrated via `app/services/ai_engine.py`)
+- **Key Files**: 
+  - `ai_engine.py` (The 3-Pass AI brain)
+  - `admin.py` (Internal dashboard KPIs)
+  - `003_create_replies.sql` (Database schema for responses)
+  
+## V2 Master Insights (The Trust Architecture)
+Phase 1 aims to implement the "Science of Human Indistinguishability":
+1. **Oxytocin Triggers**: Tangible, Unexpected, Personal, Public.
+2. **Burstiness Engineering**: Targeted disruption of AI sentence rhythm.
+3. **Amygdala Scan**: Strict empathy-first rule for 1-2 star reviews (Zero defensiveness).
+4. **Variance Engine**: Structural tracking in the DB to prevent document-level AI uniformity.
 
-### Resolved Blockers (Recently Fixed)
-- ✅ **Stripe Plans:** Prices and plans perfectly synced.
-- ✅ **Auth Completeness (Password Reset):** `/forgot-password` and `/reset-password` implemented securely.
-- ✅ **Legal Pages:** Privacy Policy and Terms of Service endpoints/pages added.
-- ✅ **Webhook Idempotency:** DB-backed idempotency using the `processed_webhooks` table.
-- ✅ **14-Day Trial Logic:** Pro plan 14-day trial active.
-- ✅ **Auth Completeness (Email Verification):** Backend handles 202 on signup, redirect handler set for /auth/callback, login-guard shows verification banner.
+## Immediate V2 Priorities (Preparation for Phase 2: Claude Sonnet)
+1. DB Migration: Add `opener_type`, `structure_tag` to `replies`, and `business_register` to `users`.
+2. Pipeline Overhaul: Re-architect the prompts in `ai_engine.py` to support *Signal Extraction* (Pass 0), *Weighted Generation* (Pass 1), *Humanisation* (Pass 2), and *Cognitive Audit* (Pass 3).
 
-### Remaining Critical Path (The Pathway to Proceed)
-
-#### 🔴 Existential Blockers (Must Fix Immediately)
-1. **Internal Admin Panel (Business Intelligence):** We have implemented AI Cost Tracking and usage constraints, but there is no UI to view these cross-platform metrics without manually checking the Supabase tables. We need a secure `/admin` route on both frontend and backend to calculate total margins, monitor user plan distribution, and track system health.
-
-#### 🟢 Technical Debt
-2. **Google Business Profile Integration (The Engine):** *Deferred.* Currently uses `mock_google.py`. We must replace this with the real Google Agency Manager Access flow (OAuth for the agency, real API fetching/posting).
-
-## Handover Instructions for Phase 4 (Verification)
-The verification model (Gemini Flash) should audit the new AuthCallbackPage logic and verify that the session cookie is correctly set in the backend /verify-email endpoint. Once confirmed, the GSD cycle for Email Verification is officially closed.
+## Known Blockers & Future Gaps (V3 Roadmap)
+- AI is currently "Factually Blind" (No access to static business knowledge/menus).
+- AI is currently "Visually Blind" (Cannot analyze attached review photos).
+- AI lacks a "Skepticism Layer" (Will mistakenly apologize to competitor bots).
+- HIPAA/Staff Privacy compliance requires an upcoming "Staff Shield" module.
