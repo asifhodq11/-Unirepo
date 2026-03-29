@@ -6,6 +6,7 @@ import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, Bar
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 import ReviewModal from '../components/ReviewModal';
+import OnboardingModal from '../components/modals/OnboardingModal';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 /* ── Mini Sparkline Tooltip ── */
@@ -300,6 +301,10 @@ export default function DashboardPage() {
   const [analytics, setAnalytics] = useState(null);
   const [activities, setActivities] = useState([]);
   const [selectedReview, setSelectedReview] = useState(null);
+  // Show onboarding for new users who haven't completed it yet
+  const [showOnboarding, setShowOnboarding] = useState(
+    user?.onboarding_complete === false
+  );
 
   const plan  = user?.plan ?? 'free';
   const used  = user?.reply_count_this_month ?? 0;
@@ -417,5 +422,12 @@ export default function DashboardPage() {
         readOnly
       />
     )}
+
+    {/* Onboarding Wizard — shown automatically for new users */}
+    <OnboardingModal
+      isOpen={showOnboarding}
+      onClose={() => setShowOnboarding(false)}
+      user={user}
+    />
   </>);
 }

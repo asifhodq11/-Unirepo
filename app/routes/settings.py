@@ -27,6 +27,7 @@ SETTINGS_FIELDS = (
     "google_status",
     "reply_count_this_month",
     "daily_autonomy_limit",
+    "onboarding_complete",
 )
 
 

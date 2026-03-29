@@ -32,5 +32,9 @@ class UpdateSettingsSchema(Schema):
         validate=validate.Range(min=5, max=200),
     )
 
+    onboarding_complete = fields.Boolean(
+        load_default=None,
+    )
+
     class Meta:
         unknown = RAISE
