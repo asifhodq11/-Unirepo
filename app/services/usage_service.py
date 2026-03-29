@@ -2,9 +2,10 @@
 app/services/usage_service.py
 
 Tracks and enforces monthly reply limits based on the user's plan.
-Free     =  5 replies/month  (manual generation only)
+Free     =   5 replies/month  (manual generation only)
 Starter  = 100 replies/month  (manual generation, HITL)
-Pro      = unlimited monthly  (autonomous, circuit-breaker via daily_autonomy_limit)
+Pro      = 100 replies/month  (autonomous, circuit-breaker via daily_autonomy_limit)
+Ultra    = 500 replies/month  (fully autonomous, VIP support, custom brand models)
 """
 
 from datetime import datetime, timedelta
@@ -15,10 +16,10 @@ from app.utils.exceptions import ReplyLimitReached
 
 
 PLAN_LIMITS = {
-    "free":    5,
-    "starter": 100,
-    "pro":     999_999,  # Effectively unlimited — capped daily by autonomy dial
-    "growth":  999_999,
+    "free":    5,     # Manual AI replies only
+    "starter": 100,   # Manual hold & review
+    "pro":     100,   # Autonomous replies
+    "ultra":   500,   # Unlimited auto replies (500 cap)
 }
 
 

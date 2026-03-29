@@ -306,7 +306,7 @@ export default function LandingPage() {
               </div>
               <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
-                <li className="flex items-start gap-3 text-xs color: var(--text-primary)"><CheckCircle2 size={14} className="text-primary shrink-0 mt-0.5" /> Unlimited Auto replies</li>
+                <li className="flex items-start gap-3 text-xs color: var(--text-primary)"><CheckCircle2 size={14} className="text-primary shrink-0 mt-0.5" /> Unlimited auto replies (500)</li>
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> VIP dedicated support</li>
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> Custom brand models</li>
               </ul>
