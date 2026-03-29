@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, MessageSquare } from 'lucide-react';
 import { getPlanLimitDisplay, TONE_OPTIONS, PLAN_LABELS } from '../utils/plans';
 import PricingModal from '../components/modals/PricingModal';
+import GoogleConnectionModal from '../components/modals/GoogleConnectionModal';
 
 const CANCEL_REASONS = [
   'Too expensive for my needs',
@@ -29,8 +30,9 @@ export default function SettingsPage() {
   const [cancelStep, setCancelStep]     = useState(0);
   const [cancelReason, setCancelReason] = useState('');
 
-  // Pricing modal
+  // Pricing & Google Modals
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [showGoogleModal, setShowGoogleModal]   = useState(false);
 
   // Autonomy Dial (Pro plan only)
   const [autonomyLimit, setAutonomyLimit] = useState(20);
@@ -210,10 +212,15 @@ export default function SettingsPage() {
             </div>
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
               <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Connection</span></div>
-              <div>
+              <div className="flex flex-col gap-2 items-start w-full">
                 {user?.google_connected 
-                  ? <span className="badge badge-success" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Connected</span> 
-                  : <span className="badge badge-muted" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Not connected</span>
+                  ? <span className="badge badge-success flex items-center gap-1" style={{ padding: '6px 12px', fontSize: '0.8rem' }}><CheckCircle size={14} /> Connected</span> 
+                  : <>
+                      <span className="badge badge-muted mb-1" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Not connected</span>
+                      <button className="btn btn-sm btn-primary w-full flex justify-center w-full" onClick={() => setShowGoogleModal(true)}>
+                        Connect Business
+                      </button>
+                    </>
                 }
               </div>
             </div>
@@ -502,6 +509,12 @@ export default function SettingsPage() {
         isOpen={showPricingModal}
         onClose={() => setShowPricingModal(false)}
         currentPlan={plan}
+      />
+      
+      {/* Google Connection Modal */}
+      <GoogleConnectionModal
+        isOpen={showGoogleModal}
+        onClose={() => setShowGoogleModal(false)}
       />
     </motion.div>
   );

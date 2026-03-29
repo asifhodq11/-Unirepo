@@ -1,43 +1,35 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Copy, ArrowRight, Sparkles, Building2, Link2 } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Sparkles, Building2, Search, Bot, Zap, X } from 'lucide-react';
 import { api } from '../../api/client';
 import { useToast } from '../../hooks/useToast';
-
-// ─── The agency email users need to invite ───────────────────────────────────
-// Replace this with your actual Google Agency account email
-const AGENCY_EMAIL = 'agency@replyiq.app';
+import { useAuth } from '../../context/AuthContext';
 
 const STEPS = [
   { id: 1, label: 'Your Business',   icon: Building2 },
-  { id: 2, label: 'Connect Google',  icon: Link2 },
-  { id: 3, label: 'All Set!',        icon: Sparkles },
+  { id: 2, label: 'All Set!',        icon: Sparkles },
 ];
 
 export default function OnboardingModal({ isOpen, onClose, user }) {
   const { toast } = useToast();
+  const { refreshUser } = useAuth();
   const [step, setStep] = useState(1);
   const [completing, setCompleting] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   async function handleComplete() {
     setCompleting(true);
     try {
       await api.patch('/settings/', { onboarding_complete: true });
+      // Crucial: Update our global auth state so the modal 
+      // doesn't re-trigger when they navigate around Dashboard
+      await refreshUser(); 
       onClose();
-      toast('Welcome to ReplyIQ! 🎉', 'success');
+      toast('Welcome to ReplyIQ!', 'success');
     } catch {
       toast('Could not save progress. Please try again.', 'error');
     } finally {
       setCompleting(false);
     }
-  }
-
-  function copyEmail() {
-    navigator.clipboard.writeText(AGENCY_EMAIL).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
   }
 
   if (!isOpen) return null;
@@ -89,6 +81,18 @@ export default function OnboardingModal({ isOpen, onClose, user }) {
             />
           </div>
 
+          <button 
+            onClick={onClose}
+            className="btn btn-ghost"
+            style={{ 
+              position: 'absolute', top: '1rem', right: '1rem', 
+              padding: '0.4rem', color: 'var(--text-muted)' 
+            }}
+            aria-label="Close"
+          >
+            <X size={20} />
+          </button>
+
           <div style={{ padding: '2rem' }}>
             {/* Step Indicators */}
             <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
@@ -128,8 +132,7 @@ export default function OnboardingModal({ isOpen, onClose, user }) {
                 transition={{ duration: 0.2 }}
               >
                 {step === 1 && <StepOne user={user} />}
-                {step === 2 && <StepTwo email={AGENCY_EMAIL} copied={copied} onCopy={copyEmail} />}
-                {step === 3 && <StepThree />}
+                {step === 2 && <StepThree />}
               </motion.div>
             </AnimatePresence>
 
@@ -170,7 +173,7 @@ export default function OnboardingModal({ isOpen, onClose, user }) {
                     opacity: completing ? 0.7 : 1,
                   }}
                 >
-                  {completing ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Saving…</> : <>Go to Dashboard <ArrowRight size={15} /></>}
+                  {completing ? <><span className="spinner" style={{ width: 14, height: 14 }} /> Committing…</> : <>Go to Dashboard <ArrowRight size={15} /></>}
                 </button>
               )}
             </div>
@@ -186,25 +189,25 @@ function StepOne({ user }) {
   return (
     <div>
       <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.4rem' }}>
-        Step 1 of 3
+        Step 1 of 2
       </p>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-        Welcome, {user?.business_name || 'there'}! 👋
+        Welcome, {user?.business_name || 'there'}!
       </h2>
       <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-        Let's get your account set up. Here's what we have on file for your business:
+        Let's get your account set up. Here's what we have on file for your business profile:
       </p>
 
       <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '1rem 1.25rem', border: '1px solid rgba(255,255,255,0.07)' }}>
         <div style={{ display: 'grid', gap: '0.6rem' }}>
           <InfoRow label="Business Name" value={user?.business_name || '—'} />
-          <InfoRow label="Business Type" value={user?.business_type || '—'} />
-          <InfoRow label="Reply Tone"    value={user?.tone_preference || 'friendly'} />
+          <InfoRow label="Industry" value={user?.business_type || '—'} />
+          <InfoRow label="Brand Tone" value={user?.tone_preference || 'friendly'} />
         </div>
       </div>
 
       <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '1rem' }}>
-        You can update these at any time in <strong>Settings</strong>.
+        You can update these guidelines at any time in <strong>Settings</strong>.
       </p>
     </div>
   );
@@ -212,107 +215,46 @@ function StepOne({ user }) {
 
 function InfoRow({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+    <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
       <span style={{ color: 'var(--text-muted)', fontSize: '0.825rem' }}>{label}</span>
       <span style={{ color: 'var(--text-primary)', fontSize: '0.825rem', fontWeight: 600, textTransform: 'capitalize' }}>{value}</span>
     </div>
   );
 }
 
-// ─── Step 2: Google Manager Access instructions ───────────────────────────────
-function StepTwo({ email, copied, onCopy }) {
-  return (
-    <div>
-      <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.4rem' }}>
-        Step 2 of 3
-      </p>
-      <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-        Connect your Google Business
-      </h2>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-        To reply to your Google reviews, you need to grant ReplyIQ access to your Google Business Profile. Here's how:
-      </p>
-
-      {[
-        { n: 1, text: 'Go to your Google Business Profile at business.google.com' },
-        { n: 2, text: 'Click Settings → Managers → Add manager' },
-        { n: 3, text: 'Invite the ReplyIQ agency email below as a Manager' },
-        { n: 4, text: 'Once you\'ve sent the invite, click Continue below' },
-      ].map(({ n, text }) => (
-        <div key={n} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
-          <div style={{
-            width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)',
-          }}>
-            {n}
-          </div>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5, margin: 0 }}>{text}</p>
-        </div>
-      ))}
-
-      {/* Email Copy Box */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)',
-        borderRadius: '10px', padding: '0.75rem 1rem', marginTop: '0.5rem', gap: '1rem',
-      }}>
-        <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', color: 'var(--accent)', fontWeight: 600 }}>
-          {email}
-        </span>
-        <button
-          onClick={onCopy}
-          style={{
-            background: copied ? 'rgba(99,102,241,0.3)' : 'rgba(99,102,241,0.15)',
-            border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px',
-            color: 'var(--accent)', cursor: 'pointer', padding: '0.35rem 0.75rem',
-            fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem',
-            transition: 'all 0.15s', flexShrink: 0,
-          }}
-        >
-          <Copy size={13} /> {copied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 3: All set! ─────────────────────────────────────────────────────────
+// ─── Step 2: All set! ─────────────────────────────────────────────────────────
 function StepThree() {
+  const finalList = [
+    { icon: Search, color: 'var(--accent-cyan)',   text: 'Reviews appear instantly in your Dashboard.' },
+    { icon: Bot,    color: 'var(--accent)',        text: 'AI replies are generated automatically on the Pro plan.' },
+    { icon: CheckCircle2, color: 'var(--success)', text: 'Review and approve replies before they go live on Starter.' },
+    { icon: Zap,    color: 'var(--warning)',       text: 'Adjust your daily autonomy limit in Settings anytime.' },
+  ];
+
   return (
-    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: '50%', margin: '0 auto 1.5rem',
-        background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05))',
-        border: '1px solid rgba(99,102,241,0.3)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <Sparkles size={28} style={{ color: 'var(--accent)' }} />
-      </div>
+    <div style={{ padding: '0.5rem 0' }}>
       <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '0.4rem' }}>
-        Step 3 of 3
+        Step 2 of 2
       </p>
       <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-        You're all set!
+        Your workspace is ready.
       </h2>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.7, maxWidth: 380, margin: '0 auto 1.5rem' }}>
-        Once you accept the manager invitation in Google, ReplyIQ will begin detecting your reviews automatically.
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '1.5rem' }}>
+        ReplyIQ is armed to begin detecting your reviews.
       </p>
 
       <div style={{
         background: 'rgba(255,255,255,0.03)', borderRadius: '12px',
-        padding: '1rem', border: '1px solid rgba(255,255,255,0.07)', textAlign: 'left',
+        padding: '1.25rem', border: '1px solid rgba(255,255,255,0.07)', textAlign: 'left',
+        display: 'flex', flexDirection: 'column', gap: '1rem'
       }}>
-        {[
-          '🔍 Your reviews will appear in the Dashboard',
-          '🤖 AI replies are generated automatically on the Pro plan',
-          '✅ Review and approve replies before they go live on Starter',
-          '⚡ Adjust your daily autonomy limit in Settings anytime',
-        ].map((item) => (
-          <p key={item} style={{ color: 'var(--text-secondary)', fontSize: '0.825rem', margin: '0 0 0.5rem', lineHeight: 1.5 }}>
-            {item}
-          </p>
+        {finalList.map((item, idx) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+             <item.icon size={16} strokeWidth={2.5} style={{ color: item.color, marginTop: '2px', flexShrink: 0 }} />
+             <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
+               {item.text}
+             </p>
+          </div>
         ))}
       </div>
     </div>
