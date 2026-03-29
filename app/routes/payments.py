@@ -31,9 +31,9 @@ def checkout():
     data = request.json or {}
     plan = data.get("plan")
 
-    if plan not in ("starter", "pro"):
+    if plan not in ("starter", "pro", "ultra"):
         raise ValidationError(
-            fields={"plan": ['Must be "starter" or "pro".']},
+            fields={"plan": ['Must be "starter", "pro", or "ultra".']},
             message="Invalid plan value.",
         )
 
@@ -43,7 +43,7 @@ def checkout():
         plan=plan,
     )
 
-    return jsonify({"checkout_url": url}), 200
+    return jsonify({"url": url}), 200
 
 
 # ── ROUTE 2 — POST /webhook ───────────────────────────────────

@@ -38,6 +38,7 @@ def create_checkout_session(user_id: str, user_email: str, plan: str) -> str:
     price_id_map = {
         "starter": os.environ["STRIPE_PRICE_ID_STARTER"],
         "pro":     os.environ.get("STRIPE_PRICE_ID_PRO", os.environ["STRIPE_PRICE_ID_STARTER"]),
+        "ultra":   os.environ.get("STRIPE_PRICE_ID_ULTRA", os.environ["STRIPE_PRICE_ID_STARTER"]),
     }
     price_id = price_id_map.get(plan, os.environ["STRIPE_PRICE_ID_STARTER"])
 
@@ -119,7 +120,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         # Detect plan from metadata (set in create_checkout_session)
         plan        = session_data.get("metadata", {}).get("plan", "starter")
         # Validate plan — only allow known paid plans
-        if plan not in ("starter", "pro"):
+        if plan not in ("starter", "pro", "ultra"):
             plan = "starter"
 
         from app.utils.logger import log_event
