@@ -34,8 +34,9 @@ export default function GoogleConnectionModal({ isOpen, onClose }) {
   }
 
   function handleOpenGmail() {
-    // Deep link into Gmail searching for Google Business Profile emails
-    window.open('https://mail.google.com/mail/u/0/#search/from%3Agooglebusinessprofile-noreply%40google.com', '_blank');
+    // Deep link into Gmail searching for all versions of Google Business Profile invitation emails
+    const query = encodeURIComponent('from:google.com "Business Profile" ("Manager" OR "invitation")');
+    window.open(`https://mail.google.com/mail/u/0/#search/${query}`, '_blank');
   }
 
   if (!isOpen) return null;
@@ -105,7 +106,7 @@ export default function GoogleConnectionModal({ isOpen, onClose }) {
                   <div className="flex-1">
                     <h4 className="text-sm font-bold mb-1">1. Check your email</h4>
                     <p className="text-xs text-muted mb-3 leading-relaxed">
-                      We've initiated the sync. Open your inbox and look for an email from Google regarding your Business Profile.
+                      We've initiated the sync. Open your inbox and look for an official invitation from Google.
                     </p>
                     <button onClick={handleOpenGmail} className="btn btn-secondary btn-sm" style={{ width: '100%' }}>
                       <ExternalLink size={14} className="mr-2" /> Open Gmail Inbox
