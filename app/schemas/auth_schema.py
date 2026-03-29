@@ -24,7 +24,7 @@ class SignupSchema(Schema):
     tone_preference = fields.String(
         load_default="friendly",
         validate=validate.OneOf(
-            ["friendly", "formal", "casual"], error="tone_preference must be one of: friendly, formal, casual."
+            ["friendly", "professional", "formal", "casual"], error="tone_preference must be one of: friendly, professional, formal, casual."
         ),
     )
 

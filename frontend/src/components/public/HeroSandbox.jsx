@@ -36,7 +36,7 @@ export default function HeroSandbox() {
   async function handleUnlock(e) {
     e.preventDefault();
     if (!email) {
-      navigate('/');
+      navigate('/signup');
       return;
     }
 
@@ -52,7 +52,7 @@ export default function HeroSandbox() {
     }
 
     // 2. Redirect to main app with pre-fill email param
-    navigate(`/?email=${encodeURIComponent(email)}`);
+    navigate(`/signup?email=${encodeURIComponent(email)}`);
   }
 
   const showBlur = hasGenerated || (isGenerating && displayedText.length > MOCK_RESPONSE.length * 0.4);

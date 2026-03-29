@@ -44,7 +44,10 @@ def get_user_by_id(user_id: str) -> dict | None:
     .eq('id', user_id) is the equivalent of the user_id filter required
     by Rule 3 for all other tables.
 
-    Returns None if the user does not exist or is soft-deleted.
+    Returns None if the user does not exist, is soft-deleted, or on any error.
     """
-    result = supabase.table("users").select("*").eq("id", user_id).eq("is_deleted", False).maybe_single().execute()
-    return result.data
+    try:
+        result = supabase.table("users").select("*").eq("id", user_id).eq("is_deleted", False).maybe_single().execute()
+        return result.data if result and result.data else None
+    except Exception:
+        return None

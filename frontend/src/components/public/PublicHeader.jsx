@@ -32,7 +32,7 @@ export default function PublicHeader() {
     >
       
       {/* Brand / Logo */}
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
+      <Link to="/landing" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
         <div style={{
           width: 28, height: 28,
           background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent))',
@@ -77,7 +77,7 @@ export default function PublicHeader() {
           Log in
         </button>
         <button 
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/signup')}
           style={{
             display: 'flex', alignItems: 'center', gap: 6,
             background: 'var(--text-primary)', color: 'var(--bg-base)',

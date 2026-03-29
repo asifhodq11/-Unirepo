@@ -46,8 +46,8 @@ async function request(method, path, { body, timeout = DEFAULT_TIMEOUT_MS } = {}
   }
   clearTimeout(timer);
 
-  // Handle 401 — redirect to login (except for the /me boot call)
-  if (res.status === 401 && !path.includes('/auth/me')) {
+  // Handle 401 — redirect to login (except for /me check and explicit /login requests)
+  if (res.status === 401 && !path.includes('/auth/me') && !path.includes('/auth/login')) {
     window.location.href = '/login';
     throw new ApiError('AUTH_REQUIRED', 'Session expired.', 401);
   }
@@ -64,8 +64,9 @@ async function request(method, path, { body, timeout = DEFAULT_TIMEOUT_MS } = {}
   }
 
   if (!res.ok) {
-    const errCode = data?.error?.code ?? 'SERVER_ERROR';
-    const errMsg  = data?.error?.message ?? `Request failed (${res.status})`;
+    // Backend returns: { error: true, code: "CODE", message: "Human text", details: {...} }
+    const errCode = data?.code ?? data?.error?.code ?? 'SERVER_ERROR';
+    const errMsg  = data?.message ?? data?.error?.message ?? `Request failed (${res.status})`;
     throw new ApiError(errCode, errMsg, res.status);
   }
 

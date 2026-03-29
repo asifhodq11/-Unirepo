@@ -252,7 +252,7 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> 10 manual AI replies</li>
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> History dashboard</li>
               </ul>
-              <Link to="/" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.03)', marginTop: 'auto' }}>Start Free</Link>
+              <Link to="/signup?plan=free" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.03)', marginTop: 'auto' }}>Start Free</Link>
             </div>
 
             {/* Starter */}
@@ -328,7 +328,7 @@ export default function LandingPage() {
               <Bot size={32} color="var(--text-primary)" />
            </div>
           <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.04em', marginBottom: 'var(--space-8)' }}>Deploy ReplyIQ today.</h2>
-          <Link to="/" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: 999 }}>
+          <Link to="/signup" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: 999 }}>
             Start Automating Free <ArrowRight size={18} style={{ marginLeft: 8 }} />
           </Link>
         </div>

@@ -115,7 +115,9 @@ def login():
 
     user = get_user_by_id(auth_response.user.id)
     if not user:
-        return build_error("AUTH_REQUIRED")
+        # Auth succeeded but no profile row exists — the account was never fully created.
+        # Guide the user to sign up instead.
+        return build_error("INVALID_CREDENTIALS")
 
     response = make_response({"user": user}, 200)
     _set_session_cookie(response, auth_response.session.access_token)
