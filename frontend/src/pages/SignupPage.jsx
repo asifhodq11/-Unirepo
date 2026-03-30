@@ -21,18 +21,9 @@ export default function SignupPage() {
   });
   const [error, setError]                 = useState('');
   const [loading, setLoading]             = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  // Resend cooldown
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resending, setResending]           = useState(false);
-
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const t = setInterval(() => setResendCooldown(c => c - 1), 1000);
-    return () => clearInterval(t);
-  }, [resendCooldown]);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -45,8 +36,8 @@ export default function SignupPage() {
     try {
       const { status, data } = await api.rawPost('/auth/signup', form);
       if (status === 202) {
-        // Email verification required — show success screen
-        setVerificationSent(true);
+        // Email verification required — jump to dedicated verify page
+        window.location.href = `/verify-email?email=${encodeURIComponent(form.email)}`;
       } else {
         // 201 — session created, store user and navigate
         setUser(data.user);
@@ -57,67 +48,6 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handleResend() {
-    setResending(true);
-    try {
-      await api.post('/auth/resend-verification', { email: form.email });
-    } catch { /* silent fail */ }
-    setResendCooldown(60);
-    setResending(false);
-  }
-
-  // ── Verification-pending screen ───────────────────────────────
-  if (verificationSent) {
-    return (
-      <div className="auth-page">
-        <div className="auth-card" style={{ textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-            <div style={{
-              width: 64, height: 64, borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.05))',
-              border: '1px solid rgba(99,102,241,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Mail size={28} style={{ color: 'var(--accent)' }} />
-            </div>
-          </div>
-
-          <h2 style={{ marginBottom: '0.4rem' }}>Verify your email</h2>
-          <p className="text-sm text-muted" style={{ marginBottom: '1.75rem', lineHeight: 1.6 }}>
-            We sent a confirmation link to <strong>{form.email}</strong>.<br />
-            Click it to activate your account.
-          </p>
-
-          <button
-            id="signup-resend"
-            onClick={handleResend}
-            disabled={resending || resendCooldown > 0}
-            style={{
-              width: '100%', padding: '0.65rem', borderRadius: '10px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: resendCooldown > 0 ? 'rgba(255,255,255,0.03)' : 'rgba(99,102,241,0.12)',
-              color: resendCooldown > 0 ? 'var(--text-muted)' : 'var(--accent)',
-              cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
-              fontSize: '0.875rem', fontWeight: 600,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              transition: 'all 0.2s',
-            }}
-          >
-            <RefreshCw size={14} />
-            {resendCooldown > 0
-              ? `Resend in ${resendCooldown}s`
-              : resending ? 'Sending…' : 'Resend verification email'
-            }
-          </button>
-
-          <p className="text-sm text-center text-muted" style={{ marginTop: '1.25rem' }}>
-            <Link to="/login" style={{ color: 'var(--text-muted)' }}>← Back to Sign in</Link>
-          </p>
-        </div>
-      </div>
-    );
   }
 
   return (

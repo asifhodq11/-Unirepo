@@ -5,15 +5,24 @@ import { useAuth } from '../context/AuthContext';
 
 export default function VerifyEmailPage() {
   const { logout, user } = useAuth();
+  const searchParams = new URLSearchParams(window.location.search);
+  const emailParam   = searchParams.get('email');
+  const targetEmail  = user?.email || emailParam;
+
   const [loading, setLoading] = useState(false);
   const [sent, setSent]       = useState(false);
   const [error, setError]     = useState(null);
 
   const handleResend = async () => {
+    if (!targetEmail) {
+      setError("No email found to resend to.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      await api.post('/auth/resend-verification', { email: user?.email });
+      await api.post('/auth/resend-verification', { email: targetEmail });
+
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch (err) {
@@ -48,7 +57,7 @@ export default function VerifyEmailPage() {
 
         <h2 style={{ marginBottom: '0.5rem' }}>One last step</h2>
         <p className="text-sm text-muted" style={{ marginBottom: '2rem', lineHeight: 1.6 }}>
-          We've sent a verification link to your email. Click it to activate
+          We've sent a verification link to <strong>{targetEmail || "your email"}</strong>. Click it to activate
           your ReplyIQ account and unlock your dashboard.
         </p>
 
