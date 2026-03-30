@@ -23,6 +23,7 @@ from app.models.reply_model import insert_reply
 from app.services.ai_engine import generate_reply
 from app.services.usage_service import increment_usage, get_today_reply_count
 from app.services.google_api_service import get_master_access_token, fetch_recent_reviews
+from app.utils.exceptions import PollerError
 
 def run_google_poller():
     log_event("poller_started", environment="google_api")
@@ -35,15 +36,16 @@ def run_google_poller():
         users = users_result.data if users_result.data else []
     except Exception as e:
         log_event("poller_error", stage="fetch_users", error=str(e))
-        return
+        raise PollerError(stage="fetch_users", message=str(e))
 
     log_event("poller_user_count", total_active_users=len(users))
 
     # Fetch Master Token once per cycle
     access_token = get_master_access_token()
     if not access_token:
-        log_event("poller_error", stage="oauth_token", error="Failed to acquire Google Master Access Token")
-        return
+        error_msg = "Failed to acquire Google Master Access Token. Check your .env credentials (GOOGLE_CLIENT_ID, etc)."
+        log_event("poller_error", stage="oauth_token", error=error_msg)
+        raise PollerError(stage="oauth_token", message=error_msg)
 
     # 2. Iterate and process reviews per user
     for user in users:

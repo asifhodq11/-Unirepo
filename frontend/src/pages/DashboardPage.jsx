@@ -31,19 +31,25 @@ function SparkTooltip({ active, payload, label }) {
 /* ── Live Stats Panel (Right Column) ── */
 function LiveEngineStats({ used, limitDisplay, analytics }) {
   const [running, setRunning] = useState(false);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState({ message: '', isError: false });
 
   async function handleTriggerPoller() {
     setRunning(true);
-    setToast('Scanning for new reviews...');
+    setToast({ message: 'Scanning for new reviews...', isError: false });
     try {
       const response = await api.post('/poller/trigger', {});
-      setToast(response.message || 'Scan complete — 2 new replies generated!');
+      setToast({ 
+        message: response.message || 'Scan complete — 2 new replies generated!', 
+        isError: false 
+      });
     } catch (err) {
-      setToast('Scan failed to run.');
+      setToast({ 
+        message: err.message || 'Scan failed to run.', 
+        isError: true 
+      });
     } finally {
       setRunning(false);
-      setTimeout(() => setToast(''), 4000);
+      setTimeout(() => setToast({ message: '', isError: false }), 6000);
     }
   }
 
@@ -156,7 +162,15 @@ function LiveEngineStats({ used, limitDisplay, analytics }) {
               <Cpu size={14} className="mr-2" />
               {running ? 'Running...' : 'Trigger Scan'}
             </button>
-            {toast && <span className="text-xs text-success bg-success/10 px-2 py-1 rounded">{toast}</span>}
+            {toast.message && (
+              <span className={`text-xs px-2 py-1 rounded ${
+                toast.isError 
+                  ? 'text-error bg-error/10 border border-error/20' 
+                  : 'text-success bg-success/10'
+              }`}>
+                {toast.message}
+              </span>
+            )}
         </div>
       </motion.div>
     </motion.div>

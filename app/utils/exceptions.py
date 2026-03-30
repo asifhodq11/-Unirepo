@@ -180,3 +180,13 @@ class StripeWebhookInvalid(ReplyIQError):
 class RateLimitExceeded(ReplyIQError):
     error_code = "RATE_LIMIT_EXCEEDED"
     http_status = 429
+
+
+class PollerError(ReplyIQError):
+    """Raised when the background poller fails critically (e.g. invalid credentials)."""
+
+    error_code = "POLLER_ERROR"
+    http_status = 500
+
+    def __init__(self, stage=None, message=None):
+        super().__init__(details={"stage": stage, "message": message})

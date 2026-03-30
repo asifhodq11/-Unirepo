@@ -1,6 +1,7 @@
 import requests
 from flask import current_app
 import os
+from app.utils.logger import log_event
 
 def get_master_access_token():
     """
@@ -21,7 +22,7 @@ def get_master_access_token():
         refresh_token = os.environ.get("GOOGLE_MASTER_REFRESH_TOKEN")
 
     if not all([client_id, client_secret, refresh_token]):
-        print("[Google API Error] Missing OAuth credentials (ID, Secret, or Refresh Token).")
+        log_event("google_api_error", message="Missing OAuth credentials (ID, Secret, or Refresh Token).")
         return None
 
     url = "https://oauth2.googleapis.com/token"
@@ -36,7 +37,7 @@ def get_master_access_token():
     if resp.status_code == 200:
         return resp.json().get("access_token")
     else:
-        print(f"[Google API Error] Failed to refresh token: {resp.text}")
+        log_event("google_api_error", stage="refresh_token", error=resp.text)
         return None
 
 
