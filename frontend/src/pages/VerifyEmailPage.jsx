@@ -1,30 +1,32 @@
 import React, { useState } from 'react';
-import { Mail, ArrowLeft, RefreshCw, LogOut } from 'lucide-react';
+import { Mail, RefreshCw, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import supabase from '../api/supabase';
+import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleResend = async () => {
     setLoading(true);
-    const user = (await supabase.auth.getUser()).data.user;
-    if (user?.email) {
-      await supabase.auth.resend({
-        type: 'signup',
-        email: user.email,
-      });
+    setError(null);
+    try {
+      await api.post('/auth/resend-verification');
       setSent(true);
+      setTimeout(() => setSent(false), 5000);
+    } catch (err) {
+      setError(err.message || 'Failed to resend. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setTimeout(() => setSent(false), 5000);
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    document.cookie = 'session_token=; Max-Age=0; path=/;';
+    await logout();
     navigate('/login');
   };
 
@@ -49,6 +51,12 @@ const VerifyEmailPage = () => {
           <p className="text-white/60 text-center mb-8 leading-relaxed">
             We've sent a verification link to your email. Click it to activate your ReplyIQ account and unlock your dashboard.
           </p>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm text-center">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-4">
             <button
