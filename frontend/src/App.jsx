@@ -40,14 +40,6 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (!user)   return <Navigate to="/login" replace />;
-
-  // NEW: Strict email verification check (Wave 2)
-  // If the user hasn't confirmed their email, send them to the verify-email page.
-  // We check for email_confirmed_at (Supabase default field) or a custom confirmed flag.
-  if (!user.email_confirmed_at && !user.is_verified) {
-    return <Navigate to="/verify-email" replace />;
-  }
-
   return children;
 }
 
