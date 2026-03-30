@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Activity, AlertTriangle } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 export default function AdminPage() {
@@ -11,6 +11,33 @@ export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Modal state for Google Configuration
+  const [editGoogleUser, setEditGoogleUser] = useState(null);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [googleLocationId, setGoogleLocationId] = useState('');
+  const [savingGoogle, setSavingGoogle] = useState(false);
+
+  async function handleSaveGoogle(e) {
+    e.preventDefault();
+    if (!editGoogleUser) return;
+    setSavingGoogle(true);
+    try {
+      await api.put(`/admin/users/${editGoogleUser.id}/google-config`, {
+        google_connected: googleConnected,
+        google_location_id: googleLocationId
+      });
+      setUsers(users.map(u => u.id === editGoogleUser.id 
+        ? { ...u, google_connected: googleConnected, google_location_id: googleLocationId } 
+        : u
+      ));
+      setEditGoogleUser(null);
+    } catch (err) {
+      alert("Failed to save google config");
+    } finally {
+      setSavingGoogle(false);
+    }
+  }
 
   // Redundant structural guard just in case the route wasn't enough
   if (!user?.is_admin) {
@@ -135,6 +162,8 @@ export default function AdminPage() {
                 <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Plan</th>
                 <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Usage (Mo)</th>
                 <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Joined</th>
+                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Google</th>
+                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -151,11 +180,25 @@ export default function AdminPage() {
                   <td style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                     {new Date(u.created_at).toLocaleDateString()}
                   </td>
+                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                    {u.google_connected ? <CheckCircle size={16} className="text-success" /> : <XCircle size={16} className="text-muted" />}
+                  </td>
+                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
+                    <button 
+                      onClick={() => {
+                        setEditGoogleUser(u);
+                        setGoogleConnected(u.google_connected || false);
+                        setGoogleLocationId(u.google_location_id || '');
+                      }} 
+                      className="btn btn-ghost btn-sm text-xs py-1 px-3">
+                      Config
+                    </button>
+                  </td>
                 </tr>
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={7} style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
                     No users found.
                   </td>
                 </tr>
@@ -164,6 +207,41 @@ export default function AdminPage() {
           </table>
         </div>
       </div>
+      
+      {/* Edit Google Config Modal */}
+      {editGoogleUser && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)' }}>
+          <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
+            <h3 className="text-lg font-bold mb-4">Edit Google Config</h3>
+            <p className="text-sm text-muted mb-4 break-all">User: {editGoogleUser.email}</p>
+            <form onSubmit={handleSaveGoogle}>
+              <div className="form-group mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={googleConnected} onChange={e => setGoogleConnected(e.target.checked)} />
+                  <span className="text-sm">Google Connected</span>
+                </label>
+              </div>
+              <div className="form-group mb-6">
+                <label className="text-sm font-medium mb-1 block">Google Location ID</label>
+                <input 
+                  type="text" 
+                  className="input flex-1" 
+                  style={{ width: '100%' }}
+                  value={googleLocationId} 
+                  onChange={e => setGoogleLocationId(e.target.value)} 
+                  placeholder="e.g. 1234567890" 
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" className="btn btn-secondary" onClick={() => setEditGoogleUser(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={savingGoogle}>
+                  {savingGoogle ? 'Saving...' : 'Save Config'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

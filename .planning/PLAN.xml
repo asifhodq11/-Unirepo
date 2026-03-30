@@ -1,212 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plan version="2.0" objective="Ultimate AI Intelligence: Human-Indistinguishable Review Responses">
+<plan version="2.0" objective="Google Business Profile API Integration (Agency Invitation Flow)">
 
   <!-- ============================================================ -->
   <!-- CONTEXT                                                        -->
   <!-- ============================================================ -->
   <context>
     <current_state>
-      - ai_engine.py has a 2-pass pipeline (Generate + Audit). No temperature control, no signal extraction, no burstiness engineering.
-      - call_llm() hardcodes temperature=0.7 for ALL passes.
-      - STAR_INSTRUCTIONS are shallow strings with no psychological architecture.
-      - No Signal Extraction pass (Pass 0) exists.
-      - No Variance Engine exists (opener_type, structure_tag not in DB).
-      - TWENTY_FOUR_PATTERNS exist but do not include the new Layer 3 / Layer 5 patterns.
+      - Frontend GoogleConnectionModal asks users to approve an email invitation.
+      - Supabase schema `users` already has `google_connected` and `google_location_id` fields (from 001_create_users.sql).
+      - `run_poller.py` uses `mock_google.generate_fake_reviews()` instead of real API calls.
+      - `admin.py` dashboard lacks endpoints to set `google_location_id` for users.
     </current_state>
     <target_state>
-      - A 4-Pass pipeline: Signal Extraction → Weighted Generation → Burstiness Humaniser → Cognitive Audit.
-      - Per-pass temperature matrix (0.6 to 0.9) based on star_rating and pass number.
-      - Structural Variance Engine: DB tracks last 5 opener_types and structure_tags per user to force rotation.
-      - Amygdala Scan hard-wired into Pass 3 for 1-2 star reviews.
-      - Advanced Persona Injection (small business owner, not corporate manager).
-      - Register Library (Restaurants, Salons, Medical, Gyms, etc.) for tonal permissions.
-      - 3 few-shot examples (varied tone, length, structure) in Pass 1.
-      - Subjectivity Injection mandatory in Pass 2.
-      - Quality Score (1-24) computed in Pass 3 and stored on the reply record.
+      - Admin UI allows manual mapping of `google_location_id` to a `user_id` and toggles `google_connected`.
+      - `google_api_service.py` connects to the real Google Business Profile API using a Master Refresh Token.
+      - `run_poller.py` pulls real reviews for connected users and posts AI replies back to Google.
     </target_state>
   </context>
 
   <!-- ============================================================ -->
-  <!-- WAVE 1: DATABASE FOUNDATION                                   -->
+  <!-- WAVE 1: ADMIN CONFIGURATION ROUTES & UI                       -->
   <!-- ============================================================ -->
-  <wave id="1" name="Database Foundation">
-    <description>Add variance tracking columns to replies and business_register to users. This is the foundation the Variance Engine depends on.</description>
+  <wave id="1" name="Admin Google Mapping">
+    <description>Provide the Admin Dashboard the tools to manually link users to their Google Location IDs after an invite is accepted.</description>
     
-    <task id="1.1" file="supabase/migrations/012_intelligence_v2.sql" action="CREATE">
-      Add to public.replies:
-        - opener_type TEXT (e.g. 'name', 'experience', 'item', 'reaction', 'question')
-        - structure_tag TEXT (e.g. 'A', 'B', 'C', 'D')
-        - quality_score SMALLINT (0-24, computed by Pass 3)
-      Add to public.users:
-        - business_register TEXT DEFAULT 'restaurant' 
-          (allowed values: restaurant, salon, gym, medical, automotive, hotel)
+    <task id="1.1" file="app/routes/admin.py" action="MODIFY">
+      - Update `GET /users` route to also fetch `google_connected` and `google_location_id`.
+      - Create new endpoint `PUT /users/<user_id>/google-config`.
+      - Schema requires `google_connected` (boolean) and `google_location_id` (string).
+      - Update user record in Supabase `users` table.
+    </task>
+
+    <task id="1.2" file="frontend/src/pages/AdminPage.jsx" action="MODIFY">
+      - Update the Users table columns to show a Google icon/status if `google_connected` is true.
+      - Add an "Edit Google Config" action button for each user.
+      - Build a small internal modal containing a text input for `Location ID` and a toggle for `Connected`.
+      - Wire the submit button to the new PUT endpoint.
     </task>
   </wave>
 
   <!-- ============================================================ -->
-  <!-- WAVE 2: AI ENGINE CORE OVERHAUL                              -->
+  <!-- WAVE 2: GOOGLE API SERVICE                                   -->
   <!-- ============================================================ -->
-  <wave id="2" name="AI Engine Core Overhaul">
-    <description>The complete re-architecture of ai_engine.py into a 4-pass pipeline.</description>
+  <wave id="2" name="Google API Core Service">
+    <description>Create the HTTP service wrapper for the Google Business Profile API.</description>
 
-    <task id="2.1" file="app/services/ai_engine.py" action="MODIFY" section="call_llm">
-      Add temperature parameter to call_llm(). 
-      For Gemini native calls: pass temperature via config dict.
-      For OpenAI/OpenRouter calls: pass temperature in create() call.
-      Default = 0.75. Each pass will pass its own temperature value.
+    <task id="2.1" file="app/config.py" action="MODIFY">
+      - Add new required ENV keys for the Master OAuth connection:
+        `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_MASTER_REFRESH_TOKEN`
     </task>
 
-    <task id="2.2" file="app/services/ai_engine.py" action="MODIFY" section="constants">
-      REPLACE STAR_INSTRUCTIONS with STAR_CONTRACTS dict containing:
-        - approach (string)
-        - emotional_contract (string explaining WHY)
-        - required_elements (list)
-        - forbidden (list)
-        - temperature (float: 0.6-0.9)
-        - word_target (tuple: min, max)
-      
-      ADD REGISTER_LIBRARY dict for 6 business types:
-        - restaurant, salon, gym, medical, automotive, hotel
-        - Each has: permission_level, forbidden_phrases, ideal_tone, sample_voice
-      
-      ADD OPENER_TYPES list ['name','experience','item','reaction','question']
-      ADD STRUCTURE_TAGS list ['A','B','C','D'] with template strings
-      
-      EXTEND TWENTY_FOUR_PATTERNS with 5 new patterns from the Intelligence doc:
-        25. Symmetry openers (using the same word 3+ times)
-        26. Topic Echo (repeating reviewer's exact phrase verbatim)
-        27. "Ensuring" passive (we will ensure vs we will)
-        28. Platform clichés (hope this review helps)
-        29. Hollow superlatives in closers (best regards ever)
-    </task>
-
-    <task id="2.3" file="app/services/ai_engine.py" action="ADD" section="pass0">
-      ADD extract_review_signals(review_text, reviewer_name) -> dict
-      Implements:
-        - specific_items: regex extraction of quoted nouns and food/service items
-        - staff_names: capitalised proper nouns after role-indicator words
-        - occasion: keyword matching (birthday, anniversary, first visit, regular, special)
-        - emotional_register: detection of formality (lowercase/emoji = casual; full sentences = formal)
-        - word_count: len(text.split())
-        - has_complaint: any negative sentiment word detected
-        - review_formality: 'casual' | 'formal'
-      Returns context_dict used to inject into Pass 1 prompt.
-    </task>
-
-    <task id="2.4" file="app/services/ai_engine.py" action="ADD" section="variance_engine">
-      ADD get_variance_context(user_id) -> dict
-      Queries supabase for last 5 replies for this user_id.
-      Returns:
-        - recent_openers: list of last 5 opener_type values
-        - recent_structures: list of last 5 structure_tag values  
-        - suggested_opener: first opener_type NOT in recent_openers (or least used)
-        - suggested_structure: first structure_tag NOT in recent_structures
-      
-      ADD get_word_target(star_rating, variance_context) -> tuple[int, int]
-      Rotates through Short/Medium/Long bands per the variance engine rules.
-    </task>
-
-    <task id="2.5" file="app/services/ai_engine.py" action="MODIFY" section="generate_reply_signature">
-      EXTEND generate_reply() signature to accept:
-        - reviewer_name: str = ""
-        - user_id: str = ""         (for variance engine lookup)
-        - business_register: str = "restaurant"  (from user profile)
-      
-      CHANGE internal flow to 4 passes:
-        Pass 0: extract_review_signals() + get_variance_context()
-        Pass 1: Weighted Generation (temperature from star contract)
-        Pass 2: Burstiness Humaniser (temperature 0.75)
-        Pass 3: Cognitive Audit (temperature 0.5)
-      
-      CHANGE return dict to include:
-        - text, tokens, cost_usd, model_used (existing)
-        - opener_type (from Pass 3 response parsing)
-        - structure_tag (from Pass 3 response parsing)
-        - quality_score (from Pass 3 scoring matrix)
-    </task>
-
-    <task id="2.6" file="app/services/ai_engine.py" action="MODIFY" section="pass1_prompt">
-      BUILD new Pass 1 system prompt using:
-        - Advanced Persona ("You are the owner of {business_name}...")
-        - REGISTER_LIBRARY voice for this business_register
-        - Context injection from Pass 0 signals
-        - STAR_CONTRACTS[star_rating] full instruction block
-        - Variance context injection ("Do NOT use opener type X, recent structures were A,C,A")
-        - 3 few-shot examples (hardcoded, varied by star: 5-star casual, 4-star professional, 2-star empathetic)
-        - Burstiness requirement (min 1 sentence under 8 words, min 1 over 18 words)
-        - Word target from variance engine
-        - Security delimiter between review text and prompt
-    </task>
-
-    <task id="2.7" file="app/services/ai_engine.py" action="MODIFY" section="pass2_prompt">
-      BUILD new Pass 2 Burstiness Humaniser prompt:
-        - Structural fixes (rhythm, opener, closer)
-        - Word-level fixes (full banned word list)
-        - Subjectivity Injection (mandatory 1 new subjectivity marker)
-        - Strategic Imperfection (1 deliberate human irregularity)
-        - Emotional Temperature Check
-        - OUTPUT: revised reply ONLY
-    </task>
-
-    <task id="2.8" file="app/services/ai_engine.py" action="MODIFY" section="pass3_prompt">
-      BUILD new Pass 3 Cognitive Audit prompt:
-        - Specificity Test
-        - Opener Test (no "Thank you" or name as first word)
-        - Closer Test (no generic closers)
-        - Rhythm Test (metronome check)
-        - Amygdala Scan (for star_rating ≤ 2): ban defensive first-sentence words
-        - AI Vocabulary Final Check
-        - Cross-Review Uniformity Flag
-        - Quality Score matrix (8 dimensions, 1-3 each = max 24)
-        - OUTPUT FORMAT: reply text + JSON metadata block:
-          {"opener_type": "...", "structure_tag": "...", "quality_score": N, "changes": "..."}
+    <task id="2.2" file="app/services/google_api_service.py" action="CREATE">
+      - Implement `get_master_access_token()`: Makes a POST to `https://oauth2.googleapis.com/token` with the client credentials and refresh token.
+      - Implement `fetch_recent_reviews(location_id, access_token)` -> returns standard list of review dicts.
+      - Implement `reply_to_review(location_id, review_id, reply_text, access_token)`.
     </task>
   </wave>
 
   <!-- ============================================================ -->
-  <!-- WAVE 3: ROUTE INTEGRATION                                     -->
+  <!-- WAVE 3: POLLER & POSTER SURGERY                               -->
   <!-- ============================================================ -->
-  <wave id="3" name="Route Integration">
-    <description>Update the replies route to pass new parameters and persist new fields.</description>
+  <wave id="3" name="Poller Engine Replacement">
+    <description>Rip out the simulation code and plug the real API service into the heartbeat.</description>
 
-    <task id="3.1" file="app/routes/replies.py" action="MODIFY">
-      In the generate endpoint:
-        - Extract reviewer_name from request body (already in reviews table, pass through)
-        - Extract user_id from JWT
-        - Fetch business_register from users table
-        - Pass all 3 new params to generate_reply()
-        - Persist opener_type, structure_tag, quality_score to the replies record on INSERT
-    </task>
-  </wave>
-
-  <!-- ============================================================ -->
-  <!-- WAVE 4: VERIFICATION                                          -->
-  <!-- ============================================================ -->
-  <wave id="4" name="Verification">
-    <description>Manual smoke test of the new pipeline.</description>
-
-    <task id="4.1" type="manual_test">
-      Test Case A: 5-star restaurant review ("Best biryani in town!")
-        - Expected: Warm, short (40-65 words), item-specific, no "Thank you" opener
-        - Check quality_score >= 18
-      
-      Test Case B: 1-star review with complaint ("Waited 40 minutes, food was cold")
-        - Expected: Empathy-first first sentence, zero defensive words, offline path included
-        - Check Amygdala words absent from sentence 1
-      
-      Test Case C: 4-star salon review mentioning "Sophie"
-        - Expected: Sophie mentioned naturally, service acknowledged, gap mentioned honestly
-        - Check business_register='salon' voice applied
-      
-      Test Case D: 3-star mixed review
-        - Expected: Both sides held, no tipping to positive or negative
-        - Check both positive and negative acknowledgment present
+    <task id="3.1" file="run_poller.py" action="MODIFY">
+      - Update user fetch query to `eq("google_connected", True)`.
+      - Remove `mock_google` imports.
+      - Fetch a master access token using `get_master_access_token()`.
+      - Loop over connected users, call `fetch_recent_reviews(user['google_location_id'], access_token)`.
+      - Transform real Google review payload into our normalized db format.
     </task>
 
-    <task id="4.2" type="variance_test">
-      Generate 3 sequential replies for same user.
-      Verify opener_type rotates (not same value 3x in a row).
-      Verify structure_tag rotates.
+    <task id="3.2" file="app/services/reply_poster.py" action="MODIFY">
+      - Add `post_to_google(reply_record, access_token)`.
+      - Fetch the associated `location_id` by joining with the user table.
+      - Call `reply_to_review(location_id, review_id, reply_text, access_token)`.
+      - If 200 OK, update the `status` column in Supabase `replies` to "posted".
     </task>
   </wave>
 

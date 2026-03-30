@@ -18,11 +18,11 @@ import time
 from app import create_app
 from app.extensions import supabase
 from app.utils.logger import log_event
-from app.services.mock_google import generate_fake_reviews
 from app.models.review_model import insert_review
 from app.models.reply_model import insert_reply
 from app.services.ai_engine import generate_reply
 from app.services.usage_service import increment_usage, get_today_reply_count
+from app.services.google_api_service import get_master_access_token, fetch_recent_reviews
 
 def run_simulation_poller():
     log_event("poller_started", environment="simulation")
@@ -30,14 +30,20 @@ def run_simulation_poller():
     # 1. Fetch active users — now includes plan + daily_autonomy_limit for tier logic
     try:
         users_result = supabase.table("users").select(
-            "id, business_name, business_type, tone_preference, plan, daily_autonomy_limit"
-        ).execute()
+            "id, business_name, business_type, tone_preference, plan, daily_autonomy_limit, google_location_id"
+        ).eq("google_connected", True).execute()
         users = users_result.data if users_result.data else []
     except Exception as e:
         log_event("poller_error", stage="fetch_users", error=str(e))
         return
 
     log_event("poller_user_count", total_active_users=len(users))
+
+    # Fetch Master Token once per cycle
+    access_token = get_master_access_token()
+    if not access_token:
+        log_event("poller_error", stage="oauth_token", error="Failed to acquire Google Master Access Token")
+        return
 
     # 2. Iterate and process reviews per user
     for user in users:
@@ -49,25 +55,41 @@ def run_simulation_poller():
         # Default limit: 20 if column not yet migrated or null
         daily_limit = user.get("daily_autonomy_limit") or 20
         
-        # 2a. Fetch from "Google"
-        mock_reviews = generate_fake_reviews(biz_name, max_count=2)
-        if not mock_reviews:
+        location_id = user.get("google_location_id")
+        if not location_id:
             continue
             
-        for rev_payload in mock_reviews:
-            google_id = rev_payload["name"]
+        # 2a. Fetch from Real Google API
+        real_reviews = fetch_recent_reviews(location_id, access_token)
+        if not real_reviews:
+            continue
+            
+        for rev_payload in real_reviews:
+            google_id = rev_payload.get("name")
+            if not google_id:
+                continue
             
             # 2b. Deduplicate — skip already-processed reviews
             existing = supabase.table("reviews").select("id").eq("user_id", user_id).eq("google_review_id", google_id).execute()
             if existing.data:
                 continue
                 
+            review_text = rev_payload.get("comment", "")
+            if not review_text.strip():
+                continue # Skip empty reviews, AI has nothing to reply to
+
+            rating_map = {"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5}
+            raw_rating = rev_payload.get("starRating", "FIVE")
+            numeric_rating = rating_map.get(raw_rating, 5)
+            
+            reviewer_name = rev_payload.get("reviewer", {}).get("displayName", "Customer")
+                
             # 2c. Build the review record
             review_record = {
                 "google_review_id": google_id,
-                "reviewer_name":    rev_payload["reviewer"]["displayName"],
-                "rating":           rev_payload["numericRating"],
-                "review_text":      rev_payload["comment"],
+                "reviewer_name":    reviewer_name,
+                "rating":           numeric_rating,
+                "review_text":      review_text,
                 "status":           "pending",
             }
             

@@ -96,7 +96,7 @@ def list_users():
 
         users_req = (
             supabase.from_("users")
-            .select("id, email, business_name, plan, reply_count_this_month, created_at")
+            .select("id, email, business_name, plan, reply_count_this_month, created_at, google_connected, google_location_id")
             .order("created_at", desc=True)
             .range(offset, offset + per_page - 1)
             .execute()
@@ -113,3 +113,40 @@ def list_users():
 
     except Exception as e:
         return build_error("SERVER_ERROR", details="Failed to fetch user list."), 500
+
+
+@admin_bp.route("/users/<user_id>/google-config", methods=["PUT"])
+@require_admin
+def update_google_config(user_id):
+    """
+    Updates the google_connected and google_location_id for a specific user.
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return build_error("BAD_REQUEST", details="Missing payload"), 400
+        
+        update_data = {}
+        if "google_connected" in data:
+            update_data["google_connected"] = bool(data["google_connected"])
+        if "google_location_id" in data:
+            # allow clearing it out with empty string
+            update_data["google_location_id"] = str(data["google_location_id"]) if data["google_location_id"] else None
+            
+        if not update_data:
+             return build_error("BAD_REQUEST", details="No fields to update"), 400
+             
+        res = supabase.from_("users").update(update_data).eq("id", str(user_id)).execute()
+        if not res.data:
+            return build_error("NOT_FOUND", details="User not found or update failed"), 404
+            
+        return jsonify({
+            "message": "Successfully updated Google configuration", 
+            "google_connected": res.data[0].get("google_connected"),
+            "google_location_id": res.data[0].get("google_location_id")
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return build_error("SERVER_ERROR", details="Failed to update Google config: " + str(e)), 500

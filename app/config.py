@@ -19,7 +19,10 @@ class Config:
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "unused")
     
     GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-    GOOGLE_API_KEY = os.environ["GOOGLE_API_KEY"]
+    GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+    GOOGLE_MASTER_REFRESH_TOKEN = os.environ.get("GOOGLE_MASTER_REFRESH_TOKEN")
 
     STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
     STRIPE_WEBHOOK_SECRET = os.environ["STRIPE_WEBHOOK_SECRET"]
