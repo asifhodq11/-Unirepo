@@ -31,4 +31,4 @@ export const PLAN_LABELS = {
   ultra:   'Ultra',
 };
 
-export const TONE_OPTIONS = ['friendly', 'professional', 'formal', 'casual'];
+export const TONE_OPTIONS = ['friendly', 'professional', 'formal', 'casual', 'empathetic'];
