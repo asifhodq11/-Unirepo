@@ -182,6 +182,12 @@ class RateLimitExceeded(ReplyIQError):
     http_status = 429
 
 
+class InvalidGrantError(ReplyIQError):
+    """Raised when Google revokes the master refresh token or app access."""
+    error_code = "INVALID_GRANT"
+    http_status = 401
+
+
 class PollerError(ReplyIQError):
     """Raised when the background poller fails critically (e.g. invalid credentials)."""
 

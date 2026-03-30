@@ -37,7 +37,18 @@ def get_master_access_token():
     if resp.status_code == 200:
         return resp.json().get("access_token")
     else:
+        error_resp = {}
+        try:
+            error_resp = resp.json()
+        except Exception:
+            pass
+            
         log_event("google_api_error", stage="refresh_token", error=resp.text)
+        
+        if error_resp.get("error") == "invalid_grant":
+            from app.utils.exceptions import InvalidGrantError
+            raise InvalidGrantError("Google refresh token revoked or inactive. status=degraded")
+            
         return None
 
 

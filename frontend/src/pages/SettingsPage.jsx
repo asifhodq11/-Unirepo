@@ -213,7 +213,14 @@ export default function SettingsPage() {
             <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
               <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Connection</span></div>
               <div className="flex flex-col gap-2 items-start w-full">
-                {user?.google_connected 
+                {user?.google_status === 'degraded' 
+                  ? <>
+                      <span className="badge badge-warning flex items-center gap-1 mb-1" style={{ padding: '6px 12px', fontSize: '0.8rem' }}><AlertTriangle size={14} /> Access Revoked</span>
+                      <button className="btn btn-sm btn-secondary w-full flex justify-center w-full" onClick={() => setShowGoogleModal(true)}>
+                        Reconnect Business
+                      </button>
+                    </>
+                  : user?.google_connected 
                   ? <span className="badge badge-success flex items-center gap-1" style={{ padding: '6px 12px', fontSize: '0.8rem' }}><CheckCircle size={14} /> Connected</span> 
                   : <>
                       <span className="badge badge-muted mb-1" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Not connected</span>

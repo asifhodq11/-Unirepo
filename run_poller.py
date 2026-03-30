@@ -23,7 +23,7 @@ from app.models.reply_model import insert_reply
 from app.services.ai_engine import generate_reply
 from app.services.usage_service import increment_usage, get_today_reply_count
 from app.services.google_api_service import get_master_access_token, fetch_recent_reviews
-from app.utils.exceptions import PollerError
+from app.utils.exceptions import PollerError, InvalidGrantError
 
 def run_google_poller():
     log_event("poller_started", environment="google_api")
@@ -41,7 +41,17 @@ def run_google_poller():
     log_event("poller_user_count", total_active_users=len(users))
 
     # Fetch Master Token once per cycle
-    access_token = get_master_access_token()
+    try:
+        access_token = get_master_access_token()
+    except InvalidGrantError as e:
+        log_event("poller_terminal_error", stage="oauth_token", error="INVALID_GRANT: Master Token revoked or expired.", action="degrading_all_users")
+        # Global degradation: Set all connected users to degraded
+        try:
+            supabase.table("users").update({"google_status": "degraded"}).eq("google_connected", True).execute()
+        except Exception as update_err:
+            log_event("poller_error", stage="degrade_users", error=str(update_err))
+        raise PollerError(stage="oauth_token", message=str(e))
+
     if not access_token:
         error_msg = "Failed to acquire Google Master Access Token. Check your .env credentials (GOOGLE_CLIENT_ID, etc)."
         log_event("poller_error", stage="oauth_token", error=error_msg)

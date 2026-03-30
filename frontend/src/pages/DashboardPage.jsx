@@ -369,6 +369,25 @@ export default function DashboardPage() {
 
       {/* Quota & Error Alerts */}
       <AnimatePresence>
+        {user?.google_status === 'degraded' && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="alert alert-error flex items-start gap-3" 
+            style={{ marginBottom: 'var(--space-6)' }}
+          >
+            <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <strong>Action Required: Google Access Revoked</strong>
+              <p className="text-sm" style={{ marginTop: 'var(--space-1)', color: 'inherit', opacity: 0.85 }}>
+                Your Google Business Profile connection has expired or been revoked. We cannot fetch new reviews. 
+                Please <a href="/settings" style={{ textDecoration: 'underline', fontWeight: 600 }}>reconnect your account</a> immediately.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {atLimit && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
