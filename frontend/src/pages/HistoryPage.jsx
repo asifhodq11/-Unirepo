@@ -8,6 +8,7 @@ import {
   Loader2, CheckSquare, Square, Zap, ExternalLink,
 } from 'lucide-react';
 import ReviewModal from '../components/ReviewModal';
+import { getPlanLimit } from '../utils/plans';
 
 const STARS = [1, 2, 3, 4, 5];
 const ITEM_HEIGHT = 72;
