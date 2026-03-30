@@ -20,20 +20,21 @@ def create_user(
     Raises on any Supabase error — the caller (auth route) is responsible
     for catching and cleaning up the orphaned auth user.
     """
-    result = (
-        supabase.table("users")
-        .insert(
-            {
-                "id": user_id,
-                "email": email,
-                "business_name": business_name,
-                "business_type": business_type,
-                "tone_preference": tone_preference,
-            }
-        )
-        .execute()
-    )
-    return result.data[0]
+    result = supabase.rpc(
+        "create_user_profile",
+        {
+            "p_id":              user_id,
+            "p_email":           email,
+            "p_business_name":   business_name,
+            "p_business_type":   business_type,
+            "p_tone_preference": tone_preference,
+        }
+    ).execute()
+
+    if not result.data:
+        raise RuntimeError("create_user_profile RPC returned no data")
+
+    return result.data
 
 
 def get_user_by_id(user_id: str) -> dict | None:

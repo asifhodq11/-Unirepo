@@ -81,11 +81,17 @@ def signup():
     if not auth_response.user:
         return build_error("EMAIL_EXISTS")
 
+    # Supabase returns a fake user with empty identities when email already exists
+    # and email confirmation is enabled. Detect this to avoid orphaned inserts.
+    user_identities = getattr(auth_response.user, "identities", None)
+    if user_identities is not None and len(user_identities) == 0:
+        return build_error("EMAIL_EXISTS")
+
     user_id = auth_response.user.id
 
     # Step 2: Create public.users profile row
-    # If this fails, clean up the orphaned auth user so login will never
-    # succeed against a non-existent profile.
+    # Uses admin API to guarantee RLS bypass — the service role key
+    # client still evaluates RLS policies when auth.uid() is NULL (server context).
     try:
         user = create_user(
             user_id=user_id,
@@ -94,12 +100,13 @@ def signup():
             business_type=data["business_type"],
             tone_preference=data.get("tone_preference", "friendly"),
         )
-    except Exception:
+    except Exception as e:
+        log_event("signup_profile_error", user_id=user_id, error=str(e))
         try:
             supabase.auth.admin.delete_user(user_id)
-        except Exception:
-            pass  # Best-effort cleanup — log but do not mask the original error
-        return build_error("SERVER_ERROR")
+        except Exception as del_err:
+            log_event("signup_cleanup_error", user_id=user_id, error=str(del_err))
+        return build_error("SERVER_ERROR", details="Profile creation failed. Please try again.")
 
     log_event("user_signup", user_id=user_id, plan="free")
 
