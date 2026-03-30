@@ -21,9 +21,11 @@ Phase 1 aims to implement the "Science of Human Indistinguishability":
 3. **Amygdala Scan**: Strict empathy-first rule for 1-2 star reviews (Zero defensiveness).
 4. **Variance Engine**: Structural tracking in the DB to prevent document-level AI uniformity.
 
-## Immediate V2 Priorities (Preparation for Phase 2: Claude Sonnet)
-1. DB Migration: Add `opener_type`, `structure_tag` to `replies`, and `business_register` to `users`.
-2. Pipeline Overhaul: Re-architect the prompts in `ai_engine.py` to support *Signal Extraction* (Pass 0), *Weighted Generation* (Pass 1), *Humanisation* (Pass 2), and *Cognitive Audit* (Pass 3).
+## Immediate Priorities (Post-V2.3 Verification)
+1. **[COMPLETED]** V2.3 "Brevity & Authenticity" Patch (Tone Engine, 40% reduction, Slop 3.0 removal).
+2. **Next up (Launch Blockers)**: Replace simulated Google poller with real Google Business Profile API integration.
+3. Fix Stripe subscription billing logic.
+4. Implement essential security/legal features (email verification, password reset, legal pages).
 
 ## Known Blockers & Future Gaps (V3 Roadmap)
 - AI is currently "Factually Blind" (No access to static business knowledge/menus).
