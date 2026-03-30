@@ -52,33 +52,51 @@ def get_master_access_token():
         return None
 
 
-def fetch_recent_reviews(location_id, access_token):
+def fetch_recent_reviews(location_id, access_token, max_pages=20):
     """
     Fetches the latest reviews for a specific Google Location.
-    `location_id` must be in the format 'accounts/{account_id}/locations/{location_id}'
+    Includes pagination handling (Wave 2 Hardening).
+    - Default max_pages=20 captures ~1,000 reviews.
     """
     if not access_token:
-        print("[Google API Error] No access token provided.")
+        log_event("google_api_error", message="Missing access token for fetch.")
         return []
+
+    all_reviews = []
+    page_token = None
+    pages_fetched = 0
+
+    while pages_fetched < max_pages:
+        url = f"https://mybusinessreviews.googleapis.com/v1/{location_id}/reviews"
+        params = {
+            "pageSize": 50,
+            "orderBy": "updateTime desc"
+        }
+        if page_token:
+            params["pageToken"] = page_token
+
+        headers = { "Authorization": f"Bearer {access_token}" }
         
-    # Standard format fallback warning
-    if not location_id.startswith("accounts/"):
-        print(f"[Google API Warning] Location ID '{location_id}' is not in the correct 'accounts/*/locations/*' format.")
+        try:
+            resp = requests.get(url, headers=headers, params=params, timeout=10)
+            if resp.status_code != 200:
+                log_event("google_api_error", status_code=resp.status_code, error=resp.text)
+                break
+            
+            data = resp.json()
+            reviews = data.get("reviews", [])
+            all_reviews.extend(reviews)
+            
+            page_token = data.get("nextPageToken")
+            if not page_token:
+                break
+                
+            pages_fetched += 1
+        except Exception as e:
+            log_event("google_api_error", stage="fetch_pagination", error=str(e))
+            break
 
-    # Manage reviews endpoint
-    url = f"https://mybusinessreviews.googleapis.com/v1/{location_id}/reviews"
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
-
-    resp = requests.get(url, headers=headers)
-    if resp.status_code == 200:
-        data = resp.json()
-        # Returns a list of review objects as defined by Google
-        return data.get("reviews", [])
-    else:
-        print(f"[Google API Error] Error fetching reviews for {location_id}: {resp.text}")
-        return []
+    return all_reviews
 
 def reply_to_review(location_id, review_id, reply_text, access_token):
     """

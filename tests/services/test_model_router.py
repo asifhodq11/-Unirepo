@@ -25,24 +25,28 @@ def test_classify_crisis():
     assert classify_complexity(1, "I hated it.") == 'standard'
 
 def test_classify_simple():
-    # Simple: rating == 5 AND word count < 30 AND no crisis word
+    # Simple: rating >= 4 AND word count < 30
     assert classify_complexity(5, "Great food!") == 'simple'
-    # Exactly 29 words
-    short_text = " ".join(["word"] * 29)
-    assert classify_complexity(5, short_text) == 'simple'
-    # Exactly 30 words -> Standard
-    long_text = " ".join(["word"] * 30)
-    assert classify_complexity(5, long_text) == 'standard'
+    assert classify_complexity(4, "Good.") == 'simple'
+    
+    # Simple even if long text, if the anger score is low (< 15)
+    # 5-star, 50 words, no caps/exclaims -> score = 0 + 5 = 5 < 15
+    long_calm_text = " ".join(["word"] * 50)
+    assert classify_complexity(5, long_calm_text) == 'simple'
 
 def test_classify_standard():
-    # Everything else
-    assert classify_complexity(4, "Good service.") == 'standard'
-    assert classify_complexity(3, "Average.") == 'standard'
-    assert classify_complexity(2, "Poor.") == 'standard' # No crisis word
+    # Standard: anger score between 15 and 45
+    # 3 star, 5 words -> score = 16.5 -> STANDARD
+    assert classify_complexity(3, "Average food.") == 'standard'
+    # 4 star, some exclaim -> 8 (rating) + 9 (3 exclaims) + 5 (long text) = 22 -> STANDARD
+    text = "Good. " + "word " * 40 + "!!!"
+    assert classify_complexity(4, text) == 'standard'
+    # 2 star, NO crisis words -> (5-2)*8 + low words = 24.5 -> STANDARD
+    assert classify_complexity(2, "Not great.") == 'standard'
 
 def test_model_mapping():
     # Default provider is openrouter — expect prefixed names
     assert get_model_for_complexity('crisis') == 'openai/gpt-4o'
-    assert get_model_for_complexity('simple') == 'google/gemini-2.0-flash-lite'
+    assert get_model_for_complexity('simple') == 'openai/gpt-4o-mini'
     assert get_model_for_complexity('standard') == 'openai/gpt-4o-mini'
     assert get_model_for_complexity('unknown') == 'openai/gpt-4o-mini'

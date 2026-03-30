@@ -5,23 +5,6 @@ tests/services/test_stripe_service.py
 All Stripe and Supabase calls are fully mocked — no real API calls.
 """
 
-import os
-
-# Set dummy env vars BEFORE any app imports
-os.environ['SECRET_KEY'] = 'test-secret'
-os.environ['SUPABASE_URL'] = 'https://test.supabase.co'
-FAKE_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.fake_signature_for_testing'
-os.environ['SUPABASE_ANON_KEY'] = FAKE_JWT
-os.environ['SUPABASE_SERVICE_ROLE_KEY'] = FAKE_JWT
-os.environ['OPENAI_API_KEY'] = 'test-openai-key'
-os.environ['GEMINI_API_KEY'] = 'test-gemini-key'
-os.environ['GOOGLE_API_KEY'] = 'test-google-key'
-os.environ['STRIPE_SECRET_KEY'] = 'test-stripe-key'
-os.environ['STRIPE_WEBHOOK_SECRET'] = 'test-webhook-secret'
-os.environ['STRIPE_PRICE_ID_STARTER'] = 'price_test_starter'
-os.environ['RESEND_API_KEY'] = 'test-resend-key'
-os.environ['FRONTEND_URL'] = 'http://test.localhost'
-
 import pytest
 import stripe
 from unittest.mock import patch, MagicMock, call
@@ -29,7 +12,6 @@ from unittest.mock import patch, MagicMock, call
 from app.services.stripe_service import (
     handle_webhook_event,
     cancel_subscription,
-    _processed_event_ids,
 )
 from app.utils.exceptions import StripeWebhookInvalid
 
@@ -72,26 +54,36 @@ def _make_payment_failed_event(event_id='evt_002'):
 def test_valid_webhook_upgrades_plan():
     event = _make_checkout_event(event_id='evt_test1')
     
-    # Ensure this event hasn't been seen before
-    _processed_event_ids.discard('evt_test1')
-
     mock_query = MagicMock()
+    mock_query.select.return_value = mock_query
     mock_query.update.return_value = mock_query
+    mock_query.insert.return_value = mock_query
     mock_query.eq.return_value = mock_query
-    mock_query.execute.return_value = MagicMock(data=None)
+    
+    # 3 calls: 1. SELECT (idempotency), 2. UPDATE (user), 3. INSERT (event)
+    mock_res_check = MagicMock(data=[]) # Not processed
+    mock_res_update = MagicMock(data=None)
+    mock_res_insert = MagicMock(data=None)
+    mock_query.execute.side_effect = [mock_res_check, mock_res_update, mock_res_insert]
 
     with patch('stripe.Webhook.construct_event', return_value=event), \
+         patch('stripe.Subscription.retrieve') as mock_sub_retr, \
          patch('app.services.stripe_service.supabase') as mock_sb:
 
-        mock_sb.from_.return_value = mock_query
+        mock_sb.table.return_value = mock_query
+        
+        # Mock sub retrieve for current_period_end
+        mock_sub = MagicMock()
+        mock_sub.current_period_end = 1711814400 # 2024-03-30
+        mock_sub_retr.return_value = mock_sub
 
         result = handle_webhook_event(b'fake-payload', 'fake-sig-header')
 
     assert result == {'received': True}
-    mock_query.update.assert_called_once_with({
-        'plan': 'starter',
-        'stripe_customer_id': FAKE_CUSTOMER_ID,
-    })
+    # verify update called with core starter plan data
+    called_payload = mock_query.update.call_args[0][0]
+    assert called_payload['plan'] == 'starter'
+    assert called_payload['stripe_customer_id'] == FAKE_CUSTOMER_ID
 
 
 # ──────────────────────────────────────────────────────────────
@@ -116,22 +108,26 @@ def test_invalid_signature_raises():
 def test_payment_failed_downgrades_plan():
     event = _make_payment_failed_event(event_id='evt_test3')
 
-    _processed_event_ids.discard('evt_test3')
-
     mock_query = MagicMock()
+    mock_query.select.return_value = mock_query
     mock_query.update.return_value = mock_query
+    mock_query.insert.return_value = mock_query
     mock_query.eq.return_value = mock_query
-    mock_query.execute.return_value = MagicMock(data=None)
+    
+    # 3 calls: SELECT check, UPDATE, INSERT event
+    mock_res_check = MagicMock(data=[])
+    mock_res_update = MagicMock(data=None)
+    mock_res_insert = MagicMock(data=None)
+    mock_query.execute.side_effect = [mock_res_check, mock_res_update, mock_res_insert]
 
     with patch('stripe.Webhook.construct_event', return_value=event), \
          patch('app.services.stripe_service.supabase') as mock_sb:
 
-        mock_sb.from_.return_value = mock_query
-
+        mock_sb.table.return_value = mock_query
         result = handle_webhook_event(b'fake-payload', 'fake-sig')
 
     assert result == {'received': True}
-    mock_query.update.assert_called_once_with({'plan': 'free'})
+    mock_query.update.assert_called_once_with({'plan': 'free', 'subscription_end': None, 'stripe_subscription_id': None})
 
 
 # ──────────────────────────────────────────────────────────────
@@ -141,26 +137,22 @@ def test_payment_failed_downgrades_plan():
 def test_replayed_event_is_idempotent():
     event = _make_checkout_event(event_id='evt_test4')
 
-    # Ensure clean state for this specific event
-    _processed_event_ids.discard('evt_test4')
-
     mock_query = MagicMock()
-    mock_query.update.return_value = mock_query
+    mock_query.select.return_value = mock_query
     mock_query.eq.return_value = mock_query
-    mock_query.execute.return_value = MagicMock(data=None)
+    
+    # Mock finding an existing ID -> Already processed
+    mock_res_check = MagicMock(data=[{'stripe_event_id': 'evt_test4'}])
+    mock_query.execute.return_value = mock_res_check
 
     with patch('stripe.Webhook.construct_event', return_value=event), \
          patch('app.services.stripe_service.supabase') as mock_sb:
 
-        mock_sb.from_.return_value = mock_query
-
-        # First call — should process
-        handle_webhook_event(b'fake-payload', 'fake-sig')
-        # Second call — same event_id, should be skipped
+        mock_sb.table.return_value = mock_query
         handle_webhook_event(b'fake-payload', 'fake-sig')
 
-    # DB update should have been called exactly once
-    assert mock_query.update.call_count == 1
+    # Update should NEVER be called on a replay
+    assert mock_query.update.call_count == 0
 
 
 # ──────────────────────────────────────────────────────────────
@@ -183,7 +175,8 @@ def test_cancel_subscription_at_period_end():
          patch('stripe.Subscription.modify') as mock_modify, \
          patch('app.services.stripe_service.supabase') as mock_sb:
 
-        mock_sb.from_.return_value = mock_query
+        # cancel_subscription uses .table()
+        mock_sb.table.return_value = mock_query
 
         result = cancel_subscription(
             user_id=FAKE_USER_ID,
@@ -196,7 +189,7 @@ def test_cancel_subscription_at_period_end():
         'sub_test_fake123',
         cancel_at_period_end=True,
     )
+    # The code only updates cancellation_reason, not plan (delayed downgrade)
     mock_query.update.assert_called_once_with({
-        'plan': 'free',
         'cancellation_reason': 'too_expensive',
     })

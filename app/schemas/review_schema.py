@@ -16,3 +16,6 @@ class GenerateReplySchema(Schema):
 class SendReplySchema(Schema):
     reply_id = fields.Str(required=True)
     reply_text = fields.Str(required=True, validate=validate.Length(min=1, max=5000))
+
+class BulkGenerateSchema(Schema):
+    review_ids = fields.List(fields.Str(), required=True, validate=validate.Length(min=1, max=50))

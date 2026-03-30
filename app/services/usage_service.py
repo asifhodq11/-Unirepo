@@ -16,7 +16,7 @@ from app.utils.exceptions import ReplyLimitReached
 
 
 PLAN_LIMITS = {
-    "free":    5,     # Manual AI replies only
+    "free":    10,    # Manual AI replies only
     "starter": 100,   # Manual hold & review
     "pro":     100,   # Autonomous replies
     "ultra":   500,   # Unlimited auto replies (500 cap)
@@ -72,10 +72,73 @@ def check_usage_limit(user_id: str) -> None:
 
 def increment_usage(user_id: str) -> None:
     """
-    Increments the reply_count_this_month for the user by 1.
-    Uses atomic RPC to prevent race conditions.
+    Increments the reply_count_this_month for the user.
+    Uses an atomic RPC with a built-in limit check and row-level locking
+    to prevent race conditions (Wave 2 Hardening).
     """
-    supabase.rpc("increment_reply_count", {"user_id_input": user_id}).execute()
+    # 1. Fetch current plan to determine limit
+    result = (
+        supabase.from_("users")
+        .select("plan")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+    if not result.data:
+        return
+    
+    plan = result.data.get("plan", "free")
+    limit = get_plan_limit(plan)
+
+    # 2. Call the atomic RPC which returns a boolean
+    rpc_result = supabase.rpc("increment_reply_count", {
+        "user_id_input": user_id,
+        "max_limit": limit
+    }).execute()
+
+    # 3. Handle failure (limit hit during race condition)
+    if rpc_result.data is False:
+        # We don't have the b_start here for a pretty reset_date, 
+        # but check_usage_limit would have caught this 99% of the time anyway.
+        raise ReplyLimitReached(used=limit, limit=limit, reset_date="next cycle")
+
+
+def reserve_bulk_usage(user_id: str, count: int) -> None:
+    """
+    Reserved multiple credits for a bulk operations atomically.
+    Used by /reviews/bulk-generate to ensure all-or-nothing credit commitment.
+    """
+    if count <= 0:
+        return
+
+    # 1. Fetch current plan to determine limit
+    result = (
+        supabase.from_("users")
+        .select("plan")
+        .eq("id", user_id)
+        .single()
+        .execute()
+    )
+    if not result.data:
+        return
+    
+    plan = result.data.get("plan", "free")
+    limit = get_plan_limit(plan)
+
+    # 2. Call the bulk reservation RPC
+    rpc_result = supabase.rpc("check_and_reserve_bulk_credits", {
+        "user_id_input": user_id,
+        "required_count": count,
+        "max_limit": limit
+    }).execute()
+
+    # 3. Handle failure (Atomic rejection)
+    if rpc_result.data is False:
+        raise ReplyLimitReached(
+            used="Calculated",
+            limit=limit,
+            reset_date="Insufficient credits for bulk batch."
+        )
 
 
 def get_today_reply_count(user_id: str) -> int:

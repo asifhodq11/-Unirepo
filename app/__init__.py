@@ -19,6 +19,7 @@ def create_app(config_name="development"):
         static_folder=static_dir,
         static_url_path="/assets"
     )
+    app.url_map.strict_slashes = False
 
     # Load completely isolated environment config
     app.config.from_object(config_map[config_name])

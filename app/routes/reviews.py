@@ -7,7 +7,7 @@ the AI Engine pipeline.
 
 import time
 from flask import Blueprint, g, jsonify, request
-from app.schemas.review_schema import GenerateReplySchema, SendReplySchema
+from app.schemas.review_schema import GenerateReplySchema, SendReplySchema, BulkGenerateSchema
 
 from app.utils.decorators import require_auth, validate_request
 from app.utils.errors import build_error
@@ -17,7 +17,7 @@ from app.extensions import supabase, limiter
 from app.models.review_model import insert_review, update_review_status
 from app.models.reply_model import insert_reply, update_reply
 
-from app.services.usage_service import check_usage_limit, increment_usage
+from app.services.usage_service import check_usage_limit, increment_usage, reserve_bulk_usage
 from app.services.model_router import classify_complexity, get_model_for_complexity
 from app.services.ai_engine import generate_reply
 
@@ -213,6 +213,80 @@ def generate_for_existing(review_id):
     return jsonify({"review": {**review, "status": "pending"}, "reply": saved_reply}), 201
 
 
+@reviews_bp.route("/bulk-generate", methods=["POST"])
+@require_auth
+@limiter.limit("5 per minute")
+@validate_request(BulkGenerateSchema)
+def bulk_generate():
+    """
+    Atomic bulk generation. Deducts credits for the ENTIRE batch upfront.
+    Prevents partial generation leaks.
+    """
+    user    = g.current_user
+    user_id = user["id"]
+    review_ids = g.validated_data["review_ids"]
+    count = len(review_ids)
+
+    # 1. Atomic Pre-Check & Reservation
+    try:
+        reserve_bulk_usage(user_id, count)
+    except Exception as e:
+        return build_error("FORBIDDEN", details=str(e)), 403
+
+    results = []
+    
+    # 2. Sequential Processing (credits are already 'paid')
+    for rid in review_ids:
+        try:
+            # Fetch review logic (reused from single generate but optimized for batch)
+            rev_res = supabase.from_("reviews").select("*").eq("id", rid).eq("user_id", user_id).single().execute()
+            if not rev_res.data or rev_res.data["status"] != "pending":
+                results.append({"id": rid, "status": "skipped", "reason": "Already replied or not found"})
+                continue
+
+            review = rev_res.data
+            
+            # 3. AI Pipeline
+            start_time = time.time()
+            ai_res = generate_reply(
+                business_name=user.get("business_name", "your business"),
+                business_type=user.get("business_type", "business"),
+                tone_preference=user.get("tone_preference", "friendly"),
+                star_rating=review["rating"],
+                review_text=review.get("review_text", ""),
+                reviewer_name=review.get("reviewer_name", "") or "",
+                user_id=user_id,
+                business_register=user.get("business_register", "restaurant"),
+            )
+            
+            duration_ms = int((time.time() - start_time) * 1000)
+            complexity  = classify_complexity(review["rating"], review.get("review_text", ""))
+            model_used  = get_model_for_complexity(complexity)
+            
+            # 4. Save Reply
+            reply_data = {
+                "review_id": rid,
+                "reply_text": ai_res["text"],
+                "status": "draft",
+                "generation_ms": duration_ms,
+                "model_used": ai_res.get("model_used", model_used),
+                "tokens_used": ai_res["tokens"],
+                "cost_usd": ai_res["cost_usd"],
+                "quality_score": ai_res.get("quality_score", 0),
+            }
+            saved_reply = insert_reply(user_id, reply_data)
+            results.append({"id": rid, "status": "success", "reply": saved_reply})
+            
+        except Exception as e_ai:
+            log_event("bulk_item_failed", user_id=user_id, review_id=rid, error=str(e_ai))
+            results.append({"id": rid, "status": "failed", "error": str(e_ai)})
+
+    return jsonify({
+        "message": f"Successfully processed {len([r for r in results if r['status'] == 'success'])} reviews.",
+        "results": results
+    }), 200
+
+
 @reviews_bp.route("/history", methods=["GET"])
 @require_auth
 def history():
@@ -292,7 +366,7 @@ def confirm_and_send(review_id):
     }
     updated_reply = update_reply(user_id, data["reply_id"], updates)
     if not updated_reply:
-        return build_error("NOT_FOUND", details="Draft reply not found or not owned by user."), 404
+        return build_error("REPLY_NOT_FOUND", details="Draft reply not found or not owned by user.")
 
     # 2. Mark the review as replied
     update_review_status(user_id, review_id, "replied")
@@ -345,4 +419,4 @@ def activity_feed():
 
     except Exception as e:
         log_event("activity_feed_error", user_id=user_id, error=str(e))
-        return build_error("SERVER_ERROR", details="Failed to fetch activity feed."), 500
+        return build_error("SERVER_ERROR", details="Failed to fetch activity feed.")

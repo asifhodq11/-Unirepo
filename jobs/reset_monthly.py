@@ -12,13 +12,11 @@ from app.utils.logger import log_event
 
 def get_users_due_for_reset():
     """
-    Finds users where today.day == billing_cycle_start.day.
-    Also ensures today > billing_cycle_start (date mismatch check).
+    Finds users where 30 or more days have passed since their last billing_cycle_start.
+    This safely avoids all leap year and '31st of the month' calendar edge cases.
     """
     today = date.today()
 
-    # Query all users to check day manually (PostgREST date parsing is tricky for day only)
-    # Fetching only necessary fields for efficiency
     result = supabase.from_("users").select("id, billing_cycle_start").execute()
 
     due = []
@@ -29,7 +27,8 @@ def get_users_due_for_reset():
                 continue
 
             b_date = date.fromisoformat(b_start)
-            if today.day == b_date.day and today > b_date:
+            # If 30 days have elapsed, they are due for a reset.
+            if (today - b_date).days >= 30:
                 due.append(user)
 
     return due

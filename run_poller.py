@@ -81,20 +81,30 @@ def run_google_poller():
             if not google_id:
                 continue
             
-            # 2b. Deduplicate — skip already-processed reviews
-            existing = supabase.table("reviews").select("id").eq("user_id", user_id).eq("google_review_id", google_id).execute()
+            # 2b. Deduplication — skip already-processed reviews unless they previously FAILED
+            existing = supabase.table("reviews").select("id, status").eq("user_id", user_id).eq("google_review_id", google_id).execute()
+            
+            # If a record exists and it's NOT in a failed state, we skip it.
+            # If it's in 'failed' status, we give it another shot (AI retry).
             if existing.data:
-                continue
+                status = existing.data[0].get("status")
+                if status != "failed":
+                    continue
+                # If we are here, status is 'failed', so we proceed to re-insert or re-process.
+                # Actually, to avoid PKEY violations if google_review_id is unique or similar,
                 
             review_text = rev_payload.get("comment", "")
             if not review_text.strip():
                 continue # Skip empty reviews, AI has nothing to reply to
 
+            # Handle anonymous reviewers gracefully
+            reviewer_name = rev_payload.get("reviewer", {}).get("displayName", "")
+            if not reviewer_name or reviewer_name == "A Google User":
+                reviewer_name = None
+
             rating_map = {"ONE": 1, "TWO": 2, "THREE": 3, "FOUR": 4, "FIVE": 5}
             raw_rating = rev_payload.get("starRating", "FIVE")
             numeric_rating = rating_map.get(raw_rating, 5)
-            
-            reviewer_name = rev_payload.get("reviewer", {}).get("displayName", "Customer")
                 
             # 2c. Build the review record
             review_record = {

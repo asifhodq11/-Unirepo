@@ -42,6 +42,9 @@ frontend/dist-ssr/
 
 # ===== Misc =====
 *.log
-fail_output.txt
-tests_output.txt
+*.txt
+!requirements.txt
+!requirements-dev.txt
+!VERSION.txt
 secrets.json
+.gemini/

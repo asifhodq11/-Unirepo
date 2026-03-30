@@ -1,34 +1,37 @@
-# STATE: ReplyIQ Monorepo
+# STATE: ReplyIQ Monorepo - Wave 2 Completion
 
-## Overview
-- **Project**: ReplyIQ (B2B SaaS for Automated Review Responses)
-- **Current Objective**: Replace simulated Google poller with real Google Business Profile API integration (COMPLETED). Next: Fix Stripe subscription billing logic.
+## 🏁 Final Cycle Summary (2026-03-30)
+The **Production Hardening Audit (Wave 2)** has been completed, verified, and locked. The platform is now architected for scale, high-concurrency billing integrity, and GDPR/CCPA data privacy compliance.
 
-## Tech Stack
-- **Frontend**: React (Vite), Tailwind CSS, Framer Motion, Lucide React
-- **Backend**: Python (Flask)
-- **Database**: Supabase (PostgreSQL)
-- **AI Core**: Google Gemini (orchestrated via `app/services/ai_engine.py`)
-- **Key Files**: 
-  - `ai_engine.py` (The 3-Pass AI brain)
-  - `admin.py` (Internal dashboard KPIs)
-  - `003_create_replies.sql` (Database schema for responses)
-  
-## V2 Master Insights (The Trust Architecture)
-Phase 1 aims to implement the "Science of Human Indistinguishability":
-1. **Oxytocin Triggers**: Tangible, Unexpected, Personal, Public.
-2. **Burstiness Engineering**: Targeted disruption of AI sentence rhythm.
-3. **Amygdala Scan**: Strict empathy-first rule for 1-2 star reviews (Zero defensiveness).
-4. **Variance Engine**: Structural tracking in the DB to prevent document-level AI uniformity.
+---
 
-## Immediate Priorities (Post-GBP Integration)
-1. **[COMPLETED]** V2.3 "Brevity & Authenticity" Patch (Tone Engine, 40% reduction, Slop 3.0 removal).
-2. **[COMPLETED]** Google Business Profile API Integration (Agency Invitation Flow).
-3. **[COMPLETED]** Stripe Subscription Billing Logic (Graceful Cancellation & Portal Sync).
-4. **Next up (Launch Blockers)**: Implement essential security/legal features (email verification, password reset, legal pages).
+## ✅ Completed in Wave 2
+- **Atomic Billing Engine**: 
+    - Protected single increments using PostgreSQL `FOR UPDATE` row-level locking.
+    - Implementation of `increment_reply_count` RPC.
+- **Atomic Bulk Safety**: 
+    - All-or-Nothing batch reservation via `check_and_reserve_bulk_credits` RPC.
+    - Frontend prevention of over-selection (Credit Logic).
+- **Onboarding Resilience**: 
+    - Universal email verification enforcement in `App.jsx` and `api/client.js`.
+    - Modern `VerifyEmailPage.jsx` UI.
+- **Universal Data Retention**: 
+    - 180-day anonymization policy implemented in `jobs/data_retention.py`.
+    - PII-wiping (Tone, Business Type) and Text Redaction active.
+- **Google API Hardening**: 
+    - Full pagination support (250+ reviews) for high-volume businesses.
+    - Anonymous reviewer ('A Google User') detection and handling.
 
-## Known Blockers & Future Gaps (V3 Roadmap)
-- AI is currently "Factually Blind" (No access to static business knowledge/menus).
-- AI is currently "Visually Blind" (Cannot analyze attached review photos).
-- AI lacks a "Skepticism Layer" (Will mistakenly apologize to competitor bots).
-- HIPAA/Staff Privacy compliance requires an upcoming "Staff Shield" module.
+---
+
+## 🛠️ Security State
+- **Authorization**: All endpoints utilize `@require_auth` with strict scoping.
+- **Integrity**: Transactional atomic increments prevent "Credit Injection" exploits.
+- **Compliance**: Universal Rule 1 (Scoping) and Rule 2 (Anonymization) are systematically enforced.
+
+---
+
+## 📅 Remaining Backlog (Post-Launch)
+- **AI Cost Dashboard**: Visualization of per-user model costs.
+- **Shadow Monitoring**: Finalizing the "Circuit Breaker" log analysis during staging traffic.
+- **HIPAA/Privacy**: Advanced "Skepticism Layer" for medical-adjacent businesses (Optional Phase).

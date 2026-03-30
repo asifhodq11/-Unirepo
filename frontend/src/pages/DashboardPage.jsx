@@ -29,7 +29,7 @@ function SparkTooltip({ active, payload, label }) {
 }
 
 /* ── Live Stats Panel (Right Column) ── */
-function LiveEngineStats({ used, limitDisplay, analytics }) {
+function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
   const [running, setRunning] = useState(false);
   const [toast, setToast] = useState({ message: '', isError: false });
 
@@ -56,6 +56,7 @@ function LiveEngineStats({ used, limitDisplay, analytics }) {
   const avgRating = analytics?.avg_rating ?? 0;
   const replyRate = analytics?.reply_rate ?? 0;
   const dailyData = analytics?.daily_ratings ?? [];
+  const remaining = Math.max(0, limit - used);
 
   // Color logic for reputation score
   const repColor = avgRating >= 4 ? 'var(--success)' : avgRating >= 3 ? 'var(--warning)' : 'var(--danger, #ef4444)';
@@ -70,13 +71,27 @@ function LiveEngineStats({ used, limitDisplay, analytics }) {
       {/* Row 1: Usage Quota + Reputation Score */}
       <div className="grid-2 gap-4">
         <motion.div className="card card-glass flex-col justify-between" style={{ minHeight: '140px' }} whileHover={{ scale: 1.02 }}>
-          <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage This Month</span></div>
+          <div className="flex items-center justify-between gap-2 text-muted mb-2">
+            <div className="flex items-center gap-2">
+              <Activity size={16} className="text-accent-cyan" /> <span>Usage</span>
+            </div>
+            {limitDisplay !== '∞' && (
+              <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+                {remaining} left
+              </span>
+            )}
+          </div>
           <div className="flex items-baseline gap-1">
             <span style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
             <span className="text-muted">/ {limitDisplay}</span>
           </div>
           <div className="progress-track mt-4" style={{ height: '4px' }}>
-            <div className="progress-fill" style={{ width: `${limitDisplay === '∞' ? Math.min((used / 200) * 100, 100) : Math.min((used / getPlanLimit('free')) * 100, 100)}%` }} />
+            <div 
+              className="progress-fill" 
+              style={{ 
+                width: `${limitDisplay === '∞' ? 100 : Math.min((used / limit) * 100, 100)}%` 
+              }} 
+            />
           </div>
         </motion.div>
 
@@ -388,6 +403,25 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {user?.google_connected && !user?.google_location_id && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="alert alert-warning flex items-start gap-3 shadow-[0_4px_24px_rgba(245,158,11,0.15)] bg-warning/20 border-warning/30" 
+            style={{ marginBottom: 'var(--space-6)' }}
+          >
+            <AlertTriangle size={20} className="text-warning" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <strong className="text-warning">Action Required: No Location Selected</strong>
+              <p className="text-sm" style={{ marginTop: 'var(--space-1)', color: 'inherit', opacity: 0.85 }}>
+                You've connected Google, but haven't chosen which business profile to manage. 
+                The AI poller is currently idle. Go to <a href="/settings" className="font-bold underline">Settings</a> to pick your location.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {atLimit && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
@@ -442,7 +476,7 @@ export default function DashboardPage() {
 
         {/* Right Column: Live Meter & Controls */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <LiveEngineStats used={used} limitDisplay={limitDisplay} analytics={analytics} />
+          <LiveEngineStats used={used} limit={limit} limitDisplay={limitDisplay} analytics={analytics} />
         </motion.div>
       </div>
     </motion.div>

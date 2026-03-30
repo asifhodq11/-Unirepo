@@ -18,6 +18,7 @@ import PrivacyPolicyPage  from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import AuthCallbackPage  from './pages/AuthCallbackPage';
 import AdminPage from './pages/AdminPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 // Layout
 import AppLayout from './components/layout/AppLayout';
@@ -39,6 +40,14 @@ function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (!user)   return <Navigate to="/login" replace />;
+
+  // NEW: Strict email verification check (Wave 2)
+  // If the user hasn't confirmed their email, send them to the verify-email page.
+  // We check for email_confirmed_at (Supabase default field) or a custom confirmed flag.
+  if (!user.email_confirmed_at && !user.is_verified) {
+    return <Navigate to="/verify-email" replace />;
+  }
+
   return children;
 }
 
@@ -92,6 +101,7 @@ function Router() {
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
       <Route path="/reset-password"  element={<ResetPasswordPage />} />
       <Route path="/auth/callback"   element={<AuthCallbackPage />} />
+      <Route path="/verify-email"    element={<VerifyEmailPage />} />
 
       {/* Legal pages — always public, no auth guard */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />

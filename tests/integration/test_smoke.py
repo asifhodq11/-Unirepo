@@ -6,32 +6,10 @@ All external services (Supabase, OpenAI, Gemini, Stripe) are mocked.
 Tests verify that routes, services, and models wire together correctly.
 """
 
-import os
-
-# Set dummy env vars BEFORE any app imports
-os.environ.setdefault("SECRET_KEY", "test-secret")
-os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
-
-FAKE_JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.fake"
-os.environ.setdefault("SUPABASE_ANON_KEY", FAKE_JWT)
-os.environ.setdefault("SUPABASE_SERVICE_ROLE_KEY", FAKE_JWT)
-os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
-os.environ.setdefault("GEMINI_API_KEY", "test-gemini-key")
-os.environ.setdefault("GOOGLE_API_KEY", "test-google-key")
-os.environ.setdefault("STRIPE_SECRET_KEY", "test-stripe-key")
-os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "test-webhook-secret")
-os.environ.setdefault("STRIPE_PRICE_ID_STARTER", "test-price-id")
-os.environ.setdefault("RESEND_API_KEY", "test-resend-key")
-os.environ.setdefault("FRONTEND_URL", "http://test.localhost")
-
 import pytest
 from unittest.mock import MagicMock, patch
 
-# Mock supabase.create_client BEFORE importing the app to avoid "Invalid API key" errors
-# during module-level initialization in app/extensions.py
-with patch("supabase.create_client") as mock_create:
-    mock_create.return_value = MagicMock()
-    from app import create_app
+from app import create_app
 
 
 # ──────────────────────────────────────────────────────────────
@@ -243,7 +221,13 @@ def test_generate_reply_full_path(client):
          patch("app.models.reply_model.supabase") as mock_reply_sb, \
          patch("app.models.review_model.update_review_status"), \
          patch("app.routes.reviews.generate_reply",
-               return_value="Thank you for visiting!"), \
+               return_value={
+                   "text": "Thank you for visiting!",
+                   "tokens": 45,
+                   "cost_usd": 0.0001,
+                   "quality_score": 95,
+                   "model_used": "gpt-4o"
+               }), \
          patch("app.routes.reviews.increment_usage"):
 
         # Auth decorator
@@ -319,7 +303,7 @@ def test_generate_blocked_at_usage_limit(client):
 
     at_limit_db_data = {
         "plan": "free",
-        "reply_count_this_month": 5,
+        "reply_count_this_month": 10,
         "billing_cycle_start": "2026-03-01",
     }
 
@@ -364,8 +348,17 @@ def test_stripe_webhook_valid_event(client):
                return_value=fake_event), \
          patch("app.services.stripe_service.supabase") as mock_sb:
 
-        # Mock the plan update chain
-        mock_sb.from_.return_value.update.return_value.eq.return_value.execute.return_value = MagicMock()
+        # Mock the entire chain for both idempotency check and update
+        mock_chain = MagicMock()
+        mock_sb.from_.return_value = mock_chain
+        mock_chain.select.return_value = mock_chain
+        mock_chain.update.return_value = mock_chain
+        mock_chain.eq.return_value = mock_chain
+        
+        # 1st call: select (idempotency), 2nd call: update
+        mock_res_check = MagicMock(data=[]) # Not processed
+        mock_res_update = MagicMock(data=[])
+        mock_chain.execute.side_effect = [mock_res_check, mock_res_update]
 
         resp = client.post(
             "/api/v1/payments/webhook",

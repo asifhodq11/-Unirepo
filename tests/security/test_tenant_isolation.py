@@ -215,41 +215,53 @@ def auth_a(client, fake_sb):
 # TEST 1 — History is scoped to authenticated tenant
 # ──────────────────────────────────────────────────────────────
 
-def test_user_a_cannot_see_user_b_reviews(auth_a, fake_sb):
+def test_user_a_cannot_see_user_b_reviews(auth_a, fake_sb, app):
     """GET /history must only return User A's reviews, never User B's."""
-    resp = auth_a.get("/api/v1/reviews/history")
-    assert resp.status_code == 200
-    data = resp.get_json()
-    ids = [item["id"] for item in data["items"]]
-    assert "r-a" in ids
-    assert "r-b" not in ids
+    with app.app_context():
+        resp = auth_a.get("/api/v1/reviews/history")
+        assert resp.status_code == 200
+        data = resp.get_json()
+        # The history endpoint returns 'items' key for pagination
+        ids = [item["id"] for item in data["items"]]
+        assert "r-a" in ids
+        assert "r-b" not in ids
 
 
 # ──────────────────────────────────────────────────────────────
 # TEST 2 — Settings PATCH is scoped to authenticated tenant
 # ──────────────────────────────────────────────────────────────
 
-def test_user_a_cannot_patch_user_b_settings(auth_a, fake_sb):
+def test_user_a_cannot_patch_user_b_settings(auth_a, fake_sb, app):
     """PATCH /settings must only update User A's row in the DB."""
-    resp = auth_a.patch("/api/v1/settings/", json={"business_name": "A Modified"})
-    assert resp.status_code == 200
+    with app.app_context():
+        # Correct endpoint is /settings (no trailing slash)
+        resp = auth_a.patch("/api/v1/settings", json={"business_name": "A Modified"})
+        assert resp.status_code == 200
 
-    user_a = next(u for u in fake_sb.db["users"] if u["id"] == USER_A["id"])
-    user_b = next(u for u in fake_sb.db["users"] if u["id"] == USER_B["id"])
+        user_a = next(u for u in fake_sb.db["users"] if u["id"] == USER_A["id"])
+        user_b = next(u for u in fake_sb.db["users"] if u["id"] == USER_B["id"])
 
-    assert user_a["business_name"] == "A Modified"
-    assert user_b["business_name"] == "B Biz"  # Isolation confirmed
+        assert user_a["business_name"] == "A Modified"
+        assert user_b["business_name"] == "B Biz"  # Isolation confirmed
 
 
 # ──────────────────────────────────────────────────────────────
 # TEST 3 — AI generation inserts records with authenticated user_id
 # ──────────────────────────────────────────────────────────────
 
-def test_user_a_cannot_generate_reply_as_user_b(auth_a, fake_sb):
+@patch("app.routes.reviews.generate_reply")
+def test_user_a_cannot_generate_reply_as_user_b(mock_gen, auth_a, fake_sb, app):
     """POST /generate must tag all created DB records with User A's user_id."""
     payload = {"rating": 5, "review_text": "Great visit!", "reviewer_name": "Tester", "google_review_id": "G-1"}
+    mock_gen.return_value = {
+        "text": "AI reply text",
+        "tokens": 100,
+        "cost_usd": 0.0001,
+        "quality_score": 90,
+        "model_used": "gpt-4o"
+    }
 
-    with patch("app.routes.reviews.generate_reply", return_value="AI reply text"):
+    with app.app_context():
         resp = auth_a.post("/api/v1/reviews/generate", json=payload)
 
     assert resp.status_code == 201
@@ -260,15 +272,13 @@ def test_user_a_cannot_generate_reply_as_user_b(auth_a, fake_sb):
     reply = data["reply"]
     assert review["user_id"] == USER_A["id"]
     assert reply["user_id"] == USER_A["id"]
-    assert review["user_id"] != USER_B["id"]
-    assert reply["user_id"] != USER_B["id"]
 
 
 # ──────────────────────────────────────────────────────────────
 # TEST 4 — Approval token update is scoped to its owner's user_id
 # ──────────────────────────────────────────────────────────────
 
-def test_approval_token_scoped_to_owner(client, fake_sb):
+def test_approval_token_scoped_to_owner(client, fake_sb, app):
     """POST /approve/<token> must never update data belonging to another user."""
     # User B owns a reply
     fake_sb.db["replies"].append({"id": "rep-b", "user_id": USER_B["id"], "reply_text": "Original B"})
@@ -278,22 +288,19 @@ def test_approval_token_scoped_to_owner(client, fake_sb):
         "expires_at": "2099-01-01T00:00:00Z", "reply_id": "rep-b"
     })
 
-    # Patch model helpers — the route uses them directly
+    # The route pulls the token data
     token_row = fake_sb.db["approval_tokens"][0]
     reply_row = fake_sb.db["replies"][0]
 
-    with patch("app.routes.approvals.get_token", return_value=token_row), \
-         patch("app.routes.approvals.get_reply_for_token", return_value=reply_row), \
-         patch("app.routes.approvals.consume_token", return_value=True), \
-         patch("app.routes.approvals.post_reply_to_google"):
-        # Send different text — attempting to overwrite User B's reply
-        resp = client.post("/api/v1/approve/tok-a", json={"reply_text": "Hijacked!"})
+    with app.app_context():
+        with patch("app.routes.approvals.get_token", return_value=token_row), \
+             patch("app.routes.approvals.get_reply_for_token", return_value=reply_row), \
+             patch("app.routes.approvals.consume_token", return_value=True), \
+             patch("app.routes.approvals.post_reply_to_google"):
+            # Send different text — attempting to overwrite User B's reply
+            resp = client.post("/api/v1/approve/tok-a", json={"reply_text": "Hijacked!"})
 
     assert resp.status_code == 200
-
-    # The .update() in approvals.py filters by BOTH reply id AND user_id
-    # Since user_id in the reply belongs to USER_B but token's user_id is USER_A,
-    # the DB update matches 0 rows, leaving the reply untouched.
     rep_b = next(r for r in fake_sb.db["replies"] if r["id"] == "rep-b")
     assert rep_b["reply_text"] == "Original B"
 
@@ -302,15 +309,11 @@ def test_approval_token_scoped_to_owner(client, fake_sb):
 # TEST 5 — Account deletion only anonymises the requesting user
 # ──────────────────────────────────────────────────────────────
 
-def test_delete_account_only_affects_own_data(auth_a, fake_sb):
+def test_delete_account_only_affects_own_data(auth_a, fake_sb, app):
     """DELETE /auth/account must call anonymise_user with ONLY User A's ID."""
-    # Patch the name bound in auth.py's namespace (imported at module top)
-    with patch("app.routes.auth.anonymise_user") as mock_anon:
-        resp = auth_a.delete("/api/v1/auth/account")
+    with app.app_context():
+        with patch("app.routes.auth.anonymise_user") as mock_anon:
+            resp = auth_a.delete("/api/v1/auth/account")
 
     assert resp.status_code == 200
-    # Called exactly once with User A's ID
     mock_anon.assert_called_once_with(USER_A["id"])
-    # User B's ID must never appear
-    called_ids = [c.args[0] for c in mock_anon.call_args_list]
-    assert USER_B["id"] not in called_ids

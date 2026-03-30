@@ -12,11 +12,13 @@ from app.utils.logger import log_event
 
 def anonymise_inactive_free_users():
     """
-    RULE 1: Free plan users inactive for 90+ days.
-    Anonymizes user data and wipes review/reply content.
+    RULE 1: Free plan users inactive for 180+ days.
+    Anonymizes user data and wipes review/reply content. (Wave 2)
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=90)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=180)
     cutoff_iso = cutoff.isoformat()
+
+    log_event("retention_verification_check", rule=1, cutoff=cutoff_iso)
 
     # 1. Find inactive free users
     result = (
@@ -38,6 +40,8 @@ def anonymise_inactive_free_users():
                     {
                         "email": f"deleted_{user_id[:8]}@deleted.replyiq.com",
                         "business_name": "[Deleted Account]",
+                        "business_type": "business",
+                        "tone_preference": "professional",
                         "google_location_id": None,
                         "stripe_customer_id": None,
                         "cancellation_reason": None,
@@ -50,7 +54,7 @@ def anonymise_inactive_free_users():
                     "user_id", user_id
                 ).execute()
 
-                supabase.from_("replies").update({"reply_text": "[Deleted]"}).eq("user_id", user_id).execute()
+                supabase.from_("replies").update({"reply_text": "[REDACTED]"}).eq("user_id", user_id).execute()
 
                 count += 1
             except Exception as e:
@@ -61,17 +65,20 @@ def anonymise_inactive_free_users():
 
 def anonymise_cancelled_accounts():
     """
-    RULE 2: Users where is_deleted=True and cancellation_reason
-    was set (soft-deleted), if they are 30+ days old.
+    RULE 2: Users in soft-deleted state (is_deleted=True).
+    Waits 180 days (Wave 2) to ensure they are truly gone and no 
+    billing disputes are pending before anonymizing.
     """
-    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    cutoff = datetime.now(timezone.utc) - timedelta(days=180)
     cutoff_iso = cutoff.isoformat()
 
+    log_event("retention_verification_check", rule=2, cutoff=cutoff_iso)
+
+    # Catch ALL deleted users, regardless of cancellation_reason survey completion.
     result = (
         supabase.from_("users")
         .select("id")
         .eq("is_deleted", True)
-        .neq("cancellation_reason", None)
         .lt("created_at", cutoff_iso)
         .execute()
     )
@@ -86,6 +93,8 @@ def anonymise_cancelled_accounts():
                     {
                         "email": f"deleted_{user_id[:8]}@deleted.replyiq.com",
                         "business_name": "[Deleted Account]",
+                        "business_type": "business",
+                        "tone_preference": "professional",
                         "google_location_id": None,
                         "stripe_customer_id": None,
                         "cancellation_reason": None,
@@ -97,7 +106,7 @@ def anonymise_cancelled_accounts():
                     "user_id", user_id
                 ).execute()
 
-                supabase.from_("replies").update({"reply_text": "[Deleted]"}).eq("user_id", user_id).execute()
+                supabase.from_("replies").update({"reply_text": "[REDACTED]"}).eq("user_id", user_id).execute()
 
                 count += 1
             except Exception as e:

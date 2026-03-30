@@ -63,6 +63,13 @@ async function request(method, path, { body, timeout = DEFAULT_TIMEOUT_MS } = {}
     return null;
   }
 
+  // Handle 403 EMAIL_UNVERIFIED — redirect to onboarding
+  const errCode = data?.code ?? data?.error?.code ?? 'SERVER_ERROR';
+  if (res.status === 403 && (errCode === 'EMAIL_UNVERIFIED')) {
+    window.location.href = '/verify-email';
+    throw new ApiError(errCode, 'Email verification required.', 403);
+  }
+
   if (!res.ok) {
     // Backend returns: { error: true, code: "CODE", message: "Human text", details: {...} }
     const errCode = data?.code ?? data?.error?.code ?? 'SERVER_ERROR';

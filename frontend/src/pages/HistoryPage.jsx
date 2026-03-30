@@ -179,6 +179,11 @@ export default function HistoryPage() {
   const [selectedIds, setSelectedIds]     = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
   const [isProcessing, setIsProcessing]   = useState(false);
+  const [toast, setToast] = useState(null); // { message, type }
+
+  const used = user?.reply_count_this_month ?? 0;
+  const limit = getPlanLimit(plan);
+  const remainingCredits = Math.max(0, limit - used);
 
   const isUninitialized = items === undefined && !isFetching;
   const isLoading       = isFetching;
@@ -242,7 +247,16 @@ export default function HistoryPage() {
   function toggleSelect(id) {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        if (next.size >= remainingCredits) {
+          setToast({ message: `Credit limit reached. You have ${remainingCredits} credits remaining.`, type: 'warning' });
+          setTimeout(() => setToast(null), 3000);
+          return prev;
+        }
+        next.add(id);
+      }
       return next;
     });
   }
@@ -289,40 +303,48 @@ export default function HistoryPage() {
     }
   }
 
-  // ── Bulk Generate ─────────────────────────────────
+  // ── Bulk Generate (Unified Atomic API) ─────────────
   async function handleBulkGenerate() {
     if (isProcessing || selectedIds.size === 0) return;
-    setIsProcessing(true);
+    
+    // Safety check against race conditions or stale local state
+    if (selectedIds.size > remainingCredits) {
+      setToast({ message: 'Insufficient credits for selected items.', type: 'error' });
+      return;
+    }
 
+    setIsProcessing(true);
     const orderedIds = (items ?? [])
       .filter(i => selectedIds.has(i.id) && i.status === 'pending')
       .map(i => i.id);
 
-    for (const reviewId of orderedIds) {
-      setGeneratingIds(prev => new Set([...prev, reviewId]));
-      try {
-        const result = await api.post(`/reviews/${reviewId}/generate`);
-        setItems(prev =>
-          (prev ?? []).map(item =>
-            item.id === reviewId
-              ? { ...item, status: 'pending', replies: [result.reply] }
-              : item
-          )
-        );
-        setSelectedIds(prev => { const n = new Set(prev); n.delete(reviewId); return n; });
-      } catch {
-        setItems(prev =>
-          (prev ?? []).map(item =>
-            item.id === reviewId ? { ...item, status: 'failed' } : item
-          )
-        );
-      } finally {
-        setGeneratingIds(prev => { const n = new Set(prev); n.delete(reviewId); return n; });
-      }
-    }
+    try {
+      const result = await api.post('/reviews/bulk-generate', { review_ids: orderedIds });
+      
+      // Update local items based on batch results
+      const resultsMap = new Map((result.results || []).map(r => [r.id, r]));
+      setItems(prev => (prev ?? []).map(item => {
+        const batchRes = resultsMap.get(item.id);
+        if (batchRes && batchRes.status === 'success') {
+          return { ...item, status: 'replied', replies: [batchRes.reply] };
+        }
+        if (batchRes && batchRes.status === 'failed') {
+          return { ...item, status: 'failed' };
+        }
+        return item;
+      }));
 
-    refreshUser();
-    setIsProcessing(false);
+      // Flush selection
+      setSelectedIds(new Set());
+      setToast({ message: result.message || 'Bulk generation complete.', type: 'success' });
+      
+      await refreshUser(); // Sync the new credit count
+    } catch (err) {
+      setToast({ message: err.message || 'Bulk generation failed.', type: 'error' });
+    } finally {
+      setIsProcessing(false);
+      setTimeout(() => setToast(null), 5000);
+    }
   }
 
   // Visible items — apply rating filter
@@ -469,14 +491,24 @@ export default function HistoryPage() {
 
       {/* Selection mode helper */}
       {selectionMode && pendingCount > 0 && !isProcessing && (
-        <motion.p
+        <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-muted"
+          className="flex items-center justify-between"
           style={{ marginBottom: 'var(--space-4)' }}
         >
-          Click any review to open it, or select and bulk generate. First 10 auto-selected.
-        </motion.p>
+          <p className="text-xs text-muted">
+            Click any review to open it, or select and bulk generate. First 10 auto-selected.
+          </p>
+          {toast && (
+            <motion.span 
+              initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
+              className={`text-xs px-2 py-1 rounded ${toast.type === 'warning' ? 'bg-warning/10 text-warning' : toast.type === 'error' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}
+            >
+              {toast.message}
+            </motion.span>
+          )}
+        </motion.div>
       )}
 
       {/* Grid List */}
@@ -559,9 +591,16 @@ export default function HistoryPage() {
               boxShadow: '0 8px 32px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
             }}
           >
-            <span className="text-sm text-muted">
-              {isProcessing ? 'Generating drafts…' : `${selectedIds.size} review${selectedIds.size > 1 ? 's' : ''} selected`}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                {isProcessing ? 'Generating drafts…' : `${selectedIds.size} selected`}
+              </span>
+              {!isProcessing && (
+                <span className="text-[10px] text-muted uppercase tracking-wider font-bold">
+                  {remainingCredits} credits remaining
+                </span>
+              )}
+            </div>
             <motion.button
               className="btn btn-primary flex items-center gap-2"
               style={{

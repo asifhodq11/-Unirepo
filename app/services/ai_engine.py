@@ -384,7 +384,7 @@ _OCCASION_SIGNALS = {
 }
 
 _STAFF_CONTEXT_PATTERNS = [
-    r"(?:ask for|served by|our|was|helped|by)\s+([A-Z][a-z]+)",
+    r"(?:ask for|served by|our|was|helped|by|from)\s+([A-Z][a-z]+)",
     r"([A-Z][a-z]+)\s+(?:was|helped|served|assisted|looked after)",
 ]
 
@@ -521,6 +521,44 @@ def get_variance_context(user_id: str) -> dict:
         }
     except Exception:
         return default
+
+
+def get_brand_voice_examples(user_id: str) -> str:
+    """
+    Pass 0.5: Brand Voice Extraction.
+    Queries the last 10 'sent' replies for this user and their matching reviews.
+    Formats them as a few-shot block for the LLM to learn the user's signature style.
+    """
+    if not user_id:
+        return ""
+
+    try:
+        from app.extensions import supabase
+        # Fetch last 10 sent replies for this specific user
+        # We need the reply text and the original review text
+        result = (
+            supabase.from_("replies")
+            .select("reply_text, reviews(review_text)")
+            .eq("user_id", user_id)
+            .eq("status", "sent")
+            .order("created_at", desc=True)
+            .limit(10)
+            .execute()
+        )
+
+        entries = result.data or []
+        if not entries:
+            return ""
+
+        voice_block = "YOUR RECENT SUCCESSFUL REPLIES (BRAND VOICE EXAMPLES):\n"
+        for i, entry in enumerate(entries, 1):
+            rev_txt = (entry.get("reviews") or {}).get("review_text", "[rating only]")
+            rep_txt = entry.get("reply_text", "")
+            voice_block += f"Example {i}:\n  Review: {rev_txt}\n  Your Reply: {rep_txt}\n\n"
+        
+        return voice_block.strip()
+    except Exception:
+        return ""
 
 
 def get_word_target(star_rating: int, variance_context: dict) -> tuple[int, int]:
@@ -991,6 +1029,9 @@ def generate_reply(
     pass1_temperature = contract["temperature"] + tone.get("temperature_modifier", 0.0)
     pass1_temperature = max(0.4, min(1.0, pass1_temperature))  # clamp to safe range
 
+    # ── Pass 0.5: Brand Voice Extraction ──────────────────────
+    brand_voice = get_brand_voice_examples(user_id)
+
     # ── Pass 1: Weighted Generation ────────────────────────────
     if not has_text:
         no_text_instruction = {
@@ -1007,6 +1048,9 @@ def generate_reply(
             f"Write plainly, without corporate polish.\n"
             f"BANNED PATTERNS: {FORTY_ONE_PATTERNS.replace(chr(10), ' ')}"
         )
+        if brand_voice:
+            sys_1 += f"\n\nLEARNED BRAND VOICE:\n{brand_voice}\nMatch the rhythm and style of your previous successful replies."
+
         usr_1 = (
             f"Rating: {star_rating}/5\n"
             f"Review text: [None — rating only]\n\n"
@@ -1026,6 +1070,9 @@ def generate_reply(
             min_words=min_words,
             max_words=max_words,
         )
+        if brand_voice:
+            sys_1 += f"\n\nLEARNED BRAND VOICE (REPLICATE THIS STYLE):\n{brand_voice}\n"
+
         pass1_output, pass1_tokens = call_llm(sys_1, usr_1, model, temperature=pass1_temperature)
 
     # ── Pass 2: Burstiness Humaniser ───────────────────────────

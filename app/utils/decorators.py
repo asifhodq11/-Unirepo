@@ -25,7 +25,18 @@ def require_auth(f):
 
         try:
             user_response = supabase.auth.get_user(token)
-            user_id = user_response.user.id
+            # Supabase auth user object
+            auth_user = user_response.user
+            
+            # Phase 13 Hardening: Enforce email verification
+            if not getattr(auth_user, 'email_confirmed_at', None):
+                from app.utils.errors import build_error
+                return build_error(
+                    "EMAIL_UNVERIFIED", 
+                    details="Please verify your email address to access this resource."
+                ), 403
+
+            user_id = auth_user.id
         except Exception:
             raise AuthRequired()
 

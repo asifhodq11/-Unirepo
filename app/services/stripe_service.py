@@ -10,7 +10,7 @@ Security rules enforced here:
 
 import os
 import stripe
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 from app.extensions import supabase
 from app.utils.exceptions import StripeWebhookInvalid, ReplyIQError
@@ -148,6 +148,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
                 update_payload = {
                     "plan": plan, 
                     "stripe_customer_id": customer_id,
+                    "billing_cycle_start": date.today().isoformat(),
                 }
                 if subscription_id:
                     update_payload["stripe_subscription_id"] = subscription_id
