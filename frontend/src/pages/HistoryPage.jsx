@@ -431,8 +431,17 @@ export default function HistoryPage() {
 
           {/* Star rating filter */}
           <div
-            className="flex items-center gap-1 p-1 rounded-full"
-            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+            className="flex items-center gap-1 p-1 rounded-full hide-scrollbar text-xs"
+            style={{ 
+              background: 'var(--bg-elevated)', 
+              border: '1px solid var(--border)',
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              WebkitOverflowScrolling: 'touch',
+              maxWidth: '100%',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
           >
             <button
               className="star-btn"

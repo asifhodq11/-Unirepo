@@ -171,8 +171,8 @@ export default function SettingsPage() {
               <div className="form-group">
                 <label className="form-label" style={{ opacity: 0.7 }}>Reply Tone</label>
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-full" 
-                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}
+                  className="flex items-center gap-1 p-1 rounded-md" 
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', flexWrap: 'wrap' }}
                 >
                   {TONE_OPTIONS.map(t => (
                     <button

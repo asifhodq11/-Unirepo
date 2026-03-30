@@ -933,9 +933,17 @@ a:hover { color: var(--accent-hover); }
     display: none;
   }
 
-  .page-content,
   .main-content {
-    padding: var(--space-5) var(--space-4) var(--space-8) var(--space-4);
+    padding: 0;
+    overflow-x: hidden;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .page-content {
+    padding: var(--space-4) var(--space-4) var(--space-8) var(--space-4);
     overflow-x: hidden;
   }
 
@@ -1104,3 +1112,5 @@ a:hover { color: var(--accent-hover); }
     padding: var(--space-4) !important;
   }
 }
+/ *   H i d e   s c r o l l b a r   f o r   C h r o m e ,   S a f a r i   a n d   O p e r a   * / . h i d e - s c r o l l b a r : : - w e b k i t - s c r o l l b a r   {   d i s p l a y :   n o n e ;   }  
+ 
