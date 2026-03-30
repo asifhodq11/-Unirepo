@@ -14,6 +14,8 @@ Plan-Aware Logic (Phase 10):
                 and a surge_limit_reached event is logged.
 """
 
+import os
+import socket
 import time
 from app import create_app
 from app.extensions import supabase
@@ -25,10 +27,68 @@ from app.services.usage_service import increment_usage, get_today_reply_count
 from app.services.google_api_service import get_master_access_token, fetch_recent_reviews
 from app.utils.exceptions import PollerError, InvalidGrantError
 
+_INSTANCE_ID = socket.gethostname()
+_LOCK_TIMEOUT_MINUTES = 30  # Release stale locks older than 30 min
+
+
+def _try_acquire_lock() -> bool:
+    """
+    Attempts to acquire the global poller mutex.
+    Uses Supabase UPDATE with a WHERE clause that acts as an atomic CAS
+    (Compare-And-Set): only succeeds if no active lock or lock is stale.
+    Returns True if the lock was acquired, False if another instance holds it.
+    """
+    try:
+        stale_threshold = f"now() - interval '{_LOCK_TIMEOUT_MINUTES} minutes'"
+        # Acquire if: lock is unheld (acquired_by IS NULL) OR stale (older than 30 min)
+        result = supabase.rpc("acquire_poller_lock", {
+            "instance_id": _INSTANCE_ID,
+            "timeout_minutes": _LOCK_TIMEOUT_MINUTES
+        }).execute()
+        return bool(result.data)
+    except Exception as e:
+        log_event("poller_lock_error", stage="acquire", error=str(e))
+        return False  # Fail closed — do not run if lock state is unknown
+
+
+def _release_lock() -> None:
+    """Unconditionally releases the global poller mutex."""
+    try:
+        supabase.from_("poller_lock").update({
+            "acquired_by": None,
+            "acquired_at": "now()"
+        }).eq("lock_name", "global_poller").execute()
+    except Exception as e:
+        log_event("poller_lock_error", stage="release", error=str(e))
+
+
 def run_google_poller():
-    log_event("poller_started", environment="google_api")
-    
+    # ── Distributed Concurrency Lock ───────────────────────────
+    if not _try_acquire_lock():
+        log_event("poller_skipped", reason="Another instance is already running", instance=_INSTANCE_ID)
+        return
+    log_event("poller_started", environment="google_api", instance=_INSTANCE_ID)
+    try:
+        _run_poller_body()
+    finally:
+        _release_lock()
+        log_event("poller_lock_released", instance=_INSTANCE_ID)
+
+
+def _run_poller_body():
+    """Core poller logic — called only after the mutex is held."""
+    from app.services.health_service import preflight_check
+
+    # ── Pre-flight: abort if external dependencies are down ────
+    if not preflight_check():
+        log_event(
+            "poller_aborted",
+            reason="Pre-flight health check failed — external dependency is down. No user processing this cycle.",
+        )
+        return
+
     # 1. Fetch active users — now includes plan + daily_autonomy_limit for tier logic
+
     try:
         users_result = supabase.table("users").select(
             "id, business_name, business_type, tone_preference, plan, daily_autonomy_limit, google_location_id"
