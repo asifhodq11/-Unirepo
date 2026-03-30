@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 export default function VerifyEmailPage() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [sent, setSent]       = useState(false);
   const [error, setError]     = useState(null);
@@ -13,7 +13,7 @@ export default function VerifyEmailPage() {
     setLoading(true);
     setError(null);
     try {
-      await api.post('/auth/resend-verification');
+      await api.post('/auth/resend-verification', { email: user?.email });
       setSent(true);
       setTimeout(() => setSent(false), 5000);
     } catch (err) {
