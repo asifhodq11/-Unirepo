@@ -116,19 +116,14 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(12, 1fr)', 
-            gridTemplateRows: 'auto auto',
-            gap: 'var(--space-4)' 
-          }}>
+          <div className="landing-bento">
             
             {/* Massive Card: Hybrid Router (Spans 8 cols) */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.6 }}
-              className="card-glass" 
+              className="card-glass bento-hero" 
               style={{ 
-                gridColumn: 'span 8', padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
+                padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
                 justifyContent: 'flex-end', minHeight: 380, position: 'relative', overflow: 'hidden' 
               }}
             >
@@ -153,9 +148,9 @@ export default function LandingPage() {
             {/* Tall Card: Autopilot (Spans 4 cols, 2 rows) */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.6, delay: 0.1 }}
-              className="card-glass" 
+              className="card-glass bento-tall" 
               style={{ 
-                gridColumn: 'span 4', gridRow: 'span 2', padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
+                padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
                 position: 'relative', overflow: 'hidden',
                 background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, var(--bg-elevated) 100%)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 0 40px rgba(139,92,246,0.03)'
@@ -195,8 +190,8 @@ export default function LandingPage() {
             {/* Small Card: Compounding (Spans 4 cols) */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.6, delay: 0.2 }}
-              className="card-glass" 
-              style={{ gridColumn: 'span 4', padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              className="card-glass bento-small" 
+              style={{ padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
             >
                <div className="flex items-center gap-3 mb-4">
                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -212,8 +207,8 @@ export default function LandingPage() {
             {/* Small Card: Integrations (Spans 4 cols) */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.6, delay: 0.3 }}
-              className="card-glass" 
-              style={{ gridColumn: 'span 4', padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+              className="card-glass bento-small" 
+              style={{ padding: 'var(--space-6)', minHeight: 240, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
             >
                <div className="flex items-center gap-3 mb-4">
                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>

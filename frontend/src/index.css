@@ -750,10 +750,21 @@ a:hover { color: var(--accent-hover); }
 /* History items grid */
 .history-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr));
   gap: var(--space-4);
   align-items: start;
 }
+
+/* Landing Page Bento */
+.landing-bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--space-4);
+}
+.bento-hero  { grid-column: span 8; }
+.bento-tall  { grid-column: span 4; grid-row: span 2; }
+.bento-small { grid-column: span 4; }
+
 
 /* Filter bar (History + any toolbar) */
 .filter-bar {
@@ -882,6 +893,17 @@ a:hover { color: var(--accent-hover); }
     gap: var(--space-6);
   }
 
+  .landing-bento {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .bento-hero, .bento-tall, .bento-small {
+    grid-column: span 1;
+    width: 100%;
+  }
+
   .history-grid {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   }
@@ -922,10 +944,17 @@ a:hover { color: var(--accent-hover); }
   h2 { font-size: 1.2rem; }
   h3 { font-size: 1rem; }
 
-  /* Bento grid → single column */
-  .app-bento-grid {
-    grid-template-columns: 1fr;
+  /* Bento grids → single column */
+  .app-bento-grid,
+  .landing-bento {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-5);
+  }
+
+  .bento-hero, .bento-tall, .bento-small {
+    grid-column: span 1 !important;
+    width: 100%;
   }
 
   .grid-2 {
@@ -939,6 +968,8 @@ a:hover { color: var(--accent-hover); }
   /* History items → single column */
   .history-grid {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Filter bar wraps + export drops below */
@@ -951,6 +982,8 @@ a:hover { color: var(--accent-hover); }
   .card,
   .card-glass {
     padding: var(--space-4);
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .stat-value {
@@ -964,6 +997,7 @@ a:hover { color: var(--accent-hover); }
     bottom: 0;
     left: 0;
     right: 0;
+    width: 100vw;
     height: calc(65px + env(safe-area-inset-bottom));
     background: rgba(9, 9, 11, 0.95);
     backdrop-filter: blur(30px);
@@ -973,6 +1007,7 @@ a:hover { color: var(--accent-hover); }
     align-items: center;
     justify-content: space-around;
     padding: 0 var(--space-4) env(safe-area-inset-bottom) var(--space-4);
+    box-sizing: border-box;
   }
 
   .nav-item-bottom {
