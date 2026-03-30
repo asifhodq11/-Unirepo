@@ -24,8 +24,8 @@ from app.services.ai_engine import generate_reply
 from app.services.usage_service import increment_usage, get_today_reply_count
 from app.services.google_api_service import get_master_access_token, fetch_recent_reviews
 
-def run_simulation_poller():
-    log_event("poller_started", environment="simulation")
+def run_google_poller():
+    log_event("poller_started", environment="google_api")
     
     # 1. Fetch active users — now includes plan + daily_autonomy_limit for tier logic
     try:
@@ -100,19 +100,19 @@ def run_simulation_poller():
                 continue
                 
             review_db_id = inserted_review["id"]
-
+ 
             # ── PLAN-AWARE AI GATE ────────────────────────────────
             #
             # STARTER: Collect only — user must click Generate manually.
             if plan == "starter":
                 log_event("poller_collected_starter", user_id=user_id, review_id=review_db_id)
                 continue  # No AI, no cost. Review sits as 'pending'.
-
+ 
             # FREE: No autonomous generation either.
             if plan == "free":
                 log_event("poller_collected_free", user_id=user_id, review_id=review_db_id)
                 continue
-
+ 
             # PRO: Check daily autonomy circuit breaker before calling AI.
             if plan == "pro":
                 today_count = get_today_reply_count(user_id)
@@ -128,7 +128,7 @@ def run_simulation_poller():
                     # Review already saved as 'pending' — user can generate manually
                     continue
             # ─────────────────────────────────────────────────────
-
+ 
             # 2d. Trigger the AI Pipeline (Pro plan under daily limit)
             start_time = time.time()
             try:
@@ -146,7 +146,7 @@ def run_simulation_poller():
                     "review_id":     review_db_id,
                     "reply_text":    ai_result["text"],
                     "status":        "draft",
-                    "model_used":    ai_result.get("model_used", "simulation_poller_auto"),
+                    "model_used":    ai_result.get("model_used", "google_poller_auto"),
                     "generation_ms": gen_ms,
                     "tokens_used":   ai_result["tokens"],
                     "cost_usd":      ai_result["cost_usd"],
@@ -160,10 +160,10 @@ def run_simulation_poller():
             except Exception as e_ai:
                 log_event("poller_error", stage="ai_generation", user_id=user_id, review_id=review_db_id, error=str(e_ai))
                 supabase.table("reviews").update({"status": "failed"}).eq("id", review_db_id).execute()
-
+ 
     log_event("poller_completed")
-
-
+ 
+ 
 if __name__ == "__main__":
     # Load the Flask App context so config & extensions (Supabase) are wired correctly
     # We use 'development' as default for testing the simulation
@@ -172,4 +172,4 @@ if __name__ == "__main__":
     app = create_app(env)
     
     with app.app_context():
-        run_simulation_poller()
+        run_google_poller()
