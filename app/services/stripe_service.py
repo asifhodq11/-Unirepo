@@ -10,6 +10,7 @@ Security rules enforced here:
 
 import os
 import stripe
+from datetime import datetime, timezone
 
 from app.extensions import supabase
 from app.utils.exceptions import StripeWebhookInvalid, ReplyIQError
@@ -40,6 +41,9 @@ def create_checkout_session(user_id: str, user_email: str, plan: str) -> str:
         "ultra":   os.environ.get("STRIPE_PRICE_ID_ULTRA", os.environ["STRIPE_PRICE_ID_STARTER"]),
     }
     price_id = price_id_map.get(plan, os.environ["STRIPE_PRICE_ID_STARTER"])
+
+    # Map current prices back to plan strings
+    PRICE_TO_PLAN = {v: k for k, v in price_id_map.items()}
 
     try:
         session = stripe.checkout.Session.create(
@@ -121,21 +125,69 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         session_data = event["data"]["object"]
         user_id     = session_data.get("client_reference_id")
         customer_id = session_data.get("customer")
+        subscription_id = session_data.get("subscription")
         plan        = session_data.get("metadata", {}).get("plan", "starter")
+        
         if plan not in ("starter", "pro", "ultra"):
             plan = "starter"
+
+        # Fetch the actual subscription to get current_period_end
+        subscription_end = None
+        if subscription_id:
+            try:
+                sub = stripe.Subscription.retrieve(subscription_id)
+                subscription_end = datetime.fromtimestamp(sub.current_period_end, tz=timezone.utc).isoformat()
+            except Exception:
+                pass
 
         from app.utils.logger import log_event
         log_event("webhook_checkout_received", user_id=user_id, customer_id=customer_id, plan=plan)
 
         if user_id and customer_id:
             try:
-                supabase.table("users").update(
-                    {"plan": plan, "stripe_customer_id": customer_id}
-                ).eq("id", user_id).execute()
+                update_payload = {
+                    "plan": plan, 
+                    "stripe_customer_id": customer_id,
+                }
+                if subscription_id:
+                    update_payload["stripe_subscription_id"] = subscription_id
+                if subscription_end:
+                    update_payload["subscription_end"] = subscription_end
+
+                supabase.table("users").update(update_payload).eq("id", user_id).execute()
                 log_event("webhook_user_updated", user_id=user_id, plan=plan)
             except Exception as e:
                 log_event("webhook_update_failed", user_id=user_id, error=str(e))
+
+    elif event_type == "customer.subscription.updated":
+        sub_data = event["data"]["object"]
+        customer_id = sub_data.get("customer")
+        subscription_id = sub_data.get("id")
+        status = sub_data.get("status")
+        
+        # If subscription active/trialing, update plan and period end
+        if status in ("active", "trialing"):
+            price_id = None
+            if "items" in sub_data and "data" in sub_data["items"] and len(sub_data["items"]["data"]) > 0:
+                price_id = sub_data["items"]["data"][0]["price"]["id"]
+            
+            # Map price ID back to plan name
+            plan = "starter"
+            if price_id == os.environ.get("STRIPE_PRICE_ID_PRO"): plan = "pro"
+            elif price_id == os.environ.get("STRIPE_PRICE_ID_ULTRA"): plan = "ultra"
+            elif price_id == os.environ.get("STRIPE_PRICE_ID_STARTER"): plan = "starter"
+
+            current_period_end = sub_data.get("current_period_end")
+            subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc).isoformat() if current_period_end else None
+
+            if customer_id:
+                update_payload = {"plan": plan}
+                if subscription_id:
+                    update_payload["stripe_subscription_id"] = subscription_id
+                if subscription_end:
+                    update_payload["subscription_end"] = subscription_end
+                
+                supabase.table("users").update(update_payload).eq("stripe_customer_id", customer_id).execute()
 
     elif event_type == "invoice.payment_failed":
         invoice_data = event["data"]["object"]
@@ -143,7 +195,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
 
         if customer_id:
             supabase.table("users").update(
-                {"plan": "free"}
+                {"plan": "free", "subscription_end": None, "stripe_subscription_id": None}
             ).eq("stripe_customer_id", customer_id).execute()
 
     elif event_type == "customer.subscription.deleted":
@@ -156,7 +208,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         if customer_id:
             try:
                 supabase.table("users").update(
-                    {"plan": "free"}
+                    {"plan": "free", "subscription_end": None, "stripe_subscription_id": None}
                 ).eq("stripe_customer_id", customer_id).execute()
             except Exception as e:
                 log_event("webhook_subscription_cancel_failed", customer_id=customer_id, error=str(e))
@@ -197,12 +249,13 @@ def cancel_subscription(
             cancel_at_period_end=True,
         )
 
-    # Update the user record regardless — downgrade plan immediately
-    supabase.table("users").update(
-        {
-            "plan": "free",
-            "cancellation_reason": reason,
-        }
-    ).eq("id", user_id).execute()
+    # Update the user record with the reason, but DO NOT downgrade plan immediately.
+    # Plan is downgraded by webhook when the subscription actually ends.
+    if reason:
+        supabase.table("users").update(
+            {
+                "cancellation_reason": reason,
+            }
+        ).eq("id", user_id).execute()
 
     return True

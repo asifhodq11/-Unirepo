@@ -36,13 +36,22 @@ def check_usage_limit(user_id: str) -> None:
     """
     result = (
         supabase.from_("users")
-        .select("reply_count_this_month, plan, billing_cycle_start")
+        .select("reply_count_this_month, plan, billing_cycle_start, subscription_end")
         .eq("id", user_id)
         .single()
         .execute()
     )
     user = result.data
     plan = user.get("plan", "free")
+    
+    # Graceful degradation: if subscription ended, treat as free plan for limits
+    subscription_end_str = user.get("subscription_end")
+    if subscription_end_str:
+        # Supabase returns ISO 8601 strings
+        subscription_end = datetime.fromisoformat(subscription_end_str.replace("Z", "+00:00"))
+        if datetime.now(timezone.utc) > subscription_end:
+            plan = "free"
+
     used = user.get("reply_count_this_month", 0)
     limit = get_plan_limit(plan)
 

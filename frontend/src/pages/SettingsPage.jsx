@@ -317,6 +317,17 @@ export default function SettingsPage() {
                 }
               </p>
 
+              {user?.subscription_end && plan !== 'free' && (
+                <div style={{ marginTop: '4px', fontSize: '0.85rem' }} className="flex items-center gap-1 text-muted">
+                  {user.cancellation_reason ? (
+                    <span className="text-warning">Plan cancels on:</span>
+                  ) : (
+                    <span>Current period ends:</span>
+                  )}
+                  <strong className="text-primary">{new Date(user.subscription_end).toLocaleDateString()}</strong>
+                </div>
+              )}
+
               {/* Single unified upgrade / manage button */}
               {plan !== 'ultra' ? (
                 <button

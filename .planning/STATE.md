@@ -2,7 +2,7 @@
 
 ## Overview
 - **Project**: ReplyIQ (B2B SaaS for Automated Review Responses)
-- **Current Objective**: Implement the "Ultimate AI Training Intelligence (v2.0)" upgrade and begin architecture planning for the "Knowledge & Context" (V3) Layer.
+- **Current Objective**: Replace simulated Google poller with real Google Business Profile API integration (COMPLETED). Next: Fix Stripe subscription billing logic.
 
 ## Tech Stack
 - **Frontend**: React (Vite), Tailwind CSS, Framer Motion, Lucide React
@@ -21,11 +21,11 @@ Phase 1 aims to implement the "Science of Human Indistinguishability":
 3. **Amygdala Scan**: Strict empathy-first rule for 1-2 star reviews (Zero defensiveness).
 4. **Variance Engine**: Structural tracking in the DB to prevent document-level AI uniformity.
 
-## Immediate Priorities (Post-V2.3 Verification)
+## Immediate Priorities (Post-GBP Integration)
 1. **[COMPLETED]** V2.3 "Brevity & Authenticity" Patch (Tone Engine, 40% reduction, Slop 3.0 removal).
-2. **Next up (Launch Blockers)**: Replace simulated Google poller with real Google Business Profile API integration.
-3. Fix Stripe subscription billing logic.
-4. Implement essential security/legal features (email verification, password reset, legal pages).
+2. **[COMPLETED]** Google Business Profile API Integration (Agency Invitation Flow).
+3. **[COMPLETED]** Stripe Subscription Billing Logic (Graceful Cancellation & Portal Sync).
+4. **Next up (Launch Blockers)**: Implement essential security/legal features (email verification, password reset, legal pages).
 
 ## Known Blockers & Future Gaps (V3 Roadmap)
 - AI is currently "Factually Blind" (No access to static business knowledge/menus).
