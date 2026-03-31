@@ -32,25 +32,18 @@ function SparkTooltip({ active, payload, label }) {
 /* ── Live Stats Panel (Right Column) ── */
 function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
   const [running, setRunning] = useState(false);
-  const [toast, setToast] = useState({ message: '', isError: false });
+  const toast = useToast();
 
   async function handleTriggerPoller() {
     setRunning(true);
-    setToast({ message: 'Scanning for new reviews...', isError: false });
+    toast.info('Scanning for new reviews...');
     try {
       const response = await api.post('/poller/trigger', {});
-      setToast({ 
-        message: response.message || 'Scan complete — 2 new replies generated!', 
-        isError: false 
-      });
+      toast.success(response.message || 'Scan complete — new replies generated!');
     } catch (err) {
-      setToast({ 
-        message: err.message || 'Scan failed to run.', 
-        isError: true 
-      });
+      toast.error(err.message || 'Scan failed to run.');
     } finally {
       setRunning(false);
-      setTimeout(() => setToast({ message: '', isError: false }), 6000);
     }
   }
 
@@ -60,7 +53,8 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
   const remaining = Math.max(0, limit - used);
 
   // Color logic for reputation score
-  const repColor = avgRating >= 4 ? 'var(--success)' : avgRating >= 3 ? 'var(--warning)' : 'var(--danger, #ef4444)';
+  const hasNoData = (analytics?.total_reviews || 0) === 0;
+  const repColor = hasNoData ? 'var(--text-muted)' : avgRating >= 4 ? 'var(--success)' : avgRating >= 3 ? 'var(--warning)' : 'var(--danger, #ef4444)';
 
   return (
     <motion.div 
@@ -71,7 +65,7 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
     >
       {/* Row 1: Usage Quota + Reputation Score */}
       <div className="grid-2 gap-4">
-        <motion.div className="card card-glass flex-col justify-between" style={{ minHeight: '140px' }} whileHover={{ scale: 1.02 }}>
+        <motion.div className="card card-glass flex-col justify-between" whileHover={{ scale: 1.02 }}>
           <div className="flex items-center justify-between gap-2 text-muted mb-2">
             <div className="flex items-center gap-2">
               <Activity size={16} className="text-accent-cyan" /> <span>Usage</span>
@@ -96,7 +90,7 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
           </div>
         </motion.div>
 
-        <motion.div className="card card-glass flex-col justify-between" style={{ minHeight: '140px' }} whileHover={{ scale: 1.02 }}>
+        <motion.div className="card card-glass flex-col justify-between" whileHover={{ scale: 1.02 }}>
           <div className="flex items-center gap-2 text-muted mb-2"><Star size={16} style={{ color: repColor }} /> <span>Reputation Score</span></div>
           <div className="flex items-baseline gap-1">
             <span style={{ fontSize: '2.5rem', fontWeight: 800, lineHeight: 1, color: repColor }}>{avgRating || '—'}</span>
@@ -149,16 +143,16 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
       {/* Row 3: AI Engine Status + Scan Trigger */}
       <motion.div className="card card-glass" whileHover={{ scale: 1.01 }}>
         <div className="flex items-center gap-2 text-muted mb-4"><Network size={16} className="text-accent" /> <span>AI Engine Status</span></div>
-        <div className="flex gap-4">
-          <div className="flex-col flex-1">
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-col flex-1" style={{ minWidth: '80px' }}>
             <span className="text-xs text-muted mb-1">ROUTER</span>
             <span className="badge badge-accent"><Cpu size={12} className="mr-1"/> Hybrid 2-Pass</span>
           </div>
-          <div className="flex-col flex-1">
+          <div className="flex-col flex-1" style={{ minWidth: '100px' }}>
             <span className="text-xs text-muted mb-1">FALLBACK</span>
             <span className="badge badge-success">Standby Armed</span>
           </div>
-          <div className="flex-col flex-1">
+          <div className="flex-col flex-1" style={{ minWidth: '130px' }}>
             <span className="text-xs text-muted mb-1">MODELS</span>
             <div className="flex gap-1" style={{ opacity: 0.7 }}>
               <span className="badge">gpt-4o</span>
@@ -178,15 +172,6 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
               <Cpu size={14} className="mr-2" />
               {running ? 'Running...' : 'Trigger Scan'}
             </button>
-            {toast.message && (
-              <span className={`text-xs px-2 py-1 rounded ${
-                toast.isError 
-                  ? 'text-error bg-error/10 border border-error/20' 
-                  : 'text-success bg-success/10'
-              }`}>
-                {toast.message}
-              </span>
-            )}
         </div>
       </motion.div>
     </motion.div>
@@ -233,16 +218,16 @@ function DashboardInsights({ activities, analytics, plan, navigate, onOpenReview
           </span>
         </div>
         
-        <div className="grid-3 gap-6">
-          <div className="flex flex-col gap-1">
+        <div className="flex flex-wrap gap-6">
+          <div className="flex flex-col gap-1" style={{ flex: '1 1 120px' }}>
             <span className="text-xs text-muted">Next Scan</span>
             <span className="text-sm font-medium">approx. 12m</span>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1" style={{ flex: '1 1 120px' }}>
             <span className="text-xs text-muted">Region</span>
             <span className="text-sm font-medium">Poller @US-West</span>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1" style={{ flex: '1 1 120px' }}>
             <span className="text-xs text-muted">AI Model</span>
             <span className="text-xs badge badge-accent">gpt-4o / gemini</span>
           </div>

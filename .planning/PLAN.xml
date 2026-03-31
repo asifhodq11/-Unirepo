@@ -1,31 +1,26 @@
-<plan objective="Deep Google API Stabilization (Target 2)">
-    <background>
-        Target 2 addresses the "Stabilization" requirement for the core Google My Business integration. 
-        Issues include transient network errors, token cache staleness on revocation (401 Hazard), 
-        and lack of automated test coverage for failure modes.
-    </background>
-
-    <phase name="Phase 2.1: TDD & Test Setup" status="planned">
-        <step>Create tests/services/test_google_api_service.py with TDD cases for retries and cache invalidation.</step>
-        <step>Mock Google API using responses library to simulate 502, 503, 401, and success paths.</step>
-        <step>Verify tests FAIL (RED state).</step>
-    </phase>
-
-    <phase name="Phase 2.2: Hardening & Logic Implementation" status="planned">
-        <step>Implement a lightweight retry decorator in app/utils/decorators.py or directly in the service.</step>
-        <step>Implement cache invalidation logic in get_master_access_token().</step>
-        <step>Update fetch and reply functions to use retries and handle session expiry gracefully.</step>
-        <step>Verify tests PASS (GREEN state).</step>
-    </phase>
-
-    <phase name="Phase 2.3: Health Monitoring & Clean-Up" status="planned">
-        <step>Incorporate detailed log_event metrics for all failure scenarios to aid in admin debugging.</step>
-        <step>Refine return schema consistency across the service functions.</step>
-        <step>Perform final audit for security leaks (secrets in logs).</step>
-    </phase>
-
-    <verification>
-        - Standard unit test run: pytest tests/services/test_google_api_service.py
-        - Compile check: python -m py_compile all modified files.
-    </verification>
-</plan>
+<PLAN>
+    <OBJECTIVE>Address mobile UI deformations, analytics logic bugs, and React memory leaks on DashboardPage.jsx</OBJECTIVE>
+    
+    <STEPS>
+        <STEP>
+            <TARGET>frontend/src/pages/DashboardPage.jsx</TARGET>
+            <ACTION>Update the repColor calculation to default to var(--text-muted) instead of var(--danger) when no reviews are present to eliminate the "Red Zero" bug.</ACTION>
+        </STEP>
+        <STEP>
+            <TARGET>frontend/src/pages/DashboardPage.jsx</TARGET>
+            <ACTION>Remove the local `toast` useState and setTimeout cleanup from `LiveEngineStats`. Pass down the global useToast instance from the parent DashboardPage to prevent unmounted component warning states.</ACTION>
+        </STEP>
+        <STEP>
+            <TARGET>frontend/src/pages/DashboardPage.jsx</TARGET>
+            <ACTION>Update flex containers in `LiveEngineStats` `<div className="flex gap-4">` to `<div className="flex flex-wrap gap-4">` to fix mobile word-crush bugs on 320px screens.</ACTION>
+        </STEP>
+        <STEP>
+            <TARGET>frontend/src/pages/DashboardPage.jsx</TARGET>
+            <ACTION>Refactor the grid layout for Auto-Reply Heartbeat in `DashboardInsights` from `className="grid-3 gap-6"` to `className="flex flex-wrap gap-6"` alongside flex bases to prevent excessive vertical stacking bloat on mobile.</ACTION>
+        </STEP>
+        <STEP>
+            <TARGET>frontend/src/pages/DashboardPage.jsx</TARGET>
+            <ACTION>Verify frontend responsive behaviors under 640px viewport.</ACTION>
+        </STEP>
+    </STEPS>
+</PLAN>

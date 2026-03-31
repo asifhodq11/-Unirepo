@@ -340,6 +340,7 @@ def test_stripe_webhook_valid_event(client):
     fake_event = MagicMock()
     fake_event.id = "evt_smoke_001"
     fake_event.type = "checkout.session.completed"
+    fake_event.__getitem__.side_effect = lambda key: getattr(fake_event, key)
     fake_event.data.object = {
         "client_reference_id": FAKE_USER_ID,
         "customer": "cus_smoke_001",
