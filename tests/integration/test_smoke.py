@@ -79,6 +79,7 @@ def _make_auth_response(user_id=FAKE_USER_ID):
     """Fake Supabase auth response with session."""
     mock_user = MagicMock()
     mock_user.id = user_id
+    mock_user.identities = [1]
 
     mock_session = MagicMock()
     mock_session.access_token = "smoke.fake.jwt"

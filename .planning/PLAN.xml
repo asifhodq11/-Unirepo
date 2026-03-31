@@ -1,82 +1,199 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plan version="2.0" objective="Google Business Profile API Integration (Agency Invitation Flow)">
+<plan name="ReplyIQ Serious Testing Suite" phase="3-execution">
 
-  <!-- ============================================================ -->
-  <!-- CONTEXT                                                        -->
-  <!-- ============================================================ -->
-  <context>
-    <current_state>
-      - Frontend GoogleConnectionModal asks users to approve an email invitation.
-      - Supabase schema `users` already has `google_connected` and `google_location_id` fields (from 001_create_users.sql).
-      - `run_poller.py` uses `mock_google.generate_fake_reviews()` instead of real API calls.
-      - `admin.py` dashboard lacks endpoints to set `google_location_id` for users.
-    </current_state>
-    <target_state>
-      - Admin UI allows manual mapping of `google_location_id` to a `user_id` and toggles `google_connected`.
-      - `google_api_service.py` connects to the real Google Business Profile API using a Master Refresh Token.
-      - `run_poller.py` pulls real reviews for connected users and posts AI replies back to Google.
-    </target_state>
-  </context>
+  <objective>
+    Build an automated test harness that traps silent failures in three critical
+    pipelines: (1) the signup RLS bypass, (2) the frontend verification redirect,
+    and (3) the distributed poller mutex. These tests must be runnable in CI with
+    zero manual steps and must fail loudly if any regression is introduced.
+  </objective>
 
-  <!-- ============================================================ -->
-  <!-- WAVE 1: ADMIN CONFIGURATION ROUTES & UI                       -->
-  <!-- ============================================================ -->
-  <wave id="1" name="Admin Google Mapping">
-    <description>Provide the Admin Dashboard the tools to manually link users to their Google Location IDs after an invite is accepted.</description>
-    
-    <task id="1.1" file="app/routes/admin.py" action="MODIFY">
-      - Update `GET /users` route to also fetch `google_connected` and `google_location_id`.
-      - Create new endpoint `PUT /users/<user_id>/google-config`.
-      - Schema requires `google_connected` (boolean) and `google_location_id` (string).
-      - Update user record in Supabase `users` table.
-    </task>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- WAVE 1: Backend – Harden existing auth unit tests              -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <wave id="1" name="Auth RPC Hardening Tests" runner="pytest">
 
-    <task id="1.2" file="frontend/src/pages/AdminPage.jsx" action="MODIFY">
-      - Update the Users table columns to show a Google icon/status if `google_connected` is true.
-      - Add an "Edit Google Config" action button for each user.
-      - Build a small internal modal containing a text input for `Location ID` and a toggle for `Connected`.
-      - Wire the submit button to the new PUT endpoint.
-    </task>
+    <file action="MODIFY" path="tests/routes/test_auth.py">
+      <description>
+        Add 4 critical tests that the existing suite is missing:
+
+        TEST A — Orphan Auth Cleanup on Profile Failure
+        When create_user_profile RPC raises an exception, the signup route MUST call
+        supabase.auth.admin.delete_user() with the new user_id before returning 500.
+        If this call is missing, you get an orphaned auth.users row that blocks
+        future signups with the same email AND wastes quota.
+
+        TEST B — Fake-User / Duplicate Email Detection
+        When Supabase returns a user object with an EMPTY identities list, the
+        route must return 409 EMAIL_EXISTS — NOT attempt an RPC insert.
+        This catches the silent duplicate scenario where Supabase does not raise
+        an exception but instead returns a fake user object.
+
+        TEST C — Profile-Exists But No Session (202 with email in response)
+        Confirm that the 202 response body only contains {status, message} and
+        DOES NOT leak the user's internal ID or profile data. The frontend uses
+        the URL param, not any response body field, to set the verify-email page.
+
+        TEST D — Login Blocked When Profile Row is Missing
+        Simulate: Supabase auth succeeds (returns session) but get_user_by_id
+        returns None (profile never created — the exact orphan scenario).
+        Must return 401 INVALID_CREDENTIALS, not 200.
+      </description>
+
+      <test id="A" name="test_signup_orphan_cleanup_on_profile_error">
+        <assert>supabase.auth.admin.delete_user called with correct user_id when RPC raises</assert>
+        <assert>response status 500 (SERVER_ERROR)</assert>
+      </test>
+
+      <test id="B" name="test_signup_fake_user_detection">
+        <setup>mock auth_response.user with identities=[]</setup>
+        <assert>response status 409</assert>
+        <assert>response code EMAIL_EXISTS</assert>
+        <assert>create_user NOT called (no RPC insert)</assert>
+      </test>
+
+      <test id="C" name="test_signup_202_body_does_not_leak_profile">
+        <setup>mock session=None, identities=[...valid...]</setup>
+        <assert>response status 202</assert>
+        <assert>"user" key NOT in response body</assert>
+        <assert>response body has status=verification_required</assert>
+      </test>
+
+      <test id="D" name="test_login_blocked_when_profile_missing">
+        <setup>mock Supabase auth.sign_in returns valid session, get_user_by_id returns None</setup>
+        <assert>response status 401</assert>
+        <assert>response code INVALID_CREDENTIALS</assert>
+      </test>
+    </file>
+
+    <file action="NEW" path="tests/routes/test_auth_rpc_contract.py">
+      <description>
+        Tests that verify the CONTRACT expected from the create_user_profile RPC.
+        These are unit tests with mocked Supabase, but they verify that:
+        1. The correct parameter names (p_id, p_email, p_business_name, etc.) are
+           passed to supabase.rpc() — if someone renames an arg, this breaks.
+        2. A RuntimeError is raised when the RPC returns empty data (result.data is falsy).
+        3. The returned object is passed directly to the caller (dict passthrough).
+      </description>
+
+      <test id="E" name="test_create_user_rpc_called_with_correct_params">
+        <assert>supabase.rpc called with name "create_user_profile"</assert>
+        <assert>params dict has keys: p_id, p_email, p_business_name, p_business_type, p_tone_preference</assert>
+      </test>
+
+      <test id="F" name="test_create_user_rpc_raises_on_empty_data">
+        <setup>supabase.rpc chain returns result.data = None</setup>
+        <assert>RuntimeError raised with message containing "no data"</assert>
+      </test>
+
+      <test id="G" name="test_create_user_rpc_returns_data_directly">
+        <setup>supabase.rpc chain returns result.data = {"id": "abc"}</setup>
+        <assert>function return value == {"id": "abc"}</assert>
+      </test>
+    </file>
   </wave>
 
-  <!-- ============================================================ -->
-  <!-- WAVE 2: GOOGLE API SERVICE                                   -->
-  <!-- ============================================================ -->
-  <wave id="2" name="Google API Core Service">
-    <description>Create the HTTP service wrapper for the Google Business Profile API.</description>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- WAVE 2: Backend – Poller Mutex Concurrency Tests              -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <wave id="2" name="Poller Mutex Concurrency Tests" runner="pytest">
 
-    <task id="2.1" file="app/config.py" action="MODIFY">
-      - Add new required ENV keys for the Master OAuth connection:
-        `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_MASTER_REFRESH_TOKEN`
-    </task>
+    <file action="NEW" path="tests/services/test_poller_mutex.py">
+      <description>
+        Unit tests for the _try_acquire_lock() and _release_lock() functions
+        in run_poller.py. These tests fully mock the Supabase RPC layer.
 
-    <task id="2.2" file="app/services/google_api_service.py" action="CREATE">
-      - Implement `get_master_access_token()`: Makes a POST to `https://oauth2.googleapis.com/token` with the client credentials and refresh token.
-      - Implement `fetch_recent_reviews(location_id, access_token)` -> returns standard list of review dicts.
-      - Implement `reply_to_review(location_id, review_id, reply_text, access_token)`.
-    </task>
+        TEST H — Lock Acquired When RPC Returns True
+        When acquire_poller_lock RPC returns truthy data, _try_acquire_lock()
+        must return True and the poller proceeds.
+
+        TEST I — Lock Skipped When RPC Returns Falsy
+        When acquire_poller_lock RPC returns falsy data (another instance holds
+        the lock), _try_acquire_lock() returns False.
+
+        TEST J — Fail-Closed on Network Error
+        When the RPC call itself raises an Exception (network timeout, etc.),
+        _try_acquire_lock() must return False (NOT raise). This is the
+        "fail closed" safety guarantee.
+
+        TEST K — run_google_poller Skips Body When Lock Not Acquired
+        Patch _try_acquire_lock to return False. Verify that _run_poller_body
+        is NEVER called and that a "poller_skipped" event is logged.
+
+        TEST L — run_google_poller Always Releases Lock (Even on Exception)
+        Patch _try_acquire_lock to return True, _run_poller_body to raise.
+        Verify _release_lock() is still called (finally block guard).
+      </description>
+
+      <test id="H" name="test_acquire_lock_returns_true_when_rpc_succeeds" />
+      <test id="I" name="test_acquire_lock_returns_false_when_rpc_returns_falsy" />
+      <test id="J" name="test_acquire_lock_fails_closed_on_exception" />
+      <test id="K" name="test_poller_skips_body_when_lock_not_acquired" />
+      <test id="L" name="test_poller_releases_lock_on_exception" />
+    </file>
   </wave>
 
-  <!-- ============================================================ -->
-  <!-- WAVE 3: POLLER & POSTER SURGERY                               -->
-  <!-- ============================================================ -->
-  <wave id="3" name="Poller Engine Replacement">
-    <description>Rip out the simulation code and plug the real API service into the heartbeat.</description>
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- WAVE 3: Frontend E2E – TestSprite Signup Redirect Flow        -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <wave id="3" name="Frontend E2E (TestSprite)" runner="testsprite">
 
-    <task id="3.1" file="run_poller.py" action="MODIFY">
-      - Update user fetch query to `eq("google_connected", True)`.
-      - Remove `mock_google` imports.
-      - Fetch a master access token using `get_master_access_token()`.
-      - Loop over connected users, call `fetch_recent_reviews(user['google_location_id'], access_token)`.
-      - Transform real Google review payload into our normalized db format.
-    </task>
+    <setup>
+      Bootstrap TestSprite for frontend at port 5173.
+      Generate a focused test plan covering the signup onboarding flow.
+    </setup>
 
-    <task id="3.2" file="app/services/reply_poster.py" action="MODIFY">
-      - Add `post_to_google(reply_record, access_token)`.
-      - Fetch the associated `location_id` by joining with the user table.
-      - Call `reply_to_review(location_id, review_id, reply_text, access_token)`.
-      - If 200 OK, update the `status` column in Supabase `replies` to "posted".
-    </task>
+    <scenarios>
+      <scenario name="signup_redirect_to_verify_email">
+        Fill signup form with valid data.
+        Submit form.
+        ASSERT: URL changes to /verify-email.
+        ASSERT: ?email= query param is present and matches the entered email.
+        ASSERT: The verify-email page renders (not a blank screen or error).
+      </scenario>
+
+      <scenario name="signup_shows_loading_state">
+        Fill and submit the signup form.
+        ASSERT: Submit button shows spinner / "Creating account…" text while loading.
+        ASSERT: Button is disabled during loading (prevents double-submit).
+      </scenario>
+
+      <scenario name="signup_shows_error_on_api_failure">
+        Mock the API to return 409.
+        ASSERT: Error alert is visible.
+        ASSERT: Form is not cleared (user can correct email).
+      </scenario>
+
+      <scenario name="signup_short_password_client_validation">
+        Enter a password with fewer than 8 characters.
+        Submit form.
+        ASSERT: Error message visible without any network call being made.
+      </scenario>
+    </scenarios>
+  </wave>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- WAVE 4: CI Configuration                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <wave id="4" name="CI Hardening" runner="shell">
+
+    <file action="MODIFY" path="pytest.ini or setup.cfg">
+      <description>
+        Add test markers: unit, integration, e2e.
+        Configure testpaths to include tests/routes, tests/services.
+        Set addopts = --tb=short -q so failures are immediately visible.
+      </description>
+    </file>
+
+    <file action="NEW" path="scripts/run_serious_tests.sh">
+      <description>
+        A single shell script that runs ALL waves in sequence:
+        1. pytest tests/routes/test_auth.py -m unit
+        2. pytest tests/routes/test_auth_rpc_contract.py -m unit
+        3. pytest tests/services/test_poller_mutex.py -m unit
+        Exit non-zero if any suite fails. Human-readable summary at the end.
+      </description>
+    </file>
   </wave>
 
 </plan>

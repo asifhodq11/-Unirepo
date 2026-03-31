@@ -1,10 +1,9 @@
 """
 tests/routes/test_auth.py
 
-8 auth tests — all Supabase calls are mocked.
-No real network calls. No .env.test required.
+All Supabase calls are mocked. No real network calls. No .env.test required.
 
-Test IDs (as specified in Phase 3 requirements):
+Original Test IDs:
 1. POST /signup  valid data         → 201 + cookie set
 2. POST /signup  duplicate email    → 409 EMAIL_EXISTS
 3. POST /signup  missing fields     → 400 VALIDATION_ERROR
@@ -13,6 +12,12 @@ Test IDs (as specified in Phase 3 requirements):
 6. POST /login   wrong password     → 401 INVALID_CREDENTIALS
 7. GET  /me      valid cookie       → 200 + user object
 8. GET  /me      no cookie          → 401 AUTH_REQUIRED
+
+Hardening Test IDs (Phase 3 Serious Suite):
+A. POST /signup  RPC fails          → 500 + orphaned auth user DELETED
+B. POST /signup  fake user (empty identities) → 409 EMAIL_EXISTS, no RPC call
+C. POST /signup  session=None       → 202 body does NOT contain user profile data
+D. POST /login   auth OK but no profile row   → 401 INVALID_CREDENTIALS
 """
 
 import pytest
@@ -82,6 +87,7 @@ def _make_auth_response(user_id=FAKE_USER_ID):
     """Build a fake Supabase auth response with a session."""
     mock_user    = MagicMock()
     mock_user.id = user_id
+    mock_user.identities = [MagicMock()]
 
     mock_session              = MagicMock()
     mock_session.access_token = 'fake.jwt.token'
@@ -311,6 +317,7 @@ def test_signup_verification_required_flow(client):
         # signup returns user but NO session -> verification required
         mock_auth_resp = MagicMock()
         mock_auth_resp.user = MagicMock(id=FAKE_USER_ID)
+        mock_auth_resp.user.identities = [1]
         mock_auth_resp.session = None  # Crucial for 202 branch
         mock_sb.auth.sign_up.return_value = mock_auth_resp
         
@@ -319,3 +326,138 @@ def test_signup_verification_required_flow(client):
             
             assert resp.status_code == 202
             assert resp.get_json()['status'] == 'verification_required'
+
+
+# ──────────────────────────────────────────────────────────────
+# HARDENING TEST A — Signup orphan cleanup on profile error
+# ──────────────────────────────────────────────────────────────
+
+def test_signup_orphan_cleanup_on_profile_error(client):
+    """
+    CRITICAL: When create_user_profile RPC raises, the auth route MUST call
+    supabase.auth.admin.delete_user(user_id) before returning 500.
+    Skipping this step creates a permanently orphaned auth.users row — the
+    affected user can never sign up again with the same email.
+    """
+    with patch('app.routes.auth.supabase') as mock_sb, \
+         patch('app.routes.auth.create_user', side_effect=RuntimeError('RPC failed')):
+
+        # Build a valid-looking auth response with non-empty identities so the
+        # duplicate-email guard passes and execution reaches create_user()
+        mock_user            = MagicMock()
+        mock_user.id         = FAKE_USER_ID
+        mock_user.identities = [MagicMock()]   # ← non-empty = legitimate new user
+
+        mock_auth_resp         = MagicMock()
+        mock_auth_resp.user    = mock_user
+        mock_auth_resp.session = MagicMock()   # session present (not None)
+        mock_sb.auth.sign_up.return_value = mock_auth_resp
+
+        # give the admin stub a delete_user method we can assert on
+        mock_sb.auth.admin.delete_user = MagicMock()
+
+        resp = client.post('/api/v1/auth/signup', json=VALID_SIGNUP_PAYLOAD)
+
+    # Must respond with a server error, not 201/202
+    assert resp.status_code == 500
+    data = resp.get_json()
+    assert data['error'] is True
+
+    # The orphaned auth user MUST be cleaned up
+    mock_sb.auth.admin.delete_user.assert_called_once_with(FAKE_USER_ID)
+
+
+# ──────────────────────────────────────────────────────────────
+# HARDENING TEST B — Fake-user / duplicate email silent detection
+# ──────────────────────────────────────────────────────────────
+
+def test_signup_fake_user_detection(client):
+    """
+    When email confirmation is enabled, Supabase does NOT raise an exception
+    for duplicate emails. Instead it returns a 'fake' user object with an
+    empty identities list. We must detect this and return 409, NOT attempt
+    an RPC insert (which would fail or create garbage data).
+    """
+    with patch('app.routes.auth.supabase') as mock_sb, \
+         patch('app.routes.auth.create_user') as mock_create_user:
+
+        # Supabase fake-user response: user present but identities=[]
+        mock_user            = MagicMock()
+        mock_user.id         = FAKE_USER_ID
+        mock_user.identities = []  # ← the duplicate-email signal
+
+        mock_auth_resp         = MagicMock()
+        mock_auth_resp.user    = mock_user
+        mock_auth_resp.session = MagicMock()
+        mock_sb.auth.sign_up.return_value = mock_auth_resp
+
+        resp = client.post('/api/v1/auth/signup', json=VALID_SIGNUP_PAYLOAD)
+
+    assert resp.status_code == 409
+    data = resp.get_json()
+    assert data['error'] is True
+    assert data['code'] == 'EMAIL_EXISTS'
+
+    # The RPC must NEVER be called for a duplicate-email signup
+    mock_create_user.assert_not_called()
+
+
+# ──────────────────────────────────────────────────────────────
+# HARDENING TEST C — 202 response body does not leak profile data
+# ──────────────────────────────────────────────────────────────
+
+def test_signup_202_body_does_not_leak_profile(client):
+    """
+    The 202 Verification Required response must only contain {status, message}.
+    It must NOT contain the user's internal ID, email, plan, or any profile
+    field. The frontend reads the email from the URL param, not the body.
+    """
+    with patch('app.routes.auth.supabase') as mock_sb, \
+         patch('app.routes.auth.create_user', return_value=FAKE_USER_ROW):
+
+        # Valid user with real identities (not a duplicate) but NO session
+        mock_user            = MagicMock()
+        mock_user.id         = FAKE_USER_ID
+        mock_user.identities = [MagicMock()]  # non-empty → legitimate new user
+
+        mock_auth_resp         = MagicMock()
+        mock_auth_resp.user    = mock_user
+        mock_auth_resp.session = None  # ← triggers verification_required branch
+        mock_sb.auth.sign_up.return_value = mock_auth_resp
+
+        resp = client.post('/api/v1/auth/signup', json=VALID_SIGNUP_PAYLOAD)
+
+    assert resp.status_code == 202
+    data = resp.get_json()
+    assert data['status'] == 'verification_required'
+
+    # Profile data must not be present in the response body
+    assert 'user' not in data, "Response body must not leak user profile data"
+    assert 'id' not in data, "Response body must not expose internal user ID"
+
+
+# ──────────────────────────────────────────────────────────────
+# HARDENING TEST D — Login blocked when profile row is missing
+# ──────────────────────────────────────────────────────────────
+
+def test_login_blocked_when_profile_missing(client):
+    """
+    Scenario: Supabase auth succeeds (returns a valid session JWT) but the
+    corresponding public.users profile row does not exist — the signup was
+    interrupted after auth.users was created but before the RPC ran.
+
+    The login route MUST return 401, not 200 with a broken user object.
+    This ensures users in the orphaned state are blocked from accessing
+    the dashboard and can contact support rather than silently breaking.
+    """
+    with patch('app.routes.auth.supabase') as mock_sb, \
+         patch('app.routes.auth.get_user_by_id', return_value=None):
+
+        mock_sb.auth.sign_in_with_password.return_value = _make_auth_response()
+
+        resp = client.post('/api/v1/auth/login', json=VALID_LOGIN_PAYLOAD)
+
+    assert resp.status_code == 401
+    data = resp.get_json()
+    assert data['error'] is True
+    assert data['code'] == 'INVALID_CREDENTIALS'
