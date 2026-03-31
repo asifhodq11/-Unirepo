@@ -368,6 +368,22 @@ export default function SettingsPage() {
                   </button>
                 </div>
               )}
+
+              {/* Sync Status Button */}
+              <button
+                 className="btn btn-ghost text-muted text-xs"
+                 style={{ alignSelf: 'flex-start', marginTop: '8px', padding: '4px 8px', opacity: 0.8 }}
+                 onClick={async () => {
+                   const btn = document.getElementById('sync-plan-btn');
+                   if (btn) btn.innerHTML = '<span class="spinner" style="width: 12px; height: 12px; margin-right: 4px;"/> Syncing...';
+                   await refreshUser();
+                   if (btn) btn.innerHTML = '✓ Synced';
+                   setTimeout(() => { if (btn) btn.innerHTML = 'Refresh Plan Status'; }, 2000);
+                 }}
+                 id="sync-plan-btn"
+              >
+                Refresh Plan Status
+              </button>
             </div>
 
             {/* ═══════════════════════════════════════════════════

@@ -56,8 +56,14 @@ function RootDispatcher() {
   const { user, loading } = useAuth();
   const searchParams = new URLSearchParams(window.location.search);
   const email = searchParams.get('email');
+  const hash = window.location.hash;
 
   if (loading) return <PageLoader />;
+  
+  // Intercept Supabase auth redirect to root
+  if (hash && hash.includes('access_token=')) {
+    return <Navigate to={`/auth/callback${hash}`} replace />;
+  }
   
   if (user) {
     return <Navigate to="/dashboard" replace />;

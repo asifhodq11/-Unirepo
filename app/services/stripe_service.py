@@ -143,7 +143,7 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
         from app.utils.logger import log_event
         log_event("webhook_checkout_received", user_id=user_id, customer_id=customer_id, plan=plan)
 
-        if user_id and customer_id:
+        if customer_id:
             try:
                 update_payload = {
                     "plan": plan, 
@@ -155,8 +155,23 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
                 if subscription_end:
                     update_payload["subscription_end"] = subscription_end
 
-                supabase.table("users").update(update_payload).eq("id", user_id).execute()
-                log_event("webhook_user_updated", user_id=user_id, plan=plan)
+                updated = False
+                if user_id:
+                    res = supabase.table("users").update(update_payload).eq("id", user_id).execute()
+                    if res.data:
+                        updated = True
+                        log_event("webhook_user_updated", user_id=user_id, plan=plan)
+                
+                if not updated:
+                    # Fallback to matching by email (safe fallback if user_id was invalid/missing)
+                    customer_email = session_data.get("customer_email") or session_data.get("customer_details", {}).get("email")
+                    if customer_email:
+                        res = supabase.table("users").update(update_payload).eq("email", customer_email).execute()
+                        if res.data:
+                            log_event("webhook_user_updated_via_email", email=customer_email, plan=plan)
+                        else:
+                            log_event("webhook_update_failed_no_user_found", email=customer_email)
+                            
             except Exception as e:
                 log_event("webhook_update_failed", user_id=user_id, error=str(e))
 

@@ -8,6 +8,7 @@ import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 import ReviewModal from '../components/ReviewModal';
 import OnboardingModal from '../components/modals/OnboardingModal';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import { useToast } from '../hooks/useToast';
 
 /* ── Mini Sparkline Tooltip ── */
 function SparkTooltip({ active, payload, label }) {
@@ -323,8 +324,9 @@ function DashboardInsights({ activities, analytics, plan, navigate, onOpenReview
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
   const [analytics, setAnalytics] = useState(null);
@@ -340,6 +342,16 @@ export default function DashboardPage() {
   const limit = getPlanLimit(plan);
   const limitDisplay = getPlanLimitDisplay(plan);
   const atLimit = used >= limit;
+
+  // Poll for plan upgrades if returning from Stripe
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      toast.success("Payment successful! Syncing your new plan limits...");
+      refreshUser();
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate, refreshUser, toast]);
 
   useEffect(() => {
     async function fetchDashboard() {

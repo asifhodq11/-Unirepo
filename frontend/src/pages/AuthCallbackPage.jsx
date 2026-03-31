@@ -39,8 +39,8 @@ export default function AuthCallbackPage() {
         setUser(data.user);
         setStatus('success');
 
-        // Brief success flash, then redirect to dashboard
-        setTimeout(() => navigate('/dashboard', { replace: true }), 1800);
+        // Brief success flash, then redirect to login
+        setTimeout(() => navigate('/login?verified=true', { replace: true }), 1800);
       } catch (err) {
         setStatus('error');
         setErrorMsg(

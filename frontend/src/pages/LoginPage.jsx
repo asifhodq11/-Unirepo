@@ -11,6 +11,9 @@ export default function LoginPage() {
   const [loading, setLoading]           = useState(false);
   const [emailNotVerified, setEmailNotVerified] = useState(false);
   const [resendSent, setResendSent]     = useState(false);
+  
+  const searchParams = new URLSearchParams(window.location.search);
+  const isVerified   = searchParams.get('verified') === 'true';
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -58,6 +61,12 @@ export default function LoginPage() {
         {error && (
           <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '1rem' }}>
             <AlertTriangle size={18} /> {error}
+          </div>
+        )}
+
+        {isVerified && !error && (
+          <div className="alert alert-success" style={{ marginBottom: '1rem', padding: '0.85rem 1rem' }}>
+            ✓ Email verified! You can now log in to your account.
           </div>
         )}
 
