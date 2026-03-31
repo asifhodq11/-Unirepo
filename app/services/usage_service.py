@@ -60,7 +60,7 @@ def check_usage_limit(user_id: str) -> None:
         billing_start = datetime.fromisoformat(billing_start_str)
         reset_date = billing_start + timedelta(days=30)
     else:
-        reset_date = datetime.utcnow() + timedelta(days=30)
+        reset_date = datetime.now(timezone.utc) + timedelta(days=30)
 
     if used >= limit:
         raise ReplyLimitReached(

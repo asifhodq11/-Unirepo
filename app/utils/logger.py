@@ -5,7 +5,7 @@
 import json
 import logging
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import request, has_request_context
 
 # Configure the root logger
@@ -28,7 +28,7 @@ def log_event(event_name: str, **kwargs):
     level = kwargs.pop("level", "info")
 
     event_data = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "level": level,
         "event": event_name,
     }
