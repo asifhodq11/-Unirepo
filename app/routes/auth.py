@@ -149,7 +149,21 @@ def login():
     user = get_user_by_id(auth_response.user.id)
     if not user:
         # Auth succeeded but no profile row exists — the account was never fully created.
-        return build_error("INVALID_CREDENTIALS")
+        # JIT Profile Recovery (Target 3 Zombie Fix)
+        # Dynamically recover the missing profile row so the user isn't permanently locked out.
+        try:
+            email_to_use = auth_response.user.email if auth_response.user.email else data["email"]
+            user = create_user(
+                user_id=auth_response.user.id,
+                email=email_to_use,
+                business_name="Recovered Account",
+                business_type="unknown",
+                tone_preference="friendly",
+            )
+            log_event("zombie_account_recovered", user_id=auth_response.user.id, email=email_to_use)
+        except Exception as e:
+            log_event("zombie_recovery_failed", user_id=auth_response.user.id, error=str(e))
+            return build_error("SERVER_ERROR", details="Account recovery failed.")
 
     response = make_response({"user": user}, 200)
     _set_session_cookie(response, auth_response.session.access_token)
@@ -183,7 +197,17 @@ def me():
 @require_auth
 def delete_account():
     user_id = g.current_user["id"]
+    
+    # 1. Anonymise relational data recursively to preserve referential integrity
     anonymise_user(user_id)
+    
+    # 2. Hard-delete the Supabase Auth Root Identity
+    try:
+        supabase.auth.admin.delete_user(user_id)
+        log_event("auth_identity_purged", user_id=user_id)
+    except Exception as e:
+        log_event("auth_identity_purge_failed", user_id=user_id, error=str(e))
+        
     response = make_response({"status": "deleted"}, 200)
     _clear_session_cookie(response)
     return response

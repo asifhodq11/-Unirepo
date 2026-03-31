@@ -437,27 +437,72 @@ def test_signup_202_body_does_not_leak_profile(client):
 
 
 # ──────────────────────────────────────────────────────────────
-# HARDENING TEST D — Login blocked when profile row is missing
+# HARDENING TEST D — JIT Profile Recovery (Zombie Account Fix)
 # ──────────────────────────────────────────────────────────────
 
-def test_login_blocked_when_profile_missing(client):
+def test_login_recovers_missing_profile(client):
     """
     Scenario: Supabase auth succeeds (returns a valid session JWT) but the
     corresponding public.users profile row does not exist — the signup was
     interrupted after auth.users was created but before the RPC ran.
 
-    The login route MUST return 401, not 200 with a broken user object.
-    This ensures users in the orphaned state are blocked from accessing
-    the dashboard and can contact support rather than silently breaking.
+    The login route must dynamically reconstruct the profile (JIT recovery)
+    and return 200 OK, instead of permanently bricking the account.
     """
     with patch('app.routes.auth.supabase') as mock_sb, \
-         patch('app.routes.auth.get_user_by_id', return_value=None):
+         patch('app.routes.auth.get_user_by_id', return_value=None), \
+         patch('app.routes.auth.create_user', return_value=FAKE_USER_ROW) as mock_create_user:
 
-        mock_sb.auth.sign_in_with_password.return_value = _make_auth_response()
+        mock_auth_response = _make_auth_response()
+        # Add an email to the fake Supabase user so JIT recovery has data to use
+        mock_auth_response.user.email = 'owner@example.com'
+        mock_sb.auth.sign_in_with_password.return_value = mock_auth_response
 
         resp = client.post('/api/v1/auth/login', json=VALID_LOGIN_PAYLOAD)
 
-    assert resp.status_code == 401
+    assert resp.status_code == 200
     data = resp.get_json()
-    assert data['error'] is True
-    assert data['code'] == 'INVALID_CREDENTIALS'
+    assert data['user']['id'] == FAKE_USER_ID
+    assert 'session_token' in resp.headers.get('Set-Cookie', '')
+
+    # Ensure profile recovery was actually triggered
+    mock_create_user.assert_called_once_with(
+        user_id=FAKE_USER_ID,
+        email='owner@example.com',
+        business_name='Recovered Account',
+        business_type='unknown',
+        tone_preference='friendly'
+    )
+
+# ──────────────────────────────────────────────────────────────
+# HARDENING TEST E — GDPR Delete Account Purges Auth Identity
+# ──────────────────────────────────────────────────────────────
+
+def test_admin_delete_account_removes_auth_identity(client):
+    """
+    When deleting an account, we must explicitly call auth.admin.delete_user
+    to remove the root authentication identity. Anonymising the public row 
+    is not enough for GDPR compliance or allowing future re-registrations.
+    """
+    with patch('app.utils.decorators.supabase') as mock_sb, \
+         patch('app.routes.auth.supabase') as mock_auth_sb, \
+         patch('app.utils.decorators.get_user_by_id', return_value=FAKE_USER_ROW), \
+         patch('app.routes.auth.anonymise_user') as mock_anon:
+
+        mock_user_response = MagicMock()
+        mock_user_response.user = MagicMock(id=FAKE_USER_ID)
+        mock_sb.auth.get_user.return_value = mock_user_response
+
+        mock_auth_sb.auth.admin.delete_user = MagicMock()
+
+        client.set_cookie('session_token', 'fake.jwt.token')
+        resp = client.delete('/api/v1/auth/account')
+
+    assert resp.status_code == 200
+    assert resp.get_json()['status'] == 'deleted'
+
+    # Must anonymise public records
+    mock_anon.assert_called_once_with(FAKE_USER_ID)
+
+    # MUST purge Auth identity using the admin client
+    mock_auth_sb.auth.admin.delete_user.assert_called_once_with(FAKE_USER_ID)
