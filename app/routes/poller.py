@@ -1,5 +1,6 @@
+import threading
 import time
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, current_app
 from app.utils.logger import log_event
 from app.utils.decorators import require_auth
 from run_poller import run_google_poller
@@ -11,27 +12,37 @@ poller_bp = Blueprint("poller", __name__)
 @require_auth
 def trigger_poller():
     """
-    Manually invokes the background Google Poller Engine.
+    Manually invokes the background Google Poller Engine in a non-blocking thread.
     Requires authentication to ensure random hits don't spam the DB.
     """
     log_event("poller_manual_trigger_started")
+    
+    # Define the worker function with app_context if needed (usually safe since it's a separate script)
+    # but run_google_poller is designed to be standalone.
+    def run_worker(app_instance):
+        with app_instance.app_context():
+            try:
+                start_time = time.time()
+                run_google_poller()
+                duration = round(time.time() - start_time, 2)
+                log_event("poller_manual_trigger_success_async", duration_seconds=duration)
+            except Exception as e:
+                log_event("poller_manual_trigger_async_failed", error=str(e))
+
     try:
-        start_time = time.time()
-        # Since we are already inside a Flask request context, 
-        # we can just call the poller function directly.
-        run_google_poller()
-        duration = round(time.time() - start_time, 2)
+        # Get the underlying application instance
+        app = current_app._get_current_object()
         
-        log_event("poller_manual_trigger_success", duration_seconds=duration)
-        return jsonify({"status": "success", "message": f"Poller ran successfully in {duration}s"}), 200
+        # Start in background thread
+        thread = threading.Thread(target=run_worker, args=(app,))
+        thread.daemon = True
+        thread.start()
         
-    except PollerError as e:
-        log_event("poller_manual_trigger_failed", stage=e.details.get("stage"), error=e.details.get("message"))
         return jsonify({
-            "status": "error", 
-            "message": e.details.get("message") or "Poller failed critically."
-        }), 500
+            "status": "accepted",
+            "message": "Poller scan started in background. Results will appear in history soon."
+        }), 202
         
     except Exception as e:
-        log_event("poller_manual_trigger_unexpected_failed", error=str(e))
-        return jsonify({"status": "error", "message": "An unexpected error occurred during polling."}), 500
+        log_event("poller_manual_trigger_init_failed", error=str(e))
+        return jsonify({"status": "error", "message": "Could not initiate background scan."}), 500

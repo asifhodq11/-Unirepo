@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import ReviewModal from '../components/ReviewModal';
 import { getPlanLimit } from '../utils/plans';
+import { useToast } from '../hooks/useToast';
 
 const STARS = [1, 2, 3, 4, 5];
 const ITEM_HEIGHT = 72;
@@ -180,7 +181,7 @@ export default function HistoryPage() {
   const [selectedIds, setSelectedIds]     = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
   const [isProcessing, setIsProcessing]   = useState(false);
-  const [toast, setToast] = useState(null); // { message, type }
+  const toast = useToast();
 
   const used = user?.reply_count_this_month ?? 0;
   const limit = getPlanLimit(plan);
@@ -252,8 +253,7 @@ export default function HistoryPage() {
         next.delete(id);
       } else {
         if (next.size >= remainingCredits) {
-          setToast({ message: `Credit limit reached. You have ${remainingCredits} credits remaining.`, type: 'warning' });
-          setTimeout(() => setToast(null), 3000);
+          toast.warning(`Credit limit reached. You have ${remainingCredits} credits remaining.`);
           return prev;
         }
         next.add(id);
@@ -310,7 +310,7 @@ export default function HistoryPage() {
     
     // Safety check against race conditions or stale local state
     if (selectedIds.size > remainingCredits) {
-      setToast({ message: 'Insufficient credits for selected items.', type: 'error' });
+      toast.error('Insufficient credits for selected items.');
       return;
     }
 
@@ -337,14 +337,13 @@ export default function HistoryPage() {
 
       // Flush selection
       setSelectedIds(new Set());
-      setToast({ message: result.message || 'Bulk generation complete.', type: 'success' });
+      toast.success(result.message || 'Bulk generation complete.');
       
       await refreshUser(); // Sync the new credit count
     } catch (err) {
-      setToast({ message: err.message || 'Bulk generation failed.', type: 'error' });
+      toast.error(err.message || 'Bulk generation failed.');
     } finally {
       setIsProcessing(false);
-      setTimeout(() => setToast(null), 5000);
     }
   }
 
@@ -411,7 +410,7 @@ export default function HistoryPage() {
                 background: !filterStatus ? 'var(--bg-surface)' : 'transparent',
                 color: !filterStatus ? 'var(--text-primary)' : 'var(--text-muted)',
                 fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s',
-                boxShadow: !filterStatus ? 'window.innerWidth > 768 ? var(--shadow-sm) : none' : 'none',
+                boxShadow: (!filterStatus && window.innerWidth > 768) ? 'var(--shadow-sm)' : 'none',
               }}
               onClick={() => setFilterStatus(null)}
             >All</button>
@@ -510,14 +509,6 @@ export default function HistoryPage() {
           <p className="text-xs text-muted">
             Click any review to open it, or select and bulk generate. First 10 auto-selected.
           </p>
-          {toast && (
-            <motion.span 
-              initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
-              className={`text-xs px-2 py-1 rounded ${toast.type === 'warning' ? 'bg-warning/10 text-warning' : toast.type === 'error' ? 'bg-error/10 text-error' : 'bg-success/10 text-success'}`}
-            >
-              {toast.message}
-            </motion.span>
-          )}
         </motion.div>
       )}
 

@@ -66,6 +66,14 @@ export default function ReviewModal({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+ 
+  // Body scroll lock
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   if (!item) return null;
 
@@ -108,7 +116,7 @@ export default function ReviewModal({
             WebkitBackdropFilter: 'blur(24px)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-xl)',
-            padding: 'var(--space-6)',
+            padding: window.innerWidth < 480 ? 'var(--space-4)' : 'var(--space-6)',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-5)',

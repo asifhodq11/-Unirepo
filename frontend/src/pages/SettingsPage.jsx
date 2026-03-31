@@ -6,6 +6,7 @@ import { ArrowUpRight, CreditCard, AlertTriangle, CheckCircle, Settings, User, A
 import { getPlanLimitDisplay, TONE_OPTIONS, PLAN_LABELS } from '../utils/plans';
 import PricingModal from '../components/modals/PricingModal';
 import GoogleConnectionModal from '../components/modals/GoogleConnectionModal';
+import { useToast } from '../hooks/useToast';
 
 const CANCEL_REASONS = [
   'Too expensive for my needs',
@@ -20,8 +21,7 @@ export default function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const [form, setForm] = useState({ business_name: '', tone_preference: 'friendly' });
   const [saving, setSaving]   = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState('');
+  const toast = useToast();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [portalLoading, setPortalLoading]     = useState(false);
   const [cancelLoading, setCancelLoading]     = useState(false);
@@ -58,47 +58,47 @@ export default function SettingsPage() {
 
   async function handleSave(e) {
     e.preventDefault();
-    setSaving(true); setError(''); setSuccess(false);
+    setSaving(true);
     try {
       await api.patch('/settings/', form);
       await refreshUser();
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      toast.success('Settings saved successfully.');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to save settings.');
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save settings.');
     } finally { setSaving(false); }
   }
 
   async function handleUpgrade(targetPlan) {
-    setCheckoutLoading(true); setError('');
+    setCheckoutLoading(true);
     try {
       const data = await api.post('/payments/checkout', { plan: targetPlan });
       window.location.href = data.checkout_url;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not start checkout.');
+      toast.error(err instanceof ApiError ? err.message : 'Could not start checkout.');
       setCheckoutLoading(false);
     }
   }
 
   async function handlePortal() {
-    setPortalLoading(true); setError('');
+    setPortalLoading(true);
     try {
       const data = await api.get('/payments/portal');
       window.location.href = data.portal_url;
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not open billing portal.');
+      toast.error(err instanceof ApiError ? err.message : 'Could not open billing portal.');
       setPortalLoading(false);
     }
   }
 
   async function handleFinalCancel() {
-    setCancelLoading(true); setError('');
+    setCancelLoading(true);
     try {
       await api.post('/payments/cancel', { reason: cancelReason || 'User initiated' });
       await refreshUser();
       setCancelStep(0);
+      toast.info('Subscription cancelled. You will have access until the end of your billing period.');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to cancel subscription.');
+      toast.error(err instanceof ApiError ? err.message : 'Failed to cancel subscription.');
     } finally { setCancelLoading(false); }
   }
 
@@ -108,9 +108,10 @@ export default function SettingsPage() {
       await api.patch('/settings/', { daily_autonomy_limit: autonomyLimit });
       await refreshUser();
       setAutonomySaved(true);
+      toast.success('Daily limit updated.');
       setTimeout(() => setAutonomySaved(false), 2000);
     } catch {
-      setError('Failed to save daily limit.');
+      toast.error('Failed to save daily limit.');
     } finally { setAutonomySaving(false); }
   }
 
@@ -131,19 +132,6 @@ export default function SettingsPage() {
         </h1>
         <p className="text-secondary">Manage your business profile, reply tone, and subscription plan.</p>
       </motion.div>
-
-      <AnimatePresence>
-        {error && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="alert alert-error" style={{ marginBottom: 'var(--space-5)' }}>
-            <AlertTriangle size={18} /> {error}
-          </motion.div>
-        )}
-        {success && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="alert alert-success" style={{ marginBottom: 'var(--space-5)' }}>
-            <CheckCircle size={18} /> Settings saved successfully.
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* 2-Column Bento Grid Layout */}
       <div className="app-bento-grid">
@@ -203,14 +191,14 @@ export default function SettingsPage() {
           </motion.div>
 
           <motion.div className="grid-2 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
+            <div className="card card-glass flex-col justify-between">
               <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage This Month</span></div>
               <div className="flex items-baseline gap-1">
                 <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
                 <span className="text-muted">/ {limitDisplay}</span>
               </div>
             </div>
-            <div className="card card-glass flex-col justify-between" style={{ minHeight: '130px' }}>
+            <div className="card card-glass flex-col justify-between">
               <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Connection</span></div>
               <div className="flex flex-col gap-2 items-start w-full">
                 {user?.google_status === 'degraded' 

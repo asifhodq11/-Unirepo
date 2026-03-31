@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    ReplyIQ Elite Design System â€” V2
    Dark-mode SaaS UI with perceptual colour science,
    typographic precision, layout stability, and smart features.
@@ -1072,13 +1072,22 @@ a:hover { color: var(--accent-hover); }
   /* Buttons stack when they don't fit */
   .btn-stack-mobile {
     flex-wrap: wrap;
+    gap: var(--space-3);
   }
   .btn-stack-mobile > .btn {
     min-width: 100%;
+    margin-bottom: 0; /* Gap handles this */
   }
 }
 
-/* â”€â”€ Mobile Landing Page Optimization â”€â”€ */
+/* --- Mobile Safe Utilities --- */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* --- Premium Typography Overrides --- */
+h1, h2, h3 { text-wrap: balance; }
+
+/* ── Mobile Landing Page Optimization ── */
 @media (max-width: 768px) {
   :root {
     --space-16: 3rem;
@@ -1112,5 +1121,6 @@ a:hover { color: var(--accent-hover); }
     padding: var(--space-4) !important;
   }
 }
+
 /* Hide scrollbar for Chrome, Safari and Opera */.hide-scrollbar::-webkit-scrollbar { display: none; }
 
