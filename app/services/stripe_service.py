@@ -187,23 +187,26 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
             if "items" in sub_data and "data" in sub_data["items"] and len(sub_data["items"]["data"]) > 0:
                 price_id = sub_data["items"]["data"][0]["price"]["id"]
             
-            # Map price ID back to plan name
-            plan = "starter"
-            if price_id == os.environ.get("STRIPE_PRICE_ID_PRO"): plan = "pro"
-            elif price_id == os.environ.get("STRIPE_PRICE_ID_ULTRA"): plan = "ultra"
-            elif price_id == os.environ.get("STRIPE_PRICE_ID_STARTER"): plan = "starter"
+            # Map price ID back to plan name safely
+            plan = None
+            if os.environ.get("STRIPE_PRICE_ID_PRO") and price_id == os.environ.get("STRIPE_PRICE_ID_PRO"): plan = "pro"
+            elif os.environ.get("STRIPE_PRICE_ID_ULTRA") and price_id == os.environ.get("STRIPE_PRICE_ID_ULTRA"): plan = "ultra"
+            elif os.environ.get("STRIPE_PRICE_ID_STARTER") and price_id == os.environ.get("STRIPE_PRICE_ID_STARTER"): plan = "starter"
 
             current_period_end = sub_data.get("current_period_end")
             subscription_end = datetime.fromtimestamp(current_period_end, tz=timezone.utc).isoformat() if current_period_end else None
 
             if customer_id:
-                update_payload = {"plan": plan}
+                update_payload = {}
+                if plan:
+                    update_payload["plan"] = plan
                 if subscription_id:
                     update_payload["stripe_subscription_id"] = subscription_id
                 if subscription_end:
                     update_payload["subscription_end"] = subscription_end
                 
-                supabase.table("users").update(update_payload).eq("stripe_customer_id", customer_id).execute()
+                if update_payload:
+                    supabase.table("users").update(update_payload).eq("stripe_customer_id", customer_id).execute()
 
     elif event_type == "invoice.payment_failed":
         invoice_data = event["data"]["object"]

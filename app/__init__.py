@@ -59,6 +59,15 @@ def create_app(config_name="development"):
     # Health endpoint sits at /api/v1/health
     app.register_blueprint(health_bp, url_prefix="/api/v1")
 
+    # Disable Caching on All API Responses
+    @app.after_request
+    def add_cache_control(response):
+        if request.path.startswith("/api/v1"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
     # 3. Serve Frontend (Catch-all for SPA)
     from flask import send_from_directory
 

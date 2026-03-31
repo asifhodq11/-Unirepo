@@ -1,4 +1,4 @@
-from functools import wraps
+from functools import lru_cache, wraps
 
 from flask import g, request
 from marshmallow import ValidationError
@@ -8,6 +8,15 @@ from app.models.user_model import get_user_by_id
 from app.utils.errors import build_error
 from app.utils.exceptions import AuthRequired
 
+
+@lru_cache(maxsize=1000)
+def _verify_token_with_supabase(token: str):
+    """
+    Caches the Supabase network verification for the token to prevent rapid 
+    concurrent API requests from rate-limiting the user into a 401 redirect loop.
+    Token itself naturally rotates so this cache is self-cleaning.
+    """
+    return supabase.auth.get_user(token)
 
 def require_auth(f):
     """
@@ -24,7 +33,8 @@ def require_auth(f):
             raise AuthRequired()
 
         try:
-            user_response = supabase.auth.get_user(token)
+            # Use local memory cache for this specific raw JWT string
+            user_response = _verify_token_with_supabase(token)
             # Supabase auth user object
             auth_user = user_response.user
             
