@@ -35,7 +35,16 @@ def test_handle_webhook_subscription_updated(mock_supabase):
     }
     
     with patch("app.services.stripe_service.stripe.Webhook.construct_event", return_value=event_data), \
+         patch("app.services.stripe_service.stripe.Subscription.retrieve") as mock_live_sub, \
          patch.dict("os.environ", {"STRIPE_PRICE_ID_PRO": "price_pro_123"}):
+        
+        # Mock the LIVE TRUTH query made to Stripe
+        live_sub = MagicMock()
+        live_sub.status = "active"
+        live_sub.current_period_end = 1735689600
+        live_sub.get = MagicMock(return_value={"data": [{"price": {"id": "price_pro_123"}}]})
+        mock_live_sub.return_value = live_sub
+
         handle_webhook_event(b"raw_payload", "fake_sig")
         
     mock_supabase.update.assert_called()
@@ -72,7 +81,8 @@ def test_handle_webhook_idempotency(mock_log, mock_supabase):
     from app.services.stripe_service import handle_webhook_event
     event_data = {"id": "evt_already_seen", "type": "any.event"}
     
-    mock_supabase.execute.return_value = MagicMock(data=[{"id": 1}], count=1)
+    # Simulate DB Unique key violation on insert
+    mock_supabase.execute.side_effect = Exception("Duplicate key violates unique constraint")
     
     with patch("app.services.stripe_service.stripe.Webhook.construct_event", return_value=event_data):
         handle_webhook_event(b"raw", "fake_sig")

@@ -29,6 +29,8 @@ def _make_checkout_event(event_id='evt_001'):
             'object': {
                 'client_reference_id': FAKE_USER_ID,
                 'customer': FAKE_CUSTOMER_ID,
+                'subscription': 'sub_test_fake123',
+                'metadata': {'plan': 'starter'},
             }
         }
     }
@@ -138,12 +140,10 @@ def test_replayed_event_is_idempotent():
     event = _make_checkout_event(event_id='evt_test4')
 
     mock_query = MagicMock()
-    mock_query.select.return_value = mock_query
-    mock_query.eq.return_value = mock_query
+    mock_query.insert.return_value = mock_query
     
-    # Mock finding an existing ID -> Already processed
-    mock_res_check = MagicMock(data=[{'stripe_event_id': 'evt_test4'}])
-    mock_query.execute.return_value = mock_res_check
+    # Simulate Unique Constraint Violation on processed_webhooks
+    mock_query.execute.side_effect = Exception("Duplicate key value violates unique constraint")
 
     with patch('stripe.Webhook.construct_event', return_value=event), \
          patch('app.services.stripe_service.supabase') as mock_sb:
