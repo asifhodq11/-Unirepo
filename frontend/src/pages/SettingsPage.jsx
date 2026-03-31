@@ -234,7 +234,7 @@ export default function SettingsPage() {
           </motion.div>
 
           {/* Autonomy Dial — Pro plan only */}
-          {plan === 'pro' && (
+          {(plan === 'pro' || plan === 'ultra') && (
             <motion.div
               className="card card-glass"
               initial={{ opacity: 0, y: 20 }}
@@ -245,7 +245,7 @@ export default function SettingsPage() {
                 <h3 className="flex items-center gap-2">
                   <Zap size={18} className="text-accent-cyan" /> Daily Reply Limit
                 </h3>
-                <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}>PRO</span>
+                <span className="badge badge-accent" style={{ fontSize: '0.7rem' }}>{plan === 'ultra' ? 'ULTRA' : 'PRO'}</span>
               </div>
               <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-4)', lineHeight: 1.6 }}>
                 Set your daily auto-reply limit. When reached, overflow reviews are queued for manual review.
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                 <input
                   type="range"
                   min={5}
-                  max={200}
+                  max={plan === 'ultra' ? 500 : 200}
                   step={5}
                   value={autonomyLimit}
                   onChange={e => setAutonomyLimit(Number(e.target.value))}
@@ -304,8 +304,9 @@ export default function SettingsPage() {
                 <CreditCard size={18} className="text-muted" /> Subscription Plan
               </h3>
               <span className={`badge ${
-                plan === 'pro' ? 'badge-success' :
-                plan === 'starter' ? 'badge-accent' : 'badge-muted'
+                plan === 'ultra'   ? 'badge-success' :
+                plan === 'pro'     ? 'badge-success' :
+                plan === 'starter' ? 'badge-accent'  : 'badge-muted'
               }`} style={{ fontSize: '0.85rem' }}>
                 {PLAN_LABELS[plan]?.toUpperCase() || plan.toUpperCase()}
               </span>
@@ -315,7 +316,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-3 w-full mt-2">
               <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>
                 {plan === 'ultra'
-                  ? 'You are on the Ultra plan — the highest tier. Unlimited replies, VIP support, and custom brand models.'
+                  ? 'You are on the Ultra plan — the highest tier. Up to 500 auto-replies/day, VIP support, and custom brand models.'
                   : plan === 'pro'
                   ? 'You are on the Pro plan. Your auto-reply heartbeat runs 24/7, capped by your daily limit in settings.'
                   : plan === 'starter'
@@ -349,11 +350,12 @@ export default function SettingsPage() {
               ) : (
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.15) 100%)',
+                  border: '1px solid rgba(139,92,246,0.4)',
                   borderRadius: 8, padding: '8px 14px', fontSize: '0.85rem',
-                  color: 'var(--accent)', fontWeight: 600,
+                  color: '#a78bfa', fontWeight: 700,
                 }}>
-                  ✓ You are on Ultra — the highest tier
+                  👑 Ultra — Maximum Tier Unlocked
                 </div>
               )}
 
