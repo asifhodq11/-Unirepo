@@ -66,7 +66,10 @@ async function request(method, path, { body, timeout = DEFAULT_TIMEOUT_MS } = {}
   // Handle 403 EMAIL_UNVERIFIED — redirect to onboarding
   const errCode = data?.code ?? data?.error?.code ?? 'SERVER_ERROR';
   if (res.status === 403 && (errCode === 'EMAIL_UNVERIFIED')) {
-    window.location.href = '/verify-email';
+    const isAuthPage = window.location.pathname === '/verify-email' || window.location.pathname === '/login';
+    if (!isAuthPage) {
+      window.location.href = '/verify-email';
+    }
     throw new ApiError(errCode, 'Email verification required.', 403);
   }
 

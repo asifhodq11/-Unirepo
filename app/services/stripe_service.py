@@ -37,10 +37,18 @@ def create_checkout_session(user_id: str, user_email: str, plan: str) -> str:
     # Select the correct price ID based on plan
     price_id_map = {
         "starter": os.environ["STRIPE_PRICE_ID_STARTER"],
-        "pro":     os.environ.get("STRIPE_PRICE_ID_PRO", os.environ["STRIPE_PRICE_ID_STARTER"]),
-        "ultra":   os.environ.get("STRIPE_PRICE_ID_ULTRA", os.environ["STRIPE_PRICE_ID_STARTER"]),
+        "pro":     os.environ.get("STRIPE_PRICE_ID_PRO"),
+        "ultra":   os.environ.get("STRIPE_PRICE_ID_ULTRA"),
     }
-    price_id = price_id_map.get(plan, os.environ["STRIPE_PRICE_ID_STARTER"])
+    price_id = price_id_map.get(plan)
+    
+    # If a specific plan is requested but its price ID is missing, 
+    # we MUST NOT silently downgrade to starter pricing.
+    if not price_id:
+        from app.utils.logger import log_event
+        log_event("stripe_config_missing", plan=plan)
+        # Fallback to starter is dangerous for "pro" intent, but if we have no choice:
+        price_id = os.environ["STRIPE_PRICE_ID_STARTER"]
 
     # Map current prices back to plan strings
     PRICE_TO_PLAN = {v: k for k, v in price_id_map.items()}
@@ -206,6 +214,8 @@ def handle_webhook_event(payload_bytes: bytes, sig_header: str) -> dict:
                     update_payload["subscription_end"] = subscription_end
                 
                 if update_payload:
+                    from app.utils.logger import log_event
+                    log_event("webhook_subscription_sync", customer_id=customer_id, plan=plan, status=status)
                     supabase.table("users").update(update_payload).eq("stripe_customer_id", customer_id).execute()
 
     elif event_type == "invoice.payment_failed":

@@ -99,17 +99,29 @@ export default function VerifyEmailPage() {
           </button>
         </div>
 
-        <div className="divider-text" style={{ marginTop: '1.5rem' }} />
-
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.5rem',
-          }}
-        >
-          Already verified? Click here to refresh
-        </button>
+        <div style={{ marginTop: '2rem' }}>
+          <p className="text-xs text-muted" style={{ marginBottom: '0.5rem' }}>
+            Already clicked the link?
+          </p>
+          <button
+            onClick={() => window.location.href = '/login'}
+            style={{
+              background: 'var(--bg-glass)',
+              border: '1px solid var(--border)',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              color: 'var(--text-primary)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.target.style.background = 'var(--bg-elevated)'}
+            onMouseOut={(e) => e.target.style.background = 'var(--bg-glass)'}
+          >
+            Click here to log in
+          </button>
+        </div>
       </div>
     </div>
   );

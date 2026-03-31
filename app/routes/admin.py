@@ -26,9 +26,12 @@ def dashboard_stats():
         starter_count_req = supabase.from_("users").select("id", count="exact").eq("plan", "starter").eq("is_deleted", False).execute()
         starter_users = starter_count_req.count if starter_count_req.count is not None else 0
 
-        # Hardcoded approximations based on typical ReplyIQ tier prices
-        # Pro = $49/mo, Starter = $19/mo
-        estimated_mrr = (pro_users * 49) + (starter_users * 19)
+        # Hardcoded approximations based on typical ReplyIQ tier prices (Landing UI)
+        # Ultra = $59/mo, Pro = $25/mo, Starter = $19/mo
+        ultra_count_req = supabase.from_("users").select("id", count="exact").eq("plan", "ultra").eq("is_deleted", False).execute()
+        ultra_users = ultra_count_req.count if ultra_count_req.count is not None else 0
+        
+        estimated_mrr = (ultra_users * 59) + (pro_users * 25) + (starter_users * 19)
 
         # 2. Financial Safety Metrics (AI Cost)
         # Fetching all replies cost for V1 MVP. 
