@@ -47,8 +47,8 @@ export default function LoginPage() {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: '#000', padding: '12px', borderRadius: '12px', display: 'flex' }}>
-            <MessageSquareText size={24} />
+          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: 'var(--black)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex' }}>
+            <Zap size={28} fill="currentColor" />
           </div>
           <span className="auth-logo-name">ReplyIQ</span>
         </div>
@@ -73,10 +73,10 @@ export default function LoginPage() {
         {emailNotVerified && (
           <div style={{
             marginBottom: '1rem', padding: '0.85rem 1rem', borderRadius: '10px',
-            background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.25)',
+            background: 'rgba(var(--warning-rgb), 0.08)', border: '1px solid rgba(var(--warning-rgb), 0.25)',
             display: 'flex', flexDirection: 'column', gap: '0.4rem',
           }}>
-            <div className="flex items-center gap-2" style={{ color: '#eab308', fontSize: '0.875rem', fontWeight: 600 }}>
+            <div className="flex items-center gap-2" style={{ color: 'var(--warning)', fontSize: '0.875rem', fontWeight: 600 }}>
               <Mail size={16} /> Email not verified
             </div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5 }}>
@@ -86,7 +86,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleResendFromLogin}
-                style={{ background: 'none', border: 'none', color: '#eab308', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, padding: 0, textAlign: 'left', marginTop: '0.15rem' }}
+                style={{ background: 'none', border: 'none', color: 'var(--warning)', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, padding: 0, textAlign: 'left', marginTop: '0.15rem' }}
               >
                 Resend verification email →
               </button>

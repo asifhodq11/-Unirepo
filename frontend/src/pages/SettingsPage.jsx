@@ -170,11 +170,11 @@ export default function SettingsPage() {
                       onClick={() => set('tone_preference')(t)}
                       className="star-btn flex items-center justify-center"
                       style={{ 
-                        flex: 1, padding: 'var(--space-2)', borderRadius: '999px',
-                        background: form.tone_preference === t ? 'var(--bg-surface)' : 'transparent',
+                        flex: 1, padding: 'var(--space-2)', borderRadius: 'var(--radius-full)',
+                        background: form.tone_preference === t ? 'var(--bg-card)' : 'transparent',
                         color: form.tone_preference === t ? 'var(--text-primary)' : 'var(--text-muted)',
                         boxShadow: form.tone_preference === t ? 'var(--shadow-sm)' : 'none',
-                        textTransform: 'capitalize', fontSize: '0.85rem', fontWeight: 500,
+                        textTransform: 'capitalize', fontSize: '0.85rem', fontWeight: 600,
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                       }}
                     >
@@ -338,10 +338,10 @@ export default function SettingsPage() {
               ) : (
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.15) 100%)',
-                  border: '1px solid rgba(139,92,246,0.4)',
-                  borderRadius: 8, padding: '8px 14px', fontSize: '0.85rem',
-                  color: '#a78bfa', fontWeight: 700,
+                  background: 'var(--accent-subtle)',
+                  border: '1px solid var(--accent-glow)',
+                  borderRadius: 'var(--radius-md)', padding: '8px 14px', fontSize: '0.85rem',
+                  color: 'var(--accent)', fontWeight: 700,
                 }}>
                   👑 Ultra — Maximum Tier Unlocked
                 </div>
@@ -392,23 +392,23 @@ export default function SettingsPage() {
                   {cancelStep === 1 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'rgba(239, 68, 68, 0.06)', border: '1px solid rgba(239, 68, 68, 0.2)', padding: 'var(--space-5)' }}
+                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--danger)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div style={{ background: 'rgba(239, 68, 68, 0.15)', padding: '10px', borderRadius: '50%' }}>
-                          <Shield size={22} style={{ color: '#ef4444' }} />
+                        <div style={{ background: 'var(--danger-subtle, rgba(239, 68, 68, 0.1))', padding: '10px', borderRadius: 'var(--radius-full)' }}>
+                          <Shield size={22} style={{ color: 'var(--danger)' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>Are you sure?</h4>
+                          <h4 style={{ color: 'var(--danger)', marginBottom: '2px' }}>Are you sure?</h4>
                           <p className="text-xs text-muted">Cancelling will remove your AI-powered review protection</p>
                         </div>
                       </div>
-                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+                      <div style={{ background: 'var(--bg-base)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px solid var(--border)' }}>
                         <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
                           You've generated <strong style={{ color: 'var(--text-primary)' }}>{used} AI replies</strong> this month. 
                           Without ReplyIQ, every new review will go unanswered — and unanswered reviews 
-                          reduce customer trust by up to <strong style={{ color: '#ef4444' }}>45%</strong>.
+                          reduce customer trust by up to <strong style={{ color: 'var(--danger)' }}>45%</strong>.
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-3 btn-stack-mobile">
@@ -426,21 +426,21 @@ export default function SettingsPage() {
                   {cancelStep === 2 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'rgba(124, 58, 237, 0.06)', border: '1px solid rgba(124, 58, 237, 0.2)', padding: 'var(--space-5)' }}
+                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--accent)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div style={{ background: 'rgba(124, 58, 237, 0.15)', padding: '10px', borderRadius: '50%' }}>
-                          <ArrowUpRight size={22} style={{ color: '#7c3aed', transform: 'rotate(180deg)' }} />
+                        <div style={{ background: 'var(--accent-subtle, rgba(124, 58, 237, 0.1))', padding: '10px', borderRadius: 'var(--radius-full)' }}>
+                          <ArrowUpRight size={22} style={{ color: 'var(--accent)', transform: 'rotate(180deg)' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#7c3aed', marginBottom: '2px' }}>Switch to Free</h4>
+                          <h4 style={{ color: 'var(--accent)', marginBottom: '2px' }}>Switch to Free</h4>
                           <p className="text-xs text-muted">Keep your history at zero cost</p>
                         </div>
                       </div>
-                      <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed rgba(124, 58, 237, 0.3)' }}>
+                      <div style={{ background: 'var(--bg-base)', borderRadius: 'var(--radius-md)', padding: 'var(--space-4)', marginBottom: 'var(--space-4)', border: '1px dashed var(--accent-glow)' }}>
                         <p className="text-sm" style={{ lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                          Instead of cancelling, switch to the <strong style={{ color: '#7c3aed' }}>Free plan ($0/mo)</strong>. 
+                          Instead of cancelling, switch to the <strong style={{ color: 'var(--accent)' }}>Free plan ($0/mo)</strong>. 
                           You'll keep your account data, history, and settings. 
                         </p>
                         <p className="text-xs text-muted mt-2">
@@ -467,15 +467,15 @@ export default function SettingsPage() {
                   {cancelStep === 3 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.15)', padding: 'var(--space-5)' }}
+                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--border)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
-                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '10px', borderRadius: '50%' }}>
-                          <MessageSquare size={22} style={{ color: '#ef4444' }} />
+                        <div style={{ background: 'var(--danger-subtle, rgba(239, 68, 68, 0.05))', padding: '10px', borderRadius: 'var(--radius-full)' }}>
+                          <MessageSquare size={22} style={{ color: 'var(--danger)' }} />
                         </div>
                         <div>
-                          <h4 style={{ color: '#ef4444', marginBottom: '2px' }}>One last thing</h4>
+                          <h4 style={{ color: 'var(--danger)', marginBottom: '2px' }}>One last thing</h4>
                           <p className="text-xs text-muted">Help us improve — why are you leaving?</p>
                         </div>
                       </div>
@@ -486,8 +486,8 @@ export default function SettingsPage() {
                             className="flex items-center gap-3 text-sm"
                             style={{ 
                               padding: '10px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                              background: cancelReason === reason ? 'rgba(239, 68, 68, 0.08)' : 'transparent',
-                              border: cancelReason === reason ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border)',
+                              background: cancelReason === reason ? 'var(--danger-subtle, rgba(239, 68, 68, 0.04))' : 'var(--bg-base)',
+                              border: cancelReason === reason ? '1px solid var(--danger)' : '1px solid var(--border)',
                               transition: 'all 0.2s',
                               color: 'var(--text-secondary)',
                             }}
@@ -498,7 +498,7 @@ export default function SettingsPage() {
                               value={reason}
                               checked={cancelReason === reason}
                               onChange={() => setCancelReason(reason)}
-                              style={{ accentColor: '#ef4444' }}
+                              style={{ accentColor: 'var(--danger)' }}
                             />
                             {reason}
                           </label>

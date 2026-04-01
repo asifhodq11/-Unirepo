@@ -28,8 +28,8 @@ export default function ForgotPasswordPage() {
       <div className="auth-card">
         {/* Logo */}
         <div className="auth-logo">
-          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: '#000', padding: '12px', borderRadius: '12px', display: 'flex' }}>
-            <MessageSquareText size={24} />
+          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: 'var(--black)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex' }}>
+            <Zap size={28} fill="currentColor" />
           </div>
           <span className="auth-logo-name">ReplyIQ</span>
         </div>

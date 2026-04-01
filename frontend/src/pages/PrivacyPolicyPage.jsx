@@ -1,23 +1,23 @@
 import { Link } from 'react-router-dom';
-import { MessageSquareText, Shield } from 'lucide-react';
+import { MessageSquareText, Shield, Zap } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)' }}>
       {/* Header */}
       <header style={{ 
-        borderBottom: '1px solid rgba(255,255,255,0.06)', 
+        borderBottom: '1px solid var(--border-subtle)', 
         padding: '1rem 2rem', 
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(var(--bg-base-rgb, 10,10,18),0.92)',
+        background: 'var(--bg-glass-heavy)',
         backdropFilter: 'blur(12px)',
       }}>
         <Link to="/landing" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: '#000', padding: '8px', borderRadius: '10px', display: 'flex' }}>
-            <MessageSquareText size={18} />
+          <div style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: 'var(--black)', padding: '8px', borderRadius: 'var(--radius-md)', display: 'flex' }}>
+            <Zap size={18} fill="currentColor" />
           </div>
           <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>ReplyIQ</span>
         </Link>
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
           </section>
         ))}
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '2rem', marginTop: '3rem', display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '2rem', marginTop: '3rem', display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
           <Link to="/terms" style={{ color: 'var(--accent)' }}>Terms of Service</Link>
           <Link to="/landing" style={{ color: 'var(--text-muted)' }}>← Back to home</Link>
         </div>

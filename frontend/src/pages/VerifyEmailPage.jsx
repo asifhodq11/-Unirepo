@@ -44,15 +44,16 @@ export default function VerifyEmailPage() {
         <div style={{
           display: 'flex', justifyContent: 'center', marginBottom: '1.5rem',
         }}>
-          <div style={{
-            width: '60px', height: '60px',
-            background: 'rgba(59,130,246,0.12)',
-            border: '1px solid rgba(59,130,246,0.3)',
-            borderRadius: '16px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Mail size={28} style={{ color: '#60a5fa' }} />
-          </div>
+          <div className="auth-logo-icon flex items-center justify-center" style={{ 
+          width: '64px', height: '64px',
+          background: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-glow)',
+          borderRadius: 'var(--radius-md)',
+          marginBottom: 'var(--space-6)',
+          marginRight: 'auto', marginLeft: 'auto'
+        }}>
+          <Mail size={32} className="text-accent" />
+        </div>
         </div>
 
         <h2 style={{ marginBottom: '0.5rem' }}>One last step</h2>

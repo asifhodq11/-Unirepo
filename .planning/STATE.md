@@ -1,29 +1,21 @@
-# GSD Workspace State: Dashboard & Mobile UX Optimization
+# Project State: ReplyIQ
 
-**Objective:** Conduct an architectural UI/UX and functional code review on `DashboardPage.jsx`, `HistoryPage.jsx`, and `SettingsPage.jsx` to flag mobile rendering unoptimizations, layout breaks, and component logic errors.
-**Active Tech Stack:** React, CSS Variables (Bento V3 UI framework), Framer Motion, Flask (Backend).
+## Current Objective
+Achieve a "Zero-Bug UI" by remediating all visual inconsistencies, hardcoded styles, and "unpleasant" component transitions identified in the Deep Audit.
 
-## Target 4: Dashboard UI Stabilization [COMPLETE]
-- **Status:** Integrated and Verified (Manual audit of logic).
-- **Fixes:**
-  - Resolved "Red Zero" reputation score bug (muted state for new users).
-  - Fixed mobile squish in `LiveEngineStats` and `DashboardInsights` via `flex-wrap`.
-  - Unified toast messaging into global `useToast()` context.
-  - Removed rigid `minHeight` card constraints.
-- **Commit:** `1907665`
+## Structural Reconnaissance
+- **HistoryPage**: Found discrepancy in 'Draft' vs 'Replied' plate backgrounds. Drafts are tinted purple; Replied are tinted neutral. This creates a "weird" visual weight difference.
+- **Auth Pages**: `SignupPage`, `SettingsPage`, `VerifyEmailPage` still contain hardcoded `rgba` values and inconsistent radii (12px vs 10px).
+- **Design Tokens**: `index.css` has been updated but coverage is not yet 100%.
 
-## Target 5: Global UX & Backend Polish [PLANNING]
-- **Findings from "Scan Once More" Audit:**
-  - **HistoryPage Bug**: Found a literal JS-logic-in-string error: `boxShadow: !filterStatus ? 'window.innerWidth > 768 ? var(--shadow-sm) : none' : 'none'`.
-  - **ReviewModal UX**: Missing body scroll lock when modal is open; non-responsive internal padding (too wide for 320px).
-  - **SettingsPage Spacing**: Hardcoded `minHeight: 130px` on small cards causes vertical bloat.
-  - **Toast Fragmentation**: `HistoryPage` and `SettingsPage` still use local feedback hooks instead of `useToast()`.
-  - **Backend Bottleneck**: `poller.py` manual trigger is synchronous and risk request timeouts during deep scans.
+## Identified UI Bugs
+1. **History Plate Inconsistency**: `HistoryItem` background logic fails to provide a cohesive 'Finished' state for Replied items.
+2. **Badge Padding**: Badges in Settings vs History have different internal padding (6px vs 2px).
+3. **Auth Branding**: Logo containers in Auth pages use hardcoded `color: #000` and `borderRadius: 12px` instead of `var(--black)` and `var(--radius-md)`.
+4. **Diagnostic Contrast**: The `NetworkHealthCheck` component's "API Live" text could be more prominent.
 
----
-
-## Phase 3 Directive (Execution)
-- Transition to `implementation_plan_target_5_polish.md`.
-- Refactor `HistoryPage` and `SettingsPage` for global toast parity.
-- Fix the `ReviewModal` scroll lock.
-- Refactor `poller.py` for non-blocking triggers.
+## Technical Context
+- **Framework**: React (Vite)
+- **Styling**: Vanilla CSS with CSS Variables (`index.css`)
+- **Icons**: Lucide-React
+- **Animations**: Framer Motion

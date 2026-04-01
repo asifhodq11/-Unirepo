@@ -56,10 +56,12 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen 
         borderLeft: isPending ? '3px solid var(--accent)' : item.status === 'replied' ? '3px solid var(--success)' : `3px solid var(--border)`,
         outline: selected ? '1px solid var(--accent)' : '1px solid transparent',
         background: isGenerating
-          ? 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(6,182,212,0.06))'
+          ? 'linear-gradient(135deg, var(--accent-subtle), var(--accent-cyan-subtle))'
           : hasDraft
-            ? 'rgba(139,92,246,0.04)'
-            : 'var(--bg-glass)',
+            ? 'var(--accent-subtle)'
+            : item.status === 'replied'
+              ? 'var(--success-subtle)'
+              : 'var(--bg-glass)',
         transition: 'outline 0.15s ease, background 0.3s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
       whileHover={{ y: -2, outline: '1px solid var(--border)' }}
@@ -113,9 +115,9 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen 
           {hasDraft && (
             <span style={{
               fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em',
-              padding: '2px 7px', borderRadius: '999px',
-              background: 'rgba(139,92,246,0.15)', color: 'var(--accent)',
-              border: '1px solid rgba(139,92,246,0.3)',
+              padding: '2px 7px', borderRadius: 'var(--radius-full)',
+              background: 'var(--accent-subtle)', color: 'var(--accent)',
+              border: '1px solid var(--accent-glow)',
             }}>
               DRAFT READY
             </span>
@@ -127,7 +129,7 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen 
             item.status === 'replied' ? 'badge-success' :
             item.status === 'failed' ? 'badge-muted' :
             isGenerating ? 'badge-accent' : 'badge-warning'
-          }`}>
+          }`} style={{ padding: 'var(--space-1) var(--space-3)' }}>
             {isGenerating ? 'Generating…' : item.status}
           </span>
           <span className="text-xs text-muted hidden sm:inline">{date}</span>
@@ -231,9 +233,10 @@ export default function HistoryPage() {
   }, [filterStatus, searchParams, setSearchParams]);
 
   useEffect(() => {
-    setIsFetching(true);
+    // Only call fetchPage(1) on initial mount or when filterStatus changes
     fetchPage(1);
-  }, [fetchPage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterStatus]);
 
   // When filter status switches to pending, re-select defaults
   useEffect(() => {
@@ -417,8 +420,8 @@ export default function HistoryPage() {
             <button
               className="star-btn flex items-center gap-1"
               style={{
-                padding: 'var(--space-2) var(--space-4)', borderRadius: '999px',
-                background: filterStatus === 'pending' ? 'rgba(139,92,246,0.15)' : 'transparent',
+                padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-full)',
+                background: filterStatus === 'pending' ? 'var(--accent-subtle)' : 'transparent',
                 color: filterStatus === 'pending' ? 'var(--accent)' : 'var(--text-muted)',
                 fontSize: '0.85rem', fontWeight: 600, transition: 'all 0.2s',
               }}
@@ -433,8 +436,8 @@ export default function HistoryPage() {
             className="flex items-center gap-1 p-1 rounded-full hide-scrollbar text-xs"
             style={{ 
               background: 'var(--bg-elevated)', 
-              border: '1px solid var(--border)',
-              overflowX: 'auto',
+              boxShadow: '0 4px 20px var(--warning-subtle, rgba(245, 158, 11, 0.1))',
+              borderColor: 'var(--warning-glow, rgba(245, 158, 11, 0.2))',
               flexWrap: 'nowrap',
               WebkitOverflowScrolling: 'touch',
               maxWidth: '100%',
@@ -530,7 +533,7 @@ export default function HistoryPage() {
                 animate={{ opacity: 1, scale: 1 }}
               >
                 <div style={{
-                  width: 64, height: 64, borderRadius: '50%', background: 'rgba(139,92,246,0.1)',
+                  width: 64, height: 64, borderRadius: 'var(--radius-full)', background: 'var(--accent-subtle)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-4)'
                 }}>
                   <History size={32} className="text-accent" />
@@ -585,11 +588,11 @@ export default function HistoryPage() {
               alignItems: 'center',
               gap: 'var(--space-4)',
               background: 'var(--bg-glass)',
-              backdropFilter: 'blur(24px)',
+              backdropFilter: 'blur(32px)',
               border: '1px solid var(--accent)',
-              borderRadius: '999px',
+              borderRadius: 'var(--radius-full)',
               padding: 'var(--space-3) var(--space-5)',
-              boxShadow: '0 8px 32px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+              boxShadow: 'var(--shadow-xl), 0 0 30px var(--accent-glow)',
             }}
           >
             <div className="flex flex-col">

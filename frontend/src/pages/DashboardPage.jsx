@@ -9,14 +9,16 @@ import ReviewModal from '../components/ReviewModal';
 import OnboardingModal from '../components/modals/OnboardingModal';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { useToast } from '../hooks/useToast';
+import NetworkHealthCheck from '../components/NetworkHealthCheck';
 
 /* ── Mini Sparkline Tooltip ── */
 function SparkTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: 'rgba(10,10,15,0.95)', border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-sm)', padding: '6px 10px', fontSize: '0.75rem',
+      background: 'var(--bg-base)', border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-sm)', padding: 'var(--space-2) var(--space-3)', fontSize: '0.75rem',
+      boxShadow: 'var(--shadow-lg)'
     }}>
       <span className="text-muted">{label}</span>
       <div style={{ color: 'var(--accent)', fontWeight: 700 }}>
@@ -54,7 +56,7 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
 
   // Color logic for reputation score
   const hasNoData = (analytics?.total_reviews || 0) === 0;
-  const repColor = hasNoData ? 'var(--text-muted)' : avgRating >= 4 ? 'var(--success)' : avgRating >= 3 ? 'var(--warning)' : 'var(--danger, #ef4444)';
+  const repColor = hasNoData ? 'var(--text-muted)' : avgRating >= 4 ? 'var(--success)' : avgRating >= 3 ? 'var(--warning)' : 'var(--danger)';
 
   return (
     <motion.div 
@@ -272,11 +274,11 @@ function DashboardInsights({ activities, analytics, plan, navigate, onOpenReview
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', overflow: 'hidden' }}>
                   {/* Avatar */}
                   <div style={{
-                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+                    width: 32, height: 32, borderRadius: 'var(--radius-full)', flexShrink: 0,
+                    background: 'var(--bg-glass-heavy)', border: '1px solid var(--border)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <User size={16} style={{ color: 'var(--text-muted)' }} />
+                    <User size={16} />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
                     <span style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -367,16 +369,19 @@ export default function DashboardPage() {
     >
       {/* Header */}
       <motion.div 
-        style={{ marginBottom: 'var(--space-8)' }}
+        style={{ marginBottom: 'var(--space-8)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 style={{ marginBottom: 'var(--space-2)' }}>
-          <span className="text-gradient">Dashboard</span>
-        </h1>
-        <p className="text-secondary">
-          Monitor your replies, reputation, and auto-reply heartbeat.
-        </p>
+        <div>
+          <h1 style={{ marginBottom: 'var(--space-2)' }}>
+            <span className="text-gradient">Dashboard</span>
+          </h1>
+          <p className="text-secondary">
+            Monitor your replies, reputation, and auto-reply heartbeat.
+          </p>
+        </div>
+        <NetworkHealthCheck />
       </motion.div>
 
       {/* Quota & Error Alerts */}
@@ -405,8 +410,12 @@ export default function DashboardPage() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="alert alert-warning flex items-start gap-3 shadow-[0_4px_24px_rgba(245,158,11,0.15)] bg-warning/20 border-warning/30" 
-            style={{ marginBottom: 'var(--space-6)' }}
+            className="alert alert-warning flex items-start gap-3" 
+            style={{ 
+              marginBottom: 'var(--space-6)',
+              boxShadow: '0 4px 20px rgba(245, 158, 11, 0.1)',
+              borderColor: 'rgba(245, 158, 11, 0.2)'
+            }}
           >
             <AlertTriangle size={20} className="text-warning" style={{ flexShrink: 0, marginTop: 2 }} />
             <div>

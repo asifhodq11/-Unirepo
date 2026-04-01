@@ -8,57 +8,68 @@
 
 /* â”€â”€ Design Tokens (Premium Bento V3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 :root {
-  /* Dynamic Backgrounds */
+  /* --- Core Palette (Slate/Violet) --- */
   --bg-base:        #030712; 
-  --bg-surface:     rgba(9, 9, 11, 0.4); 
-  --bg-elevated:    rgba(39, 39, 42, 0.3);
-  --bg-glass:       rgba(255, 255, 255, 0.02);
-
-  /* Precise Glass Borders (White-ish for Dark mode) */
-  --border:         rgba(255, 255, 255, 0.08);
-  --border-focus:   rgba(139, 92, 246, 0.6);
-
-  /* Accents (Preserved across themes but adjusted for contrast) */
+  --bg-card:        rgba(17, 24, 39, 0.7);
+  --bg-input:       #1f2937;
+  
   --accent:         #8b5cf6; 
   --accent-hover:   #a78bfa; 
   --accent-cyan:    #06b6d4; 
   --accent-glow:    rgba(139, 92, 246, 0.3);
-  --accent-subtle:  rgba(139, 92, 246, 0.1);
 
-  /* Text & Contrast */
+  --success:        #10b981; 
+  --warning:        #f59e0b; 
+  --danger:         #ef4444; 
+  
   --text-primary:   #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted:     #475569;
+  --text-dim:       #334155;
+  --accent-fg:      #000000; /* For text on vibrant backgrounds */
+  --white:          #ffffff;
+  --black:          #000000;
 
-  /* Elevation Shadows (Dark) */
+  /* --- Glassmorphism & Elevation --- */
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-subtle:  rgba(255, 255, 255, 0.04);
+  --bg-glass:       rgba(17, 24, 39, 0.6);
+  --bg-glass-hover: rgba(17, 24, 39, 0.8);
+  --bg-glass-heavy: rgba(3, 7, 18, 0.9);
+  --bg-white-05:    rgba(255, 255, 255, 0.05);
+  --bg-white-10:    rgba(255, 255, 255, 0.10);
+  --bg-black-40:    rgba(0, 0, 0, 0.40);
+  --bg-black-80:    rgba(0, 0, 0, 0.80);
+
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.5);
   --shadow-md:      0 8px 16px rgba(0,0,0,0.6);
   --shadow-lg:      0 16px 40px rgba(0,0,0,0.7);
   --shadow-glow:    0 0 40px rgba(139, 92, 246, 0.15);
+  --shadow-inner:   inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 
-  /* Metrics & Result Zones */
-  --result:         #18181b;
-  --result-border:  rgba(6, 182, 212, 0.3);
+  /* --- Spacing & Radii (Harmonic Scale) --- */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
 
-  /* Standard Radii & Spacing */
   --radius-sm:      6px;
   --radius-md:      10px;
   --radius-lg:      16px;
   --radius-xl:      24px;
+  --radius-full:    9999px;
+
+  /* --- Typography & Motion --- */
   --font-display:   'Outfit', -apple-system, sans-serif;
   --font-body:      'Plus Jakarta Sans', -apple-system, sans-serif;
   --transition:     all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-  /* Spacing scale (8pt â€” harmonic) */
-  --space-1:  0.25rem;  /* 4px  */
-  --space-2:  0.5rem;   /* 8px  */
-  --space-3:  0.75rem;  /* 12px */
-  --space-4:  1rem;     /* 16px */
-  --space-5:  1.25rem;  /* 20px */
-  --space-6:  1.5rem;   /* 24px */
-  --space-8:  2rem;     /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
+  --result:         #18181b;
 }
 
 /* â”€â”€ Light Theme Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

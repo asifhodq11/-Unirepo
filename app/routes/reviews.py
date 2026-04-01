@@ -312,30 +312,28 @@ def history():
 
     offset = (page - 1) * per_page
 
-    # Fetch total count (non-deleted, this user only)
-    count_query = supabase.from_("reviews").select("id", count="exact").eq("user_id", user_id).eq("is_deleted", False)
-    if status_filter:
-        count_query = count_query.eq("status", status_filter)
-    count_result = count_query.execute()
-    total = count_result.count if count_result.count is not None else 0
-
-    # Fetch page of reviews with their associated replies
-    rows_query = (
+    # 1. Base query for filtered results (non-deleted, this user)
+    query = (
         supabase.from_("reviews")
         .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, generation_ms, model_used)")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
     )
+
     if status_filter:
-        rows_query = rows_query.eq("status", status_filter)
+        query = query.eq("status", status_filter)
+
+    # 2. Sequential pagination & atomic count execution
+    # Using 'exact' count on the final query avoids a separate trip to Supabase
     rows_result = (
-        rows_query
+        query
         .order("created_at", desc=True)
         .range(offset, offset + per_page - 1)
-        .execute()
+        .execute(count="exact")
     )
 
     items = rows_result.data or []
+    total = rows_result.count if rows_result.count is not None else 0
     has_more = (offset + len(items)) < total
 
     return (

@@ -18,16 +18,14 @@ function AmbientBackground() {
         transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         style={{
           position: 'absolute', top: '-10%', left: '-10%', width: '50vw', height: '50vw',
-          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(3,7,18,0) 70%)',
-          filter: 'blur(100px)',
-        }}
-      />
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1], x: [0, -30, 0] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        style={{
-          position: 'absolute', top: '20%', right: '-20%', width: '60vw', height: '60vw',
-          background: 'radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, rgba(3,7,18,0) 60%)',
+          background: 'radial-gradient(circle, var(--accent-subtle) 0%, transparent 70%)',
+          filter: 'blur(80px)',
+          opacity: 0.5,
+          pointerEvents: 'none'
+        }} />
+        <div style={{ 
+          position: 'absolute', bottom: '-10%', left: '-10%', width: '50%', height: '50%', 
+          background: 'radial-gradient(circle, var(--text-dim) 0%, transparent 60%)',
           filter: 'blur(120px)',
         }}
       />
@@ -60,13 +58,13 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             >
               <div style={{ 
-                display: 'inline-flex', alignItems: 'center', gap: 8, 
-                background: 'var(--bg-glass)', padding: '6px 16px', 
-                borderRadius: 999, border: '1px solid var(--border)', 
+                display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', 
+                background: 'var(--bg-glass)', padding: 'var(--space-1) var(--space-4)', 
+                borderRadius: 'var(--radius-full)', border: '1px solid var(--border)', 
                 marginBottom: 'var(--space-8)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)'
+                boxShadow: 'var(--shadow-md), inset 0 1px 0 rgba(255,255,255,0.05)'
               }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-cyan)', boxShadow: '0 0 10px var(--accent-cyan)' }} />
+                <div style={{ width: 6, height: 6, borderRadius: 'var(--radius-full)', background: 'var(--accent-cyan)', boxShadow: '0 0 10px var(--accent-cyan)' }} />
                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                   ReplyIQ Engine v2.0 is Live
                 </span>
@@ -132,7 +130,7 @@ export default function LandingPage() {
                  <Network size={300} />
               </div>
               <div style={{ position: 'absolute', top: '24px', left: '32px' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-md)', background: 'var(--bg-glass-heavy)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)' }}>
                   <Brain size={24} />
                 </div>
               </div>
@@ -152,16 +150,16 @@ export default function LandingPage() {
               style={{ 
                 padding: 'var(--space-8)', display: 'flex', flexDirection: 'column', 
                 position: 'relative', overflow: 'hidden',
-                background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.05) 0%, var(--bg-elevated) 100%)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1), inset 0 0 40px rgba(139,92,246,0.03)'
+                background: 'linear-gradient(180deg, var(--accent-subtle) 0%, var(--bg-surface) 100%)',
+                boxShadow: 'var(--shadow-lg), inset 0 1px 0 var(--border-subtle)'
               }}
             >
               <div style={{ 
                 position: 'absolute', top: '20%', left: '50%', transform: 'translate(-50%, -50%)', 
-                width: '120%', height: '200px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 
+                width: '120%', height: '200px', background: 'radial-gradient(circle, var(--accent-glow) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 
               }} />
 
-              <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(99,102,241,0.1)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99,102,241,0.2)', marginBottom: 'var(--space-6)', position: 'relative', zIndex: 2 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-md)', background: 'var(--bg-glass-heavy)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--border)', marginBottom: 'var(--space-6)', position: 'relative', zIndex: 2 }}>
                 <Zap size={24} />
               </div>
               <h3 style={{ fontSize: '1.75rem', letterSpacing: '-0.03em', marginBottom: 'var(--space-2)', position: 'relative', zIndex: 2 }}>Zero-Click Autopilot</h3>
@@ -170,14 +168,14 @@ export default function LandingPage() {
               </p>
               
               {/* Autonomy Dial Widget */}
-              <div style={{ marginTop: 'auto', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', padding: 'var(--space-5)', borderRadius: '16px', position: 'relative', zIndex: 2 }}>
+              <div style={{ marginTop: 'auto', background: 'var(--bg-black-40)', border: '1px solid var(--border-subtle)', padding: 'var(--space-5)', borderRadius: 'var(--radius-lg)', position: 'relative', zIndex: 2 }}>
                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-muted" style={{ letterSpacing: '0.05em' }}>CIRCUIT BREAKER</span>
-                      <span className="badge badge-success" style={{ background: 'rgba(16,185,129,0.15)', color: '#6ee7b7' }}>Active: 4+ Stars</span>
+                      <span className="text-xs font-bold text-muted" style={{ letterSpacing: '0.05em', color: 'var(--text-muted)' }}>CIRCUIT BREAKER</span>
+                      <span className="badge badge-success" style={{ background: 'var(--bg-glass-heavy)', color: 'var(--success)' }}>Active: 4+ Stars</span>
                     </div>
-                    <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: '80%', background: 'linear-gradient(90deg, var(--accent), var(--accent-cyan))', borderRadius: 999 }} />
+                    <div style={{ height: 6, background: 'var(--bg-glass)', borderRadius: 'var(--radius-full)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: '80%', background: 'linear-gradient(90deg, var(--accent), var(--accent-cyan))', borderRadius: 'var(--radius-full)' }} />
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                        <span>Manual Hold</span>
@@ -236,7 +234,7 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)', alignItems: 'center' }}>
             
             {/* Free Tier */}
-            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid var(--border-subtle)', background: 'var(--bg-glass)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
               <div className="mb-6">
                  <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1">Free Tier</h3>
                  <p className="text-xs text-secondary mb-2">Kick the tires</p>
@@ -247,11 +245,11 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> 5 manual AI replies</li>
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> History dashboard</li>
               </ul>
-              <Link to="/signup?plan=free" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.03)', marginTop: 'auto' }}>Start Free</Link>
+              <Link to="/signup?plan=free" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'var(--bg-white-05)', marginTop: 'auto' }}>Start Free</Link>
             </div>
 
             {/* Starter */}
-            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.01)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid var(--border-subtle)', background: 'var(--bg-glass)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
               <div className="mb-6">
                  <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1">Starter</h3>
                  <p className="text-xs text-secondary mb-2">Semi-automation</p>
@@ -270,7 +268,7 @@ export default function LandingPage() {
             <div className="card-glass" style={{ 
               padding: 'var(--space-6)', 
               border: '1px solid var(--accent)', 
-              boxShadow: '0 20px 40px var(--shadow-glow), inset 0 0 0 1px var(--accent-subtle)',
+              boxShadow: 'var(--shadow-xl), 0 0 40px var(--accent-glow)',
               background: 'linear-gradient(180deg, var(--accent-subtle) 0%, var(--bg-base) 100%)',
               minHeight: '400px', display: 'flex', flexDirection: 'column',
               position: 'relative', zIndex: 10,
@@ -283,7 +281,7 @@ export default function LandingPage() {
                  <p className="text-xs text-secondary mb-2">Zero-touch operations</p>
                  <div style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.04em' }}>$25<span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 400 }}>/mo</span></div>
               </div>
-               <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', marginBottom: 'var(--space-6)' }} />
+               <div style={{ height: 1, background: 'var(--border-subtle)', marginBottom: 'var(--space-6)' }} />
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 var(--space-8) 0', display: 'flex', flexDirection: 'column', gap: 12, flexGrow: 1 }}>
                 <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" /> 100 Autonomous replies</li>
                 <li className="flex items-start gap-3 text-xs font-medium"><CheckCircle2 size={14} className="text-accent shrink-0 mt-0.5" /> Fully automated publishing</li>
@@ -293,7 +291,7 @@ export default function LandingPage() {
             </div>
 
             {/* Ultra */}
-            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
+            <div className="card-glass" style={{ padding: 'var(--space-6)', border: '1px solid var(--border-subtle)', background: 'var(--bg-white-05)', minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
               <div className="mb-6">
                  <h3 className="text-muted text-xs uppercase tracking-widest font-bold mb-1" style={{ color: 'var(--text-primary)'}}>Ultra</h3>
                  <p className="text-xs text-secondary mb-2">Scale without limits</p>
@@ -305,7 +303,7 @@ export default function LandingPage() {
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> VIP dedicated support</li>
                 <li className="flex items-start gap-3 text-xs color: var(--text-secondary)"><CheckCircle2 size={14} className="text-muted shrink-0 mt-0.5" /> Custom brand models</li>
               </ul>
-              <Link to="/signup?plan=ultra" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)', marginTop: 'auto' }}>Go Ultra</Link>
+              <Link to="/signup?plan=ultra" className="btn btn-secondary btn-full" style={{ padding: '10px', fontSize: '0.85rem', background: 'var(--bg-white-10)', color: 'var(--text-primary)', marginTop: 'auto' }}>Go Ultra</Link>
             </div>
 
           </div>
@@ -316,8 +314,14 @@ export default function LandingPage() {
       <section style={{ padding: 'var(--space-16) 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
         <div style={{ 
            width: '100%', maxWidth: 800, margin: '0 auto', 
-           borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 'var(--space-16)',
-           display: 'flex', flexDirection: 'column', alignItems: 'center'
+           borderBottom: '1px solid var(--border-subtle)', 
+           padding: '1rem 2rem', 
+           display: 'flex', 
+           alignItems: 'center', 
+           justifyContent: 'space-between',
+           position: 'sticky', top: 0, zIndex: 100,
+           background: 'var(--bg-glass-heavy)',
+           backdropFilter: 'blur(12px)',
         }}>
            <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-surface))', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-6)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
               <Bot size={32} color="var(--text-primary)" />
@@ -330,12 +334,12 @@ export default function LandingPage() {
       </section>
 
       {/* Minimal Footer */}
-      <footer style={{ padding: 'var(--space-6) 0', borderTop: '1px solid rgba(255,255,255,0.03)', textAlign: 'center', position: 'relative', zIndex: 10, background: 'var(--bg-base)' }}>
+      <footer style={{ padding: 'var(--space-6) 0', borderTop: '1/px solid var(--border-subtle)', textAlign: 'center', position: 'relative', zIndex: 10, background: 'var(--bg-base)' }}>
         <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
           <span>© 2026 ReplyIQ. Engine Online.</span>
           <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-            <Link to="/privacy" style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Privacy</Link>
-            <Link to="/terms"   style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='#fff'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Terms</Link>
+            <Link to="/privacy" style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='var(--text-primary)'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Privacy</Link>
+            <Link to="/terms"   style={{ cursor: 'pointer', color: 'var(--text-muted)', textDecoration: 'none' }} onMouseOver={e=>e.target.style.color='var(--text-primary)'} onMouseOut={e=>e.target.style.color='var(--text-muted)'}>Terms</Link>
           </div>
         </div>
       </footer>

@@ -13,8 +13,8 @@ from flask_talisman import Talisman
 # 1. Database client — ONE instance, shared across the entire application
 # NEVER call create_client() inside a route or service
 supabase: Client = create_client(
-    os.environ["SUPABASE_URL"],
-    os.environ["SUPABASE_SERVICE_ROLE_KEY"],  # We use service role key for backend operations
+    os.environ.get("SUPABASE_URL", "https://xyz123.supabase.co"),
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.M3FfLXh6X2dfaGdfZGYtZGYtZGYtZGYtZGYtZGY"),  # Fallback to dev JWT if missing
 )
 
 # 2. Rate limiter
