@@ -11,7 +11,7 @@ from flask import Blueprint, g, jsonify, request
 from app.schemas.review_schema import (
     GenerateReplySchema, SendReplySchema, BulkGenerateSchema
 )
-from app.utils.decorators import require_auth, validate_request
+from app.utils.decorators import require_auth, validate_request, no_cache
 from app.utils.errors import build_error
 from app.utils.logger import log_event
 from app.extensions import supabase, limiter

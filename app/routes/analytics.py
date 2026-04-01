@@ -7,7 +7,7 @@ Returns aggregated review statistics without requiring new DB tables.
 
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, g, jsonify
-from app.utils.decorators import require_auth
+from app.utils.decorators import require_auth, no_cache
 from app.extensions import supabase
 
 analytics_bp = Blueprint("analytics", __name__)
