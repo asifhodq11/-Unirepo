@@ -49,7 +49,7 @@ def generate():
         "rating": data["rating"],
         "review_text": data["review_text"] if data["review_text"] else None,
         "reviewer_name": data["reviewer_name"] if data["reviewer_name"] else None,
-        "google_review_id": data["google_review_id"] if data["google_review_id"] else None,
+        "google_review_id": data.get("google_review_id") if data.get("google_review_id") else None,
         "status": "pending",
     }
 
@@ -85,11 +85,7 @@ def generate():
         "status":        "draft",
         "generation_ms": duration_ms,
         "model_used":    ai_result.get("model_used", model_used),
-        "tokens_used":   ai_result["tokens"],
-        "cost_usd":      ai_result["cost_usd"],
-        "opener_type":   ai_result.get("opener_type"),
-        "structure_tag": ai_result.get("structure_tag"),
-        "quality_score": ai_result.get("quality_score", 0),
+        "tokens_used":   ai_result.get("tokens", 0),
     }
 
     saved_reply = insert_reply(user_id, reply_data)
@@ -315,7 +311,7 @@ def history():
     # 1. Base query for filtered results (non-deleted, this user)
     query = (
         supabase.from_("reviews")
-        .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, generation_ms, model_used)")
+        .select("id, review_text, rating, reviewer_name, status, created_at, replies(id, reply_text, status, generation_ms, model_used, tokens_used)")
         .eq("user_id", user_id)
         .eq("is_deleted", False)
     )
