@@ -225,8 +225,10 @@ export default function HistoryPage() {
           setSearchParams(searchParams, { replace: true });
         }
       }
-    } catch {
-      setItems([]);
+    } catch (err) {
+      toast.error('Unable to reach server. Please check your internet connection or DNS settings.');
+      // Keep existing items if we have them, otherwise items remain undefined (triggering skeleton)
+      // Done to avoid confusing '0 Reviews' message during a temporary outage.
     } finally {
       setIsFetching(false);
     }

@@ -43,7 +43,7 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
       const response = await api.post('/poller/trigger', {});
       toast.success(response.message || 'Scan complete — new replies generated!');
     } catch (err) {
-      toast.error(err.message || 'Scan failed to run.');
+      toast.error(err.message || 'Scan failed to run. Please check your connection.');
     } finally {
       setRunning(false);
     }
@@ -351,7 +351,8 @@ export default function DashboardPage() {
         setAnalytics(anRes);
         setActivities(actRes.events || []);
       } catch (err) {
-        // Soft fail
+        toast.error('Unable to fetch dashboard analytics. Please check your network connectivity.');
+        setError('Connection error: Some data may be missing.');
       } finally {
         setLoading(false);
       }

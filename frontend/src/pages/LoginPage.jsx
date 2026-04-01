@@ -24,11 +24,13 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(form.email, form.password);
+      toast.success('Welcome back!');
+      navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === 'EMAIL_NOT_VERIFIED') {
         setEmailNotVerified(true);
       } else {
-        setError(err instanceof ApiError ? err.message : 'Login failed. Please try again.');
+        toast.error(err instanceof ApiError ? err.message : 'Login failed. Please check your credentials or network.');
       }
     } finally {
       setLoading(false);
@@ -38,7 +40,9 @@ export default function LoginPage() {
   async function handleResendFromLogin() {
     try {
       await api.post('/auth/resend-verification', { email: form.email });
-    } catch { /* silent fail */ }
+    } catch (err) {
+      toast.error('Failed to resend verification link. Please wait a moment.');
+    }
     setResendSent(true);
   }
 

@@ -110,8 +110,8 @@ export default function SettingsPage() {
       setAutonomySaved(true);
       toast.success('Daily limit updated.');
       setTimeout(() => setAutonomySaved(false), 2000);
-    } catch {
-      toast.error('Failed to save daily limit.');
+    } catch (err) {
+      toast.error(err instanceof ApiError ? err.message : 'Failed to save daily limit. Please check your connection.');
     } finally { setAutonomySaving(false); }
   }
 

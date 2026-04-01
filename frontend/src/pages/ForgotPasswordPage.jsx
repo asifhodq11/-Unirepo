@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquareText, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { MessageSquareText, AlertTriangle, CheckCircle2, Zap } from 'lucide-react';
 import { api } from '../api/client';
 
 export default function ForgotPasswordPage() {

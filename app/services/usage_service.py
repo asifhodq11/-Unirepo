@@ -156,5 +156,7 @@ def get_today_reply_count(user_id: str) -> int:
             .execute()
         )
         return result.count if result.count is not None else 0
-    except Exception:
+    except Exception as e:
+        from app.utils.logger import log_event
+        log_event("usage_count_error", user_id=user_id, error=str(e), stage="get_today_count")
         return 0  # Fail open — do not block generation on a count error

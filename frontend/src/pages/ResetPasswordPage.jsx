@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MessageSquareText, AlertTriangle } from 'lucide-react';
+import { MessageSquareText, AlertTriangle, Zap } from 'lucide-react';
 import { api } from '../api/client';
 import { useToast } from '../hooks/useToast';
 

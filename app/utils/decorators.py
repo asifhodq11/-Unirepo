@@ -9,14 +9,26 @@ from app.utils.errors import build_error
 from app.utils.exceptions import AuthRequired
 
 
-@lru_cache(maxsize=1000)
+import time
+_TOKEN_CACHE = {}  # {token: (user_response, expiry)}
+_CACHE_TTL = 120   # 2 minutes
+
 def _verify_token_with_supabase(token: str):
     """
-    Caches the Supabase network verification for the token to prevent rapid 
-    concurrent API requests from rate-limiting the user into a 401 redirect loop.
-    Token itself naturally rotates so this cache is self-cleaning.
+    Caches the Supabase network verification for the token with a 2-minute TTL.
+    This prevents rapid concurrent API requests (DDoS on Supabase) while 
+    ensuring that revoked sessions are rejected within minutes.
     """
-    return supabase.auth.get_user(token)
+    now = time.time()
+    if token in _TOKEN_CACHE:
+        response, expiry = _TOKEN_CACHE[token]
+        if now < expiry:
+            return response
+    
+    # Cache miss or expired
+    response = supabase.auth.get_user(token)
+    _TOKEN_CACHE[token] = (response, now + _CACHE_TTL)
+    return response
 
 def require_auth(f):
     """
