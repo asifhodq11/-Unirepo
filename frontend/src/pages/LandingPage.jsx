@@ -312,24 +312,30 @@ export default function LandingPage() {
 
       {/* Massive Exit Action CTA */}
       <section style={{ padding: 'var(--space-16) 0', textAlign: 'center', position: 'relative', zIndex: 10 }}>
-        <div style={{ 
-           width: '100%', maxWidth: 800, margin: '0 auto', 
-           borderBottom: '1px solid var(--border-subtle)', 
-           padding: '1rem 2rem', 
-           display: 'flex', 
-           alignItems: 'center', 
-           justifyContent: 'space-between',
-           position: 'sticky', top: 0, zIndex: 100,
-           background: 'var(--bg-glass-heavy)',
-           backdropFilter: 'blur(12px)',
-        }}>
-           <div style={{ width: 64, height: 64, borderRadius: 16, background: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-surface))', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-6)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-              <Bot size={32} color="var(--text-primary)" />
-           </div>
-          <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', letterSpacing: '-0.04em', marginBottom: 'var(--space-8)' }}>Deploy ReplyIQ today.</h2>
-          <Link to="/signup" className="btn btn-primary" style={{ padding: '16px 32px', fontSize: '1.1rem', borderRadius: 999 }}>
-            Start Automating Free <ArrowRight size={18} style={{ marginLeft: 8 }} />
-          </Link>
+        <div className="container">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="card-glass" 
+            style={{ 
+              maxWidth: 900, margin: '0 auto', padding: 'var(--space-12) var(--space-6)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', 
+              background: 'linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-elevated) 100%)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-xl), 0 20px 80px rgba(0,0,0,0.5)'
+            }}
+          >
+            <div style={{ width: 64, height: 64, borderRadius: 'var(--radius-lg)', background: 'var(--bg-glass-heavy)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-6)' }}>
+              <Bot size={32} className="text-primary" />
+            </div>
+            
+            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', letterSpacing: '-0.05em', marginBottom: 'var(--space-8)', fontWeight: 800 }}>
+              Deploy ReplyIQ today.
+            </h2>
+            
+            <Link to="/signup" className="btn btn-primary" style={{ padding: '18px 42px', fontSize: '1.2rem', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
+              Start Automating Free <ArrowRight size={20} style={{ marginLeft: 12 }} />
+            </Link>
+          </motion.div>
         </div>
       </section>
 

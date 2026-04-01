@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
-import { MessageSquareText, AlertTriangle, Mail } from 'lucide-react';
+import { Zap, AlertTriangle, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
