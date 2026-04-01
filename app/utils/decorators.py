@@ -108,3 +108,21 @@ def validate_request(schema_class):
         return decorated
 
     return decorator
+
+
+def no_cache(f):
+    """
+    Ensures the response is never cached by the browser or intermediate proxies.
+    Important for Dashboard analytics and 'Live' status indicators.
+    """
+    from flask import make_response
+
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        resp = make_response(f(*args, **kwargs))
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "-1"
+        return resp
+
+    return decorated

@@ -345,8 +345,8 @@ export default function DashboardPage() {
       setLoading(true);
       try {
         const [anRes, actRes] = await Promise.all([
-          api.get('/analytics/overview').catch(() => null),
-          api.get('/reviews/activity').catch(() => ({ events: [] }))
+          api.get(`/analytics/overview?t=${Date.now()}`).catch(() => null),
+          api.get(`/reviews/activity?t=${Date.now()}`).catch(() => ({ events: [] }))
         ]);
         setAnalytics(anRes);
         setActivities(actRes.events || []);

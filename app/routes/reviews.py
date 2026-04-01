@@ -141,6 +141,7 @@ def bulk_generate():
 
 @reviews_bp.route("/history", methods=["GET"])
 @require_auth
+@no_cache
 def history():
     """Returns a paginated list of reviews."""
     user_id = g.current_user["id"]
@@ -179,6 +180,7 @@ def confirm_and_send(review_id):
 
 @reviews_bp.route("/activity", methods=["GET"])
 @require_auth
+@no_cache
 def activity_feed():
     """Live activity for the Dashboard."""
     user_id = g.current_user["id"]

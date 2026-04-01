@@ -43,6 +43,7 @@ def capture_lead():
 
 @analytics_bp.route("/overview", methods=["GET"])
 @require_auth
+@no_cache
 def dashboard_overview():
     """
     Returns a compact analytics payload for the dashboard widget.

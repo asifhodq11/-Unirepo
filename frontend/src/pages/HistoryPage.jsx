@@ -51,8 +51,12 @@ function HistoryItem({ item, selectable, selected, onToggle, generating, onOpen 
       className="card card-glass"
       style={{
         cursor: 'pointer',
+        height: '100%',
         minHeight: `${ITEM_HEIGHT}px`,
-        alignSelf: 'start',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: 'var(--space-3) var(--space-4)',
         borderLeft: isPending ? '3px solid var(--accent)' : item.status === 'replied' ? '3px solid var(--success)' : `3px solid var(--border)`,
         outline: selected ? '1px solid var(--accent)' : '1px solid transparent',
         background: isGenerating
@@ -201,7 +205,7 @@ export default function HistoryPage() {
     setIsFetching(true);
     try {
       const statusParam = filterStatus ? `&status=${filterStatus}` : '';
-      const data = await api.get(`/reviews/history?page=${p}&per_page=20${statusParam}`);
+      const data = await api.get(`/reviews/history?page=${p}&per_page=20${statusParam}&t=${Date.now()}`);
       const fetched = data.items ?? [];
       setItems(fetched);
       setTotal(data.total ?? 0);
