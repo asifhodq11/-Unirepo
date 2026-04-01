@@ -48,8 +48,8 @@ export default function AdminPage() {
     async function fetchAdminData() {
       try {
         const [statsRes, usersRes] = await Promise.all([
-          api.get('/admin/dashboard'),
-          api.get('/admin/users')
+          api.get(`/admin/dashboard?t=${Date.now()}`),
+          api.get(`/admin/users?t=${Date.now()}`)
         ]);
         
         setStats(statsRes);

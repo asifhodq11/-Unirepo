@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.utils.decorators import require_admin
+from app.utils.decorators import require_admin, no_cache
 from app.extensions import supabase
 from app.utils.errors import build_error
 import math
@@ -12,6 +12,7 @@ MAX_PER_PAGE = 100
 
 @admin_bp.route("/dashboard", methods=["GET"])
 @require_admin
+@no_cache
 def dashboard_stats():
     """
     Returns high-level business metrics strictly for the Internal Admin UI.
@@ -88,6 +89,7 @@ def dashboard_stats():
 
 @admin_bp.route("/users", methods=["GET"])
 @require_admin
+@no_cache
 def list_users():
     """
     Returns a paginated list of all users on the platform for the internal admin table.
@@ -129,6 +131,7 @@ def list_users():
 
 @admin_bp.route("/users/<user_id>/google-config", methods=["PUT"])
 @require_admin
+@no_cache
 def update_google_config(user_id):
     """
     Updates the google_connected and google_location_id for a specific user.
