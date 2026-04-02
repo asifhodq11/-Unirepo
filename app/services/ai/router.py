@@ -39,13 +39,13 @@ def get_model_for_complexity(complexity: str) -> str:
     provider = os.environ.get("AI_PROVIDER", "openrouter")
     
     models = {
-        "low":    "google/gemini-2.0-flash-lite-preview-02-05:free",
-        "medium": "google/gemini-2.0-flash-lite-preview-02-05:free",
-        "high":   "google/gemini-2.0-flash-lite-preview-02-05:free",
+        "low":    "google/gemini-2.0-flash-001",
+        "medium": "google/gemini-2.0-flash-001",
+        "high":   "google/gemini-2.0-flash-001",
     }
     
     # OpenRouter Overrides
     if provider == "openrouter":
-        models["high"] = "anthropic/claude-3.5-sonnet"
+        models["high"] = "google/gemini-2.0-pro-exp-02-05" # Most reliable powerful model
         
     return models.get(complexity, models["medium"])

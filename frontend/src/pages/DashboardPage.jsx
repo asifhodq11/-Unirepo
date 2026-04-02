@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../api/client';
+import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, User, ExternalLink } from 'lucide-react';
+import { Lock, AlertTriangle, Activity, Zap, Cpu, Network, Star, TrendingUp, BarChart3, User, ExternalLink, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 import ReviewModal from '../components/ReviewModal';
 import OnboardingModal from '../components/modals/OnboardingModal';
+import ReplyGenerator from '../components/ReplyGenerator';
+import ReplyCard from '../components/ReplyCard';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { useToast } from '../hooks/useToast';
 import NetworkHealthCheck from '../components/NetworkHealthCheck';
@@ -310,6 +312,54 @@ function DashboardInsights({ activities, analytics, plan, navigate, onOpenReview
   );
 }
 
+function QuickGenerateCard({ atLimit, onGenerated }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [reply, setReply] = useState(null);
+  const [review, setReview] = useState(null);
+
+  async function handleGenerate(formData) {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await api.post('/reviews/generate', formData, { timeout: 30_000 });
+      setReply(data.reply);
+      setReview(data.review);
+      if (onGenerated) onGenerated();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Generation failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="card card-glass" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div className="flex items-center gap-2 mb-4">
+        <MessageSquare size={18} className="text-accent-cyan" />
+        <h3 className="text-sm font-bold uppercase tracking-widest">Quick Generate</h3>
+      </div>
+      
+      {error && (
+        <div className="alert alert-error mb-4 py-2 px-3">
+          <AlertTriangle size={14} /> <span className="text-xs">{error}</span>
+        </div>
+      )}
+
+      {!reply ? (
+        <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          <ReplyCard reply={reply} review={review} />
+          <button className="btn btn-secondary btn-sm" onClick={() => { setReply(null); setReview(null); }}>
+            Generate Another
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
@@ -482,7 +532,8 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Right Column: Live Meter & Controls */}
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col gap-6">
+          <QuickGenerateCard atLimit={atLimit} onGenerated={refreshUser} />
           <LiveEngineStats used={used} limit={limit} limitDisplay={limitDisplay} analytics={analytics} />
         </motion.div>
       </div>

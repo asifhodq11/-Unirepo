@@ -7,9 +7,8 @@ import { api, ApiError } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { getPlanLimit } from '../utils/plans';
 
-export default function FloatingGenerator() {
+export default function FloatingGenerator({ isOpen, onClose }) {
   const { user, refreshUser } = useAuth();
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [slow, setSlow] = useState(false);
@@ -49,61 +48,49 @@ export default function FloatingGenerator() {
   }
 
   return (
-    <>
-      <div className="fab-container">
-        <button 
-          className="magic-fab" 
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Open Quick Reply"
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div 
+          className="magic-panel"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
         >
-          {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
-        </button>
-      </div>
+          <div className="magic-panel-header flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare size={18} className="text-accent-cyan" />
+              <h3 style={{ fontSize: '1.05rem' }}>Quick Reply</h3>
+            </div>
+            <button 
+              onClick={onClose} 
+              className="btn btn-ghost btn-sm" 
+              style={{ padding: '8px', borderRadius: '50%' }}
+            >
+              <X size={20} />
+            </button>
+          </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            className="magic-panel"
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-          >
-            <div className="magic-panel-header flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MessageSquare size={18} className="text-accent-cyan" />
-                <h3 style={{ fontSize: '1.05rem' }}>Quick Reply</h3>
+          <div className="magic-panel-content">
+            {error && (
+              <div className="alert alert-error mb-4" style={{ padding: 'var(--space-2) var(--space-3)' }}>
+                <AlertTriangle size={16} /> <span className="text-xs">{error}</span>
               </div>
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className="btn btn-ghost btn-sm" 
-                style={{ padding: '8px', borderRadius: '50%' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
+            )}
 
-            <div className="magic-panel-content">
-              {error && (
-                <div className="alert alert-error mb-4" style={{ padding: 'var(--space-2) var(--space-3)' }}>
-                  <AlertTriangle size={16} /> <span className="text-xs">{error}</span>
-                </div>
-              )}
-
-              {!reply ? (
-                <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} slow={slow} />
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <ReplyCard key={reply.id} reply={reply} review={review} />
-                  <button className="btn btn-secondary btn-full" onClick={() => { setReply(null); setReview(null); }}>
-                    Generate Another
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+            {!reply ? (
+              <ReplyGenerator onGenerate={handleGenerate} loading={loading} disabled={atLimit} slow={slow} />
+            ) : (
+              <div className="flex flex-col gap-4">
+                <ReplyCard key={reply.id} reply={reply} review={review} />
+                <button className="btn btn-secondary btn-full" onClick={() => { setReply(null); setReview(null); }}>
+                  Generate Another
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

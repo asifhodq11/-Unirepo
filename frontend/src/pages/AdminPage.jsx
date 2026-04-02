@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Activity, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { Users, DollarSign, Activity, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 
 export default function AdminPage() {
@@ -10,6 +10,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
   
   // Modal state for Google Configuration
@@ -44,23 +46,27 @@ export default function AdminPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  useEffect(() => {
-    async function fetchAdminData() {
-      try {
-        const [statsRes, usersRes] = await Promise.all([
-          api.get(`/admin/dashboard?t=${Date.now()}`),
-          api.get(`/admin/users?t=${Date.now()}`)
-        ]);
-        
-        setStats(statsRes);
-        setUsers(usersRes.items || []);
-      } catch (err) {
-        console.error('Failed to load admin data:', err);
-        setError('Failed to load secure admin data.');
-      } finally {
-        setLoading(false);
-      }
+  async function fetchAdminData(isRefresh = false) {
+    if (isRefresh) setRefreshing(true);
+    try {
+      const [statsRes, usersRes] = await Promise.all([
+        api.get(`/admin/dashboard?t=${Date.now()}`),
+        api.get(`/admin/users?t=${Date.now()}`)
+      ]);
+      
+      setStats(statsRes);
+      setUsers(usersRes.items || []);
+      setLastUpdated(statsRes.calculated_at);
+    } catch (err) {
+      console.error('Failed to load admin data:', err);
+      if (!isRefresh) setError('Failed to load secure admin data.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  }
+
+  useEffect(() => {
     fetchAdminData();
   }, []);
 
@@ -87,9 +93,25 @@ export default function AdminPage() {
 
   return (
     <div style={{ padding: 'var(--space-6)', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 className="text-2xl font-bold">Admin Business Intelligence</h1>
-        <p className="text-muted">Real-time financial safety and platform metrics.</p>
+      <header style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <h1 className="text-2xl font-bold">Admin Business Intelligence</h1>
+          <p className="text-muted">Real-time financial safety and platform metrics.</p>
+          {lastUpdated && (
+            <p className="text-xs text-accent mt-1">
+              Last calculated: {new Date(lastUpdated).toLocaleTimeString()}
+            </p>
+          )}
+        </div>
+        <button 
+          className="btn btn-secondary btn-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+          onClick={() => fetchAdminData(true)}
+          disabled={refreshing}
+        >
+          <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
+          {refreshing ? 'Refreshing...' : 'Refresh Stats'}
+        </button>
       </header>
 
       {/* KPI Cards */}

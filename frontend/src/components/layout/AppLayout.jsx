@@ -1,15 +1,16 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import FloatingGenerator from '../FloatingGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, LayoutDashboard, Settings, MessageSquarePlus, Shield } from 'lucide-react';
+import { Activity, LayoutDashboard, Settings, MessageSquarePlus, Shield, Plus } from 'lucide-react';
 import { getPlanLimit, getPlanLimitDisplay, PLAN_LABELS } from '../../utils/plans';
 import ThemeToggle from '../ThemeToggle';
-
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
 
   const plan = user?.plan ?? 'free';
   const used = user?.reply_count_this_month ?? 0;
@@ -19,13 +20,13 @@ export default function AppLayout() {
   const progressClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warning' : '';
 
   const navItems = [
-    { to: '/dashboard', label: 'Dashboard',  icon: Activity },
-    { to: '/history',   label: 'History',   icon: LayoutDashboard },
-    { to: '/settings',  label: 'Settings',  icon: Settings },
+    { to: '/dashboard', label: 'Home',    icon: Activity },
+    { to: '/history',   label: 'History', icon: LayoutDashboard },
+    { to: '/settings',  label: 'Settings', icon: Settings },
   ];
 
   if (user?.is_admin) {
-    navItems.push({ to: '/admin', label: 'Admin Panel', icon: Shield });
+    navItems.push({ to: '/admin', label: 'Admin', icon: Shield });
   }
 
   return (
@@ -112,22 +113,47 @@ export default function AppLayout() {
         </AnimatePresence>
       </main>
 
-      {/* ── Mobile Bottom Navigation ─────── */}
-      <nav className="bottom-nav" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        {navItems.map(({ to, label, icon: Icon }) => (
+      {/* ── Mobile Floating Pill Navigation ── */}
+      <nav className="nav-floating-pill">
+        {/* First 2 items (split for layout symmetry if needed, or just sequential) */}
+        {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
-            className={({ isActive }) => `nav-item-bottom${isActive ? ' active' : ''}`}
+            className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
           >
-            <Icon className="nav-icon" size={24} strokeWidth={2} />
+            <Icon className="nav-icon" size={24} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+
+        {/* Center Generate Button */}
+        <button 
+          className="nav-pill-center"
+          onClick={() => setIsGeneratorOpen(true)}
+          aria-label="Generate Review"
+        >
+          <Plus className="nav-icon" size={32} strokeWidth={2.5} />
+        </button>
+
+        {/* Remaining items */}
+        {navItems.slice(2).map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
+          >
+            <Icon className="nav-icon" size={24} />
             <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* ── Global Floating Quick Reply ── */}
-      <FloatingGenerator />
+      {/* ── Global Quick Reply (Controlled) ── */}
+      <FloatingGenerator 
+        isOpen={isGeneratorOpen} 
+        onClose={() => setIsGeneratorOpen(false)} 
+      />
     </div>
   );
 }

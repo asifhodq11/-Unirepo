@@ -62,7 +62,9 @@ def dashboard_stats():
 
         margin_usd = estimated_mrr - total_cost
 
+        from datetime import datetime
         return jsonify({
+            "calculated_at": datetime.now().isoformat(),
             "users": {
                 "total":   total_users,
                 "pro":     pro_users,
