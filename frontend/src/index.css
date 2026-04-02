@@ -442,7 +442,17 @@ a:hover { color: var(--accent-hover); }
   display: flex; 
   min-height: 100vh; 
   padding: var(--space-4);
+  padding-bottom: var(--space-4);
   gap: var(--space-4);
+}
+
+/* â”€â”€ Device Utilities â”€â”€ */
+.mobile-only { display: none !important; }
+.desktop-only { display: block !important; }
+
+@media (max-width: 768px) {
+  .mobile-only { display: block !important; }
+  .desktop-only { display: none !important; }
 }
 .sidebar {
   width: 240px;
@@ -931,7 +941,7 @@ a:hover { color: var(--accent-hover); }
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MOBILE  (â‰¤640px)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   /* Layout shell */
   .app-layout {
     flex-direction: column;

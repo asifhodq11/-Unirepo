@@ -11,6 +11,14 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   const plan = user?.plan ?? 'free';
   const used = user?.reply_count_this_month ?? 0;
@@ -31,73 +39,75 @@ export default function AppLayout() {
 
   return (
     <div className="app-layout">
-      {/* ── Sidebar ─────────────────────── */}
-      <nav className="sidebar">
-        <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-            <div className="sidebar-logo-icon"><MessageSquarePlus size={20} /></div>
-            <span className="sidebar-logo-name">ReplyIQ</span>
-          </div>
-          <ThemeToggle />
-        </div>
-
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-          >
-            <span className="nav-item-icon"><Icon size={18} strokeWidth={2.5} /></span>
-            {label}
-          </NavLink>
-        ))}
-
-        {/* ── Sidebar footer ── */}
-        <div className="sidebar-footer">
-          {/* Usage meter */}
-          <div className="card" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-3)', minHeight: '90px', contain: 'layout' }}>
-            <div className="flex justify-between items-center" style={{ marginBottom: 'var(--space-2)' }}>
-              <span className="text-xs text-muted">Replies this month</span>
-              <span className="text-xs font-medium">{used}/{limitDisplay}</span>
+      {/* â”€â”€ Sidebar (Desktop Only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {!isMobile && (
+        <nav className="sidebar">
+          <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <div className="sidebar-logo-icon"><MessageSquarePlus size={20} /></div>
+              <span className="sidebar-logo-name">ReplyIQ</span>
             </div>
-            <div className="progress-track">
-              <div
-                className={`progress-fill ${progressClass}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
-            {plan === 'free' && (
-              <button
-                className="btn btn-primary btn-sm btn-full"
-                style={{ marginTop: 'var(--space-3)' }}
-                onClick={() => navigate('/settings')}
-              >
-                Upgrade Plan
-              </button>
-            )}
+            <ThemeToggle />
           </div>
 
-          {/* User info */}
-          <div style={{ padding: '0 var(--space-1)' }}>
-            <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {user?.email}
-            </p>
-            <div className="flex items-center gap-2">
-              <span className={`badge ${
-                plan === 'pro' ? 'badge-success' :
-                plan === 'starter' ? 'badge-accent' : 'badge-muted'
-              }`}>
-                {PLAN_LABELS[plan] || plan}
-              </span>
-              <button className="btn btn-ghost btn-sm" onClick={logout} style={{ padding: 'var(--space-1) var(--space-2)' }}>
-                Sign out
-              </button>
+          {navItems.map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            >
+              <span className="nav-item-icon"><Icon size={18} strokeWidth={2.5} /></span>
+              {label}
+            </NavLink>
+          ))}
+
+          {/* â”€â”€ Sidebar footer â”€â”€ */}
+          <div className="sidebar-footer">
+            {/* Usage meter */}
+            <div className="card" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-3)', minHeight: '90px', contain: 'layout' }}>
+              <div className="flex justify-between items-center" style={{ marginBottom: 'var(--space-2)' }}>
+                <span className="text-xs text-muted">Replies this month</span>
+                <span className="text-xs font-medium">{used}/{limitDisplay}</span>
+              </div>
+              <div className="progress-track">
+                <div
+                  className={`progress-fill ${progressClass}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              {plan === 'free' && (
+                <button
+                  className="btn btn-primary btn-sm btn-full"
+                  style={{ marginTop: 'var(--space-3)' }}
+                  onClick={() => navigate('/settings')}
+                >
+                  Upgrade Plan
+                </button>
+              )}
+            </div>
+
+            {/* User info */}
+            <div style={{ padding: '0 var(--space-1)' }}>
+              <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user?.email}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className={`badge ${
+                  plan === 'pro' ? 'badge-success' :
+                  plan === 'starter' ? 'badge-accent' : 'badge-muted'
+                }`}>
+                  {PLAN_LABELS[plan] || plan}
+                </span>
+                <button className="btn btn-ghost btn-sm" onClick={logout} style={{ padding: 'var(--space-1) var(--space-2)' }}>
+                  Sign out
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      )}
 
-      {/* ── Main content ────────────────── */}
+      {/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <main className="main-content">
         <AnimatePresence mode="wait">
           <motion.div
@@ -113,41 +123,43 @@ export default function AppLayout() {
         </AnimatePresence>
       </main>
 
-      {/* ── Mobile Floating Pill Navigation ── */}
-      <nav className="nav-floating-pill">
-        {/* First 2 items (split for layout symmetry if needed, or just sequential) */}
-        {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
-          >
-            <Icon className="nav-icon" size={24} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
+      {/* â”€â”€ Mobile Floating Pill Navigation (Mobile Only) â”€â”€ */}
+      {isMobile && (
+        <nav className="nav-floating-pill">
+          {/* First 2 items */}
+          {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
+            >
+              <Icon className="nav-icon" size={24} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
 
-        {/* Center Generate Button */}
-        <button 
-          className="nav-pill-center"
-          onClick={() => setIsGeneratorOpen(true)}
-          aria-label="Generate Review"
-        >
-          <Plus className="nav-icon" size={32} strokeWidth={2.5} />
-        </button>
-
-        {/* Remaining items */}
-        {navItems.slice(2).map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
+          {/* Center Generate Button */}
+          <button 
+            className="nav-pill-center"
+            onClick={() => setIsGeneratorOpen(true)}
+            aria-label="Generate Review"
           >
-            <Icon className="nav-icon" size={24} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
-      </nav>
+            <Plus className="nav-icon" size={32} strokeWidth={2.5} />
+          </button>
+
+          {/* Remaining items */}
+          {navItems.slice(2).map(({ to, label, icon: Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
+            >
+              <Icon className="nav-icon" size={24} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
 
       {/* ── Global Quick Reply (Controlled) ── */}
       <FloatingGenerator 

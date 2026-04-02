@@ -171,6 +171,14 @@ export default function HistoryPage() {
   const { user, refreshUser } = useAuth();
   const plan = user?.plan ?? 'free';
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   const [items, setItems]           = useState(undefined);
   const [total, setTotal]           = useState(0);
@@ -586,7 +594,7 @@ export default function HistoryPage() {
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             style={{
               position: 'fixed',
-              bottom: 'calc(var(--space-8) + env(safe-area-inset-bottom))',
+              bottom: isMobile ? 'calc(100px + env(safe-area-inset-bottom))' : 'calc(var(--space-8) + env(safe-area-inset-bottom))',
               left: '50%',
               transform: 'translateX(-50%)',
               zIndex: 45,
