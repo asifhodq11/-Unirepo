@@ -7,6 +7,7 @@ Reduces code duplication across Reviews and Webhooks routes.
 """
 
 import time
+import traceback
 from app.utils.logger import log_event
 from app.models.review_model import update_review_status
 from app.models.reply_model import insert_reply
@@ -58,7 +59,10 @@ def process_single_generation(user: dict, review_id: str, rating: int, text: str
     try:
         increment_usage(user_id)
     except Exception as e:
-        log_event("usage_increment_warning", user_id=user_id, error=str(e))
+        error_msg = str(e)
+        stack = traceback.format_exc()
+        log_event("generation_pipeline_exception", user_id=user_id, error=error_msg, stack=stack)
+        raise Exception(f"AI Pipeline failed: {error_msg}")
 
     log_event(
         "generation_pipeline_success",

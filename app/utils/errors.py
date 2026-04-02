@@ -22,6 +22,7 @@ ERROR_CODES = {
     "GOOGLE_POST_ERROR":   (502, "Could not post to Google. Reply saved — will retry."),
     "STRIPE_WEBHOOK_INVALID": (400, "Webhook signature invalid."),
     "RATE_LIMIT_EXCEEDED": (429, "Too many requests. Please slow down."),
+    "AI_FAILURE":          (500, "AI pipeline failed to complete."),
     "SERVER_ERROR":        (500, "An unexpected error occurred."),
 }
 

@@ -61,6 +61,17 @@ export default function AppLayout() {
             </NavLink>
           ))}
 
+          <button
+            onClick={() => setIsGeneratorOpen(true)}
+            className="nav-item btn-generate-sidebar"
+            style={{ width: '100%', textAlign: 'left', marginTop: 'var(--space-2)' }}
+          >
+            <span className="nav-item-icon" style={{ color: 'var(--accent-cyan)' }}>
+              <Plus size={18} strokeWidth={3} />
+            </span>
+            <span style={{ fontWeight: 700 }}>Draft New Reply</span>
+          </button>
+
           {/* â”€â”€ Sidebar footer â”€â”€ */}
           <div className="sidebar-footer">
             {/* Usage meter */}
@@ -124,7 +135,7 @@ export default function AppLayout() {
       </main>
 
       {/* â”€â”€ Mobile Floating Pill Navigation (Mobile Only) â”€â”€ */}
-      {isMobile && (
+      {isMobile && !isGeneratorOpen && (
         <nav className="nav-floating-pill">
           {/* First 2 items */}
           {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (

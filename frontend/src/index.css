@@ -511,6 +511,20 @@ a:hover { color: var(--accent-hover); }
 .nav-item.active { background: rgba(255,255,255,0.08); color: var(--text-primary); }
 .nav-item-icon { font-size: 1rem; width: 1.25rem; text-align: center; color: var(--accent); }
 .nav-item.active .nav-item-icon { color: var(--accent-cyan); }
+
+.btn-generate-sidebar {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin: var(--space-4) 0;
+  cursor: pointer;
+}
+
+.btn-generate-sidebar:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-cyan);
+}
+
 .sidebar-footer { margin-top: auto; }
 .main-content { 
   flex: 1; 
@@ -1122,6 +1136,10 @@ a:hover { color: var(--accent-hover); }
     top: 0;
     z-index: 5;
     border-bottom: 1px solid var(--border);
+  }
+
+  .magic-panel-content {
+    padding-bottom: calc(var(--space-12) + env(safe-area-inset-bottom));
   }
 
   /* Buttons stack when they don't fit */
