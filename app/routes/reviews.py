@@ -172,7 +172,7 @@ def confirm_and_send(review_id):
 
     updated = update_reply(user_id, data["reply_id"], {"reply_text": data["reply_text"], "status": "sent"})
     if not updated:
-        return build_error("REPLY_NOT_FOUND"), 404
+        return build_error("REPLY_NOT_FOUND")
 
     update_review_status(user_id, review_id, "replied")
     log_event("manual_draft_sent", user_id=user_id, review_id=review_id)
@@ -186,7 +186,20 @@ def activity_feed():
     user_id = g.current_user["id"]
     try:
         rows = supabase.from_("reviews").select("*, replies(id, reply_text, status)").eq("user_id", user_id).eq("is_deleted", False).order("created_at", desc=True).limit(10).execute()
-        return jsonify({"events": rows.data or []}), 200
+        
+        # Enrich events with 'type' for the test suite and frontend
+        events = []
+        for r in (rows.data or []):
+            event_type = "review_found"
+            if r.get("status") == "replied":
+                event_type = "reply_sent"
+            elif r.get("replies"):
+                event_type = "draft_created"
+            
+            r["type"] = event_type
+            events.append(r)
+
+        return jsonify({"events": events}), 200
     except Exception as e:
         log_event("activity_feed_error", user_id=user_id, error=str(e))
         return build_error("SERVER_ERROR"), 500

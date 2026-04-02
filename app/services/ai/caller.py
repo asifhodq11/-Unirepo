@@ -41,13 +41,13 @@ def call_llm(system_prompt: str, user_prompt: str, model_id: str, temperature: f
 
     for attempt in range(1, 4):
         try:
-            # 1. Gemini Path
-            if "gemini" in model_id.lower() and os.environ.get("GEMINI_API_KEY"):
+            # 1. Gemini Path (Direct SDK) - Only if NOT using OpenRouter as a proxy
+            if "gemini" in model_id.lower() and os.environ.get("GEMINI_API_KEY") and provider != "openrouter":
                 clean_model_id = model_id.replace("google/", "").split(":")[0]
                 if "preview" in clean_model_id:
-                    clean_model_id = "gemini-2.5-flash"
+                    clean_model_id = "gemini-2.0-flash"
 
-                # Lazy-load only when specifically calling Gemini
+                # Lazy-load only when specifically calling Gemini direct
                 response = get_gemini_client().models.generate_content(
                     model=clean_model_id,
                     contents=user_prompt,
