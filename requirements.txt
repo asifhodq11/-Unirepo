@@ -13,7 +13,7 @@ supabase==2.13.0
 
 # AI
 openai==1.61.1
-aiobreaker==1.4.0
+aiobreaker==1.2.0
 tenacity==9.0.0
 
 # Payments
