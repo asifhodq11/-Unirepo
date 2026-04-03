@@ -34,18 +34,14 @@ def classify_complexity(star_rating: int, review_text: str) -> str:
 def get_model_for_complexity(complexity: str) -> str:
     """
     Returns the optimal model ID for the given complexity.
-    Prefers Gemini 2.5 Flash for speed/cost unless high complexity.
+    Consolidated on OpenRouter for consistent performance.
     """
     provider = os.environ.get("AI_PROVIDER", "openrouter")
     
     models = {
-        "low":    "google/gemini-2.0-flash-001",
-        "medium": "google/gemini-2.0-flash-001",
-        "high":   "google/gemini-2.0-flash-001",
+        "low":    "deepseek/deepseek-chat", # Ultra-low cost
+        "medium": "deepseek/deepseek-chat",
+        "high":   "anthropic/claude-3.5-sonnet", # Elite quality for complex logic
     }
-    
-    # OpenRouter Overrides
-    if provider == "openrouter":
-        models["high"] = "google/gemini-2.0-pro-exp-02-05" # Most reliable powerful model
         
     return models.get(complexity, models["medium"])

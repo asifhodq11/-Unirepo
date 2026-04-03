@@ -10,6 +10,7 @@ import OnboardingModal from '../components/modals/OnboardingModal';
 import ReplyCard from '../components/ReplyCard';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 import { useToast } from '../hooks/useToast';
+import { useResilientAction } from '../hooks/useResilientAction';
 import NetworkHealthCheck from '../components/NetworkHealthCheck';
 
 /* ── Mini Sparkline Tooltip ── */
@@ -34,20 +35,18 @@ function SparkTooltip({ active, payload, label }) {
 
 /* ── Live Stats Panel (Right Column) ── */
 function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
-  const [running, setRunning] = useState(false);
+  const { execute, loading: running, isSafeMode } = useResilientAction();
   const toast = useToast();
 
   async function handleTriggerPoller() {
-    setRunning(true);
-    toast.info('Scanning for new reviews...');
-    try {
-      const response = await api.post('/poller/trigger', {});
-      toast.success(response.message || 'Scan complete — new replies generated!');
-    } catch (err) {
-      toast.error(err.message || 'Scan failed to run. Please check your connection.');
-    } finally {
-      setRunning(false);
-    }
+    await execute(
+      () => api.post('/poller/trigger', {}),
+      {
+        loadingMessage: 'Scanning for new reviews...',
+        successMessage: 'Scan complete — new replies generated!',
+        errorMessage: 'Scan failed to run. Please check your connection.'
+      }
+    );
   }
 
   const avgRating = analytics?.avg_rating ?? 0;
@@ -149,17 +148,20 @@ function LiveEngineStats({ used, limit, limitDisplay, analytics }) {
         <div className="flex flex-wrap gap-4">
           <div className="flex-col flex-1" style={{ minWidth: '80px' }}>
             <span className="text-xs text-muted mb-1">ROUTER</span>
-            <span className="badge badge-accent"><Cpu size={12} className="mr-1"/> Hybrid 2-Pass</span>
+            <span className="badge badge-accent">
+              <Cpu size={12} className="mr-1"/> {isSafeMode ? 'Fast Mode' : 'Hybrid 2-Pass'}
+            </span>
           </div>
           <div className="flex-col flex-1" style={{ minWidth: '100px' }}>
-            <span className="text-xs text-muted mb-1">FALLBACK</span>
-            <span className="badge badge-success">Standby Armed</span>
+            <span className="text-xs text-muted mb-1">HEALTH</span>
+            <span className={`badge ${isSafeMode ? 'badge-warning' : 'badge-success'}`}>
+              {isSafeMode ? 'Degraded / Safe' : 'Optimal'}
+            </span>
           </div>
           <div className="flex-col flex-1" style={{ minWidth: '130px' }}>
-            <span className="text-xs text-muted mb-1">MODELS</span>
+            <span className="text-xs text-muted mb-1">ACTIVE PROVIDER</span>
             <div className="flex gap-1" style={{ opacity: 0.7 }}>
-              <span className="badge">gpt-4o</span>
-              <span className="badge">gemini</span>
+              <span className="badge">{isSafeMode ? 'DeepSeek (Backup)' : 'OpenRouter (Main)'}</span>
             </div>
           </div>
         </div>

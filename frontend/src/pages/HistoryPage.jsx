@@ -10,6 +10,7 @@ import {
 import ReviewModal from '../components/ReviewModal';
 import { getPlanLimit } from '../utils/plans';
 import { useToast } from '../hooks/useToast';
+import { useResilientAction } from '../hooks/useResilientAction';
 
 const STARS = [1, 2, 3, 4, 5];
 const ITEM_HEIGHT = 72;
@@ -195,9 +196,8 @@ export default function HistoryPage() {
   const selectionMode = filterStatus === 'pending';
 
   // Bulk selection state
-  const [selectedIds, setSelectedIds]     = useState(new Set());
+  const { execute, loading: isProcessing, isSafeMode } = useResilientAction();
   const [generatingIds, setGeneratingIds] = useState(new Set());
-  const [isProcessing, setIsProcessing]   = useState(false);
   const toast = useToast();
 
   // ── Floating Collision System ─────────────────────────────────────────
@@ -297,13 +297,23 @@ export default function HistoryPage() {
   async function handleSingleGenerate(id) {
     if (isProcessing || generatingIds.has(id)) return;
     setGeneratingIds(prev => new Set([...prev, id]));
+    
     try {
-      const result = await api.post(`/reviews/${id}/generate`);
-      const updatedItem = { ...items.find(i => i.id === id), status: 'pending', replies: [result.reply] };
-      setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
-      // Update modal live if it's open
-      if (modalItem?.id === id) setModalItem(updatedItem);
-      refreshUser();
+      await execute(
+        async () => {
+          const result = await api.post(`/reviews/${id}/generate`);
+          const updatedItem = { ...items.find(i => i.id === id), status: 'pending', replies: [result.reply] };
+          setItems(prev => prev.map(item => item.id === id ? updatedItem : item));
+          if (modalItem?.id === id) setModalItem(updatedItem);
+          refreshUser();
+          return result;
+        },
+        {
+          loadingMessage: 'Generating reply...',
+          successMessage: 'Draft generated successfully!',
+          errorMessage: 'Failed to generate draft.'
+        }
+      );
     } catch {
       setItems(prev => prev.map(item => item.id === id ? { ...item, status: 'failed' } : item));
     } finally {
@@ -339,43 +349,41 @@ export default function HistoryPage() {
   async function handleBulkGenerate() {
     if (isProcessing || selectedIds.size === 0) return;
     
-    // Safety check against race conditions or stale local state
     if (selectedIds.size > remainingCredits) {
       toast.error('Insufficient credits for selected items.');
       return;
     }
 
-    setIsProcessing(true);
     const orderedIds = (items ?? [])
       .filter(i => selectedIds.has(i.id) && i.status === 'pending')
       .map(i => i.id);
 
-    try {
-      const result = await api.post('/reviews/bulk-generate', { review_ids: orderedIds });
-      
-      // Update local items based on batch results
-      const resultsMap = new Map((result.results || []).map(r => [r.id, r]));
-      setItems(prev => (prev ?? []).map(item => {
-        const batchRes = resultsMap.get(item.id);
-        if (batchRes && batchRes.status === 'success') {
-          return { ...item, status: 'replied', replies: [batchRes.reply] };
-        }
-        if (batchRes && batchRes.status === 'failed') {
-          return { ...item, status: 'failed' };
-        }
-        return item;
-      }));
+    await execute(
+      async () => {
+        const result = await api.post('/reviews/bulk-generate', { review_ids: orderedIds });
+        
+        const resultsMap = new Map((result.results || []).map(r => [r.id, r]));
+        setItems(prev => (prev ?? []).map(item => {
+          const batchRes = resultsMap.get(item.id);
+          if (batchRes && batchRes.status === 'success') {
+            return { ...item, status: 'replied', replies: [batchRes.reply] };
+          }
+          if (batchRes && batchRes.status === 'failed') {
+            return { ...item, status: 'failed' };
+          }
+          return item;
+        }));
 
-      // Flush selection
-      setSelectedIds(new Set());
-      toast.success(result.message || 'Bulk generation complete.');
-      
-      await refreshUser(); // Sync the new credit count
-    } catch (err) {
-      toast.error(err.message || 'Bulk generation failed.');
-    } finally {
-      setIsProcessing(false);
-    }
+        setSelectedIds(new Set());
+        refreshUser();
+        return result;
+      },
+      {
+        loadingMessage: `Generating ${orderedIds.length} drafts...`,
+        successMessage: `Bulk batch complete!`,
+        errorMessage: 'Bulk generation encountered an error.'
+      }
+    );
   }
 
   // Visible items — apply rating filter

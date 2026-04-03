@@ -7,8 +7,9 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
-  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft, Sparkles, Edit3
+  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft, Sparkles, Edit3, Cpu
 } from 'lucide-react';
+import { useResilientAction } from '../hooks/useResilientAction';
 
 export default function ReviewModal({
   item,          // the review object
@@ -21,6 +22,7 @@ export default function ReviewModal({
   const { refreshUser } = useAuth();
   const [editText, setEditText] = useState('');
   const textareaRef = useRef(null);
+  const { execute, loading: internalLoading, isSafeMode } = useResilientAction();
   const overlayRef = useRef(null);
 
   const draft = item?.replies?.[0];
@@ -46,13 +48,31 @@ export default function ReviewModal({
 
   // Call refreshUser on significant actions to sync usage counters
   async function handleInternalGenerate() {
-    await onGenerate(item.id);
-    await refreshUser();
+    await execute(
+      async () => {
+        await onGenerate(item.id);
+        await refreshUser();
+      },
+      {
+        loadingMessage: 'Generating draft...',
+        successMessage: 'Draft ready for review!',
+        errorMessage: 'Generation failed pulse. Please try again.'
+      }
+    );
   }
 
   async function handleInternalSend() {
-    await onSend(item.id, draft.id, editText);
-    await refreshUser();
+    await execute(
+      async () => {
+        await onSend(item.id, draft.id, editText);
+        await refreshUser();
+      },
+      {
+        loadingMessage: 'Posting to Google Business...',
+        successMessage: 'Reply posted successfully!',
+        errorMessage: 'Failed to post reply. Check your connection.'
+      }
+    );
   }
 
   // Click-outside to close
@@ -217,10 +237,10 @@ export default function ReviewModal({
                     <button
                       className="btn btn-primary flex items-center gap-2"
                       onClick={handleInternalGenerate}
-                      disabled={generating}
+                      disabled={generating || internalLoading}
                       style={{ width: 'auto', margin: '0 auto', padding: '10px 28px', fontSize: '0.95rem' }}
                     >
-                      {generating
+                      {generating || internalLoading
                         ? <><Loader2 size={18} className="animate-spin" /> Analyzing Thinking…</>
                         : <><Sparkles size={18} /> Generate AI Response</>
                       }
@@ -250,7 +270,8 @@ export default function ReviewModal({
                       </div>
                       {draft.model_used && (
                         <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: '4px' }}>
-                          <Bot size={12} /> {draft.model_used.split('/').pop()}
+                          {isSafeMode ? <Cpu size={12} className="text-warning" /> : <Bot size={12} />}
+                          {isSafeMode ? 'Fast Mode (Backup)' : draft.model_used.split('/').pop()}
                         </span>
                       )}
                     </div>
@@ -301,10 +322,10 @@ export default function ReviewModal({
                       <button
                         className="btn btn-primary flex items-center gap-2"
                         onClick={handleInternalSend}
-                        disabled={generating || !editText.trim()}
+                        disabled={generating || internalLoading || !editText.trim()}
                         style={{ width: 'auto', padding: '12px 32px', fontSize: '1rem', fontWeight: 700 }}
                       >
-                        {generating
+                        {generating || internalLoading
                           ? <><Loader2 size={18} className="animate-spin" /> Sending…</>
                           : <><Check size={18} /> Confirm & Send Reply</>
                         }
