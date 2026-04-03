@@ -27,8 +27,8 @@ def get_openai_client() -> OpenAI:
         raise ValueError(f"{key_name} missing in environment for provider {provider}.")
         
     if provider == "openrouter":
-        return OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1")
-    return OpenAI(api_key=key)
+        return OpenAI(api_key=key, base_url="https://openrouter.ai/api/v1", timeout=90.0)
+    return OpenAI(api_key=key, timeout=90.0)
 
 def call_llm(system_prompt: str, user_prompt: str, model_id: str, temperature: float = 0.75) -> tuple[str, int]:
     """

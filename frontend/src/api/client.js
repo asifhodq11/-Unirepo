@@ -9,7 +9,7 @@
  */
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
-const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_TIMEOUT_MS = 150_000;
 
 class ApiError extends Error {
   constructor(code, message, status) {
