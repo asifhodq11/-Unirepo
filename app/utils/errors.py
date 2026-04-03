@@ -30,7 +30,7 @@ ERROR_CODES = {
 def build_error(code, status=None, details=None):
     """
     Builds a consistent JSON error response shape:
-    { "error": true, "code": "CODE_NAME", "message": "Human text" }
+    { "error": { "code": "CODE_NAME", "message": "Human text" } }
     """
     http_status, message = ERROR_CODES.get(code, (500, "An unexpected error occurred."))
 
@@ -38,10 +38,15 @@ def build_error(code, status=None, details=None):
     if status is not None:
         http_status = status
 
-    body = {"error": True, "code": code, "message": message}
+    body = {
+        "error": {
+            "code": code,
+            "message": message
+        }
+    }
 
     if details:
-        body["details"] = details
+        body["error"]["details"] = details
 
     return jsonify(body), http_status
 

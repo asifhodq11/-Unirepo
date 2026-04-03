@@ -22,8 +22,8 @@ PRICE_PER_MILLION_TOKENS = {
     "gpt-4o": 3.75,
     
     # Native Google Gemini Models
-    "gemini-2.5-flash": 0.20,     # Input: $0.075 | Output: $0.30
-    "gemini-2.5-pro": 3.50,       # Input: $1.25  | Output: $5.00
+    "google/gemini-2.0-flash-001": 0.20,
+    "google/gemini-2.0-pro-exp-02-05": 3.50,
 }
 
 # Fallback cost for unknown models to prevent calculation errors
