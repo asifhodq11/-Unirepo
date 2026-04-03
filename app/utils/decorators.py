@@ -82,7 +82,7 @@ def require_admin(f):
     def decorated(*args, **kwargs):
         if not g.current_user.get("is_admin", False):
             from app.utils.errors import build_error
-            return build_error("FORBIDDEN", details="You do not have permission to access the admin panel."), 403
+            return build_error("FORBIDDEN", details="You do not have permission to access the admin panel.", status=403)
         return f(*args, **kwargs)
 
     return decorated

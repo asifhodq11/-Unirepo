@@ -86,7 +86,7 @@ def dashboard_stats():
         # Log server-side only — never expose raw exception string to client
         from app.utils.logger import log_event
         log_event("admin_dashboard_error", error=str(e))
-        return build_error("SERVER_ERROR", details="Failed to compile admin stats."), 500
+        return build_error("SERVER_ERROR", details="Failed to compile admin stats.", status=500)
 
 
 @admin_bp.route("/users", methods=["GET"])
@@ -128,7 +128,7 @@ def list_users():
     except Exception as e:
         from app.utils.logger import log_event
         log_event("admin_list_users_error", error=str(e))
-        return build_error("SERVER_ERROR", details="Failed to fetch user list."), 500
+        return build_error("SERVER_ERROR", details="Failed to fetch user list.", status=500)
 
 
 @admin_bp.route("/users/<user_id>/google-config", methods=["PUT"])
@@ -146,7 +146,7 @@ def update_google_config(user_id):
     try:
         data = request.get_json()
         if not data:
-            return build_error("BAD_REQUEST", details="Missing payload"), 400
+            return build_error("BAD_REQUEST", details="Missing payload", status=400)
 
         update_data = {}
         if "google_connected" in data:
@@ -158,18 +158,18 @@ def update_google_config(user_id):
                 location_id_str = str(location_id).strip()
                 # Security: enforce max length to prevent DB constraint violations
                 if len(location_id_str) > 255:
-                    return build_error("BAD_REQUEST", details="google_location_id exceeds maximum length of 255 characters."), 400
+                    return build_error("BAD_REQUEST", details="google_location_id exceeds maximum length of 255 characters.", status=400)
                 update_data["google_location_id"] = location_id_str
             else:
                 # Explicitly allow clearing the field
                 update_data["google_location_id"] = None
 
         if not update_data:
-            return build_error("BAD_REQUEST", details="No valid fields provided to update."), 400
+            return build_error("BAD_REQUEST", details="No valid fields provided to update.", status=400)
 
         res = supabase.from_("users").update(update_data).eq("id", str(user_id)).execute()
         if not res.data:
-            return build_error("NOT_FOUND", details="User not found or update failed."), 404
+            return build_error("NOT_FOUND", details="User not found or update failed.", status=404)
 
         return jsonify({
             "message":           "Successfully updated Google configuration",
@@ -180,4 +180,4 @@ def update_google_config(user_id):
     except Exception as e:
         from app.utils.logger import log_event
         log_event("admin_google_config_error", error=str(e))
-        return build_error("SERVER_ERROR", details="Failed to update Google config."), 500
+        return build_error("SERVER_ERROR", details="Failed to update Google config.", status=500)

@@ -40,7 +40,7 @@ def generate():
         if isinstance(e, ReplyIQError):
             raise
         log_event("usage_check_failed", user_id=user_id, error=str(e))
-        return build_error("SERVER_ERROR", details=str(e)), 500
+        return build_error("SERVER_ERROR", details=str(e), status=500)
 
     # 2. Persist Review
     review_data = {
@@ -52,7 +52,7 @@ def generate():
     }
     saved_review = insert_review(user_id, review_data)
     if not saved_review:
-        return build_error("SERVER_ERROR", details="Failed to persist review."), 500
+        return build_error("SERVER_ERROR", details="Failed to persist review.", status=500)
 
     # 3. Execution (Service Layer)
     try:
@@ -66,7 +66,7 @@ def generate():
         )
     except Exception as e:
         log_event("generation_failed", user_id=user_id, error=str(e))
-        return build_error("AI_FAILURE", details=str(e)), 500
+        return build_error("AI_FAILURE", details=str(e), status=500)
 
     return jsonify({"review": saved_review, "reply": saved_reply}), 201
 
@@ -81,11 +81,11 @@ def generate_for_existing(review_id):
     # 1. Fetch
     res = supabase.from_("reviews").select("*").eq("id", review_id).eq("user_id", user_id).eq("is_deleted", False).single().execute()
     if not res.data:
-        return build_error("NOT_FOUND", details="Review not found."), 404
+        return build_error("NOT_FOUND", details="Review not found.", status=404)
         
     review = res.data
     if review["status"] != "pending":
-        return build_error("CONFLICT", details="Review already processed."), 409
+        return build_error("CONFLICT", details="Review already processed.", status=409)
 
     # 2. Quota Check
     try:
@@ -95,7 +95,7 @@ def generate_for_existing(review_id):
         if isinstance(e, ReplyIQError):
             raise
         log_event("usage_check_failed", user_id=user_id, error=str(e))
-        return build_error("SERVER_ERROR", details=str(e)), 500
+        return build_error("SERVER_ERROR", details=str(e), status=500)
 
     # 3. Execution (Service Layer)
     try:
@@ -109,7 +109,7 @@ def generate_for_existing(review_id):
         )
     except Exception as e:
         log_event("on_demand_failed", user_id=user_id, error=str(e))
-        return build_error("AI_FAILURE", details=str(e)), 500
+        return build_error("AI_FAILURE", details=str(e), status=500)
 
     return jsonify({"review": review, "reply": saved_reply}), 201
 
@@ -127,7 +127,7 @@ def bulk_generate():
     try:
         reserve_bulk_usage(user_id, len(r_ids))
     except Exception as e:
-        return build_error("FORBIDDEN", details=str(e)), 403
+        return build_error("FORBIDDEN", details=str(e), status=403)
 
     # 2. Flattened Processing loop
     results = []
@@ -216,4 +216,4 @@ def activity_feed():
         return jsonify({"events": events}), 200
     except Exception as e:
         log_event("activity_feed_error", user_id=user_id, error=str(e))
-        return build_error("SERVER_ERROR"), 500
+        return build_error("SERVER_ERROR", status=500)
