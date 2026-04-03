@@ -191,6 +191,9 @@ export default function HistoryPage() {
   // Modal state
   const [modalItem, setModalItem] = useState(null);
 
+  // Whether we are in "bulk selection mode" (pending filter active)
+  const selectionMode = filterStatus === 'pending';
+
   // Bulk selection state
   const [selectedIds, setSelectedIds]     = useState(new Set());
   const [generatingIds, setGeneratingIds] = useState(new Set());
@@ -218,8 +221,7 @@ export default function HistoryPage() {
   const isEmpty         = !isFetching && Array.isArray(items) && items.length === 0;
   const hasData         = Array.isArray(items) && items.length > 0;
 
-  // Whether we are in "bulk selection mode" (pending filter active)
-  const selectionMode = filterStatus === 'pending';
+
 
   const fetchPage = useCallback(async (p) => {
     setIsFetching(true);
