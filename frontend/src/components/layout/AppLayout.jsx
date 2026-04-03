@@ -3,14 +3,19 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import FloatingGenerator from '../FloatingGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, LayoutDashboard, Settings, MessageSquarePlus, Shield, Plus } from 'lucide-react';
+import { 
+  Activity, LayoutDashboard, Settings, MessageSquarePlus, 
+  Shield, Plus, PanelLeftClose, PanelLeft, Search, Bell, LogOut, User
+} from 'lucide-react';
 import { getPlanLimit, getPlanLimitDisplay, PLAN_LABELS } from '../../utils/plans';
 import ThemeToggle from '../ThemeToggle';
+
 export default function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -24,11 +29,11 @@ export default function AppLayout() {
   const used = user?.reply_count_this_month ?? 0;
   const limit = getPlanLimit(plan);
   const limitDisplay = getPlanLimitDisplay(plan);
-  const pct = plan === 'pro' ? Math.min(100, Math.round((used / 200) * 100)) : Math.min(100, Math.round((used / limit) * 100));
+  const pct = Math.min(100, Math.round((used / limit) * 100));
   const progressClass = pct >= 90 ? 'danger' : pct >= 70 ? 'warning' : '';
 
   const navItems = [
-    { to: '/dashboard', label: 'Home',    icon: Activity },
+    { to: '/dashboard', label: 'Monitor', icon: Activity },
     { to: '/history',   label: 'History', icon: LayoutDashboard },
     { to: '/settings',  label: 'Settings', icon: Settings },
   ];
@@ -37,141 +42,137 @@ export default function AppLayout() {
     navItems.push({ to: '/admin', label: 'Admin', icon: Shield });
   }
 
+  const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+
   return (
     <div className="app-layout">
-      {/* â”€â”€ Sidebar (Desktop Only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Sidebar (Professional Collapsible) ── */}
       {!isMobile && (
-        <nav className="sidebar">
-          <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <div className="sidebar-logo-icon"><MessageSquarePlus size={20} /></div>
-              <span className="sidebar-logo-name">ReplyIQ</span>
+        <aside className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+          <div className="sidebar-logo">
+            <div className="flex items-center gap-3">
+              <div className="sidebar-logo-icon">
+                <MessageSquarePlus size={20} strokeWidth={2.5} />
+              </div>
+              {!isSidebarCollapsed && <span className="sidebar-logo-name font-semibold" style={{ color: 'var(--text-primary)' }}>ReplyIQ</span>}
             </div>
-            <ThemeToggle />
           </div>
 
-          {navItems.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+          <div className="flex flex-col flex-1 mt-4">
+            {navItems.map(({ to, label, icon: Icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                title={isSidebarCollapsed ? label : ''}
+              >
+                <div className="nav-item-icon"><Icon size={20} /></div>
+                {!isSidebarCollapsed && <span style={{ flex: 1 }}>{label}</span>}
+              </NavLink>
+            ))}
+
+            <button
+              onClick={() => setIsGeneratorOpen(true)}
+              className="nav-item text-accent"
+              style={{ border: 'none', background: 'transparent', width: 'auto' }}
+              title={isSidebarCollapsed ? 'Draft New' : ''}
             >
-              <span className="nav-item-icon"><Icon size={18} strokeWidth={2.5} /></span>
-              {label}
-            </NavLink>
-          ))}
-
-          <button
-            onClick={() => setIsGeneratorOpen(true)}
-            className="nav-item btn-generate-sidebar"
-            style={{ width: '100%', textAlign: 'left', marginTop: 'var(--space-2)' }}
-          >
-            <span className="nav-item-icon" style={{ color: 'var(--accent-cyan)' }}>
-              <Plus size={18} strokeWidth={3} />
-            </span>
-            <span style={{ fontWeight: 700 }}>Draft New Reply</span>
-          </button>
-
-          {/* â”€â”€ Sidebar footer â”€â”€ */}
-          <div className="sidebar-footer">
-            {/* Usage meter */}
-            <div className="card" style={{ padding: 'var(--space-4)', marginBottom: 'var(--space-3)', minHeight: '90px', contain: 'layout' }}>
-              <div className="flex justify-between items-center" style={{ marginBottom: 'var(--space-2)' }}>
-                <span className="text-xs text-muted">Replies this month</span>
-                <span className="text-xs font-medium">{used}/{limitDisplay}</span>
+              <div className="nav-item-icon" style={{ color: 'var(--accent)' }}>
+                <Plus size={22} strokeWidth={3} />
               </div>
-              <div className="progress-track">
-                <div
-                  className={`progress-fill ${progressClass}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              {plan === 'free' && (
-                <button
-                  className="btn btn-primary btn-sm btn-full"
-                  style={{ marginTop: 'var(--space-3)' }}
-                  onClick={() => navigate('/settings')}
-                >
-                  Upgrade Plan
-                </button>
-              )}
-            </div>
-
-            {/* User info */}
-            <div style={{ padding: '0 var(--space-1)' }}>
-              <p className="text-xs text-muted" style={{ marginBottom: 'var(--space-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {user?.email}
-              </p>
-              <div className="flex items-center gap-2">
-                <span className={`badge ${
-                  plan === 'pro' ? 'badge-success' :
-                  plan === 'starter' ? 'badge-accent' : 'badge-muted'
-                }`}>
-                  {PLAN_LABELS[plan] || plan}
-                </span>
-                <button className="btn btn-ghost btn-sm" onClick={logout} style={{ padding: 'var(--space-1) var(--space-2)' }}>
-                  Sign out
-                </button>
-              </div>
-            </div>
+              {!isSidebarCollapsed && <span className="font-semibold" style={{ color: 'var(--accent)' }}>Draft New</span>}
+            </button>
           </div>
-        </nav>
+
+          {/* Sidebar Footer */}
+          <div className="p-4 border-t border-[var(--border-subtle)]">
+            {!isSidebarCollapsed && (
+              <div className="mb-4 px-2">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted font-bold">Quota Usage</span>
+                  <span className="text-[10px] font-bold text-primary">{used}/{limitDisplay}</span>
+                </div>
+                <div className="progress-track" style={{ height: '4px' }}>
+                  <div className={`progress-fill ${progressClass}`} style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            )}
+            
+            <button 
+              onClick={toggleSidebar}
+              className="nav-item m-0 p-0 hover:bg-transparent"
+              style={{ justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', background: 'transparent', border: 'none' }}
+            >
+              <div className="nav-item-icon">
+                {isSidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+              </div>
+              {!isSidebarCollapsed && <span className="text-xs">Collapse Sidebar</span>}
+            </button>
+          </div>
+        </aside>
       )}
 
-      {/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-      <main className="main-content">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            style={{ width: '100%', height: '100%' }}
-          >
-            <Outlet />
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      {/* ── Main Container (Search Header + Content) ── */}
+      <div className="main-container">
+        {!isMobile && (
+          <header className="action-header">
+            <div className="header-search">
+              <Search size={16} className="header-search-icon" />
+              <input type="text" placeholder="Search reviews, history, or commands... (⌘K)" />
+            </div>
 
-      {/* â”€â”€ Mobile Floating Pill Navigation (Mobile Only) â”€â”€ */}
+            <div className="flex items-center gap-6">
+              <ThemeToggle />
+              <button className="text-muted hover:text-primary transition-colors" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                <Bell size={20} />
+              </button>
+              <div className="h-6 w-[1px] bg-[rgba(255,255,255,0.1)]" />
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center overflow-hidden">
+                  <User size={16} className="text-indigo-400" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-primary truncate max-w-[120px]">
+                    {user?.email?.split('@')[0]}
+                  </span>
+                  <button onClick={logout} className="text-[10px] text-muted hover:text-danger flex items-center gap-1 transition-colors" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                    <LogOut size={10} /> Logout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </header>
+        )}
+
+        <main className="main-content">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="page-content"
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
+
+      {/* ── Mobile Floating Navigation ── */}
       {isMobile && !isGeneratorOpen && (
         <nav className="nav-floating-pill">
-          {/* First 2 items */}
           {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
-            >
+            <NavLink key={to} to={to} className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}>
               <Icon className="nav-icon" size={24} />
               <span>{label}</span>
             </NavLink>
           ))}
-
-          {/* Center Generate Button */}
-          <button 
-            className="nav-pill-center"
-            onClick={() => setIsGeneratorOpen(true)}
-            aria-label="Generate Review"
-          >
+          <button className="nav-pill-center" onClick={() => setIsGeneratorOpen(true)}>
             <Plus className="nav-icon" size={32} strokeWidth={2.5} />
           </button>
-
-          {/* Remaining items */}
-          {navItems.slice(2).map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}
-            >
-              <Icon className="nav-icon" size={24} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
-        </nav>
-      )}
-
       {/* ── Global Quick Reply (Controlled) ── */}
       <FloatingGenerator 
         isOpen={isGeneratorOpen} 

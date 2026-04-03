@@ -62,7 +62,8 @@ def generate():
             rating=data["rating"],
             text=data.get("review_text"),
             name=data.get("reviewer_name"),
-            provider="manual"
+            provider="manual",
+            tone=data.get("tone")
         )
     except Exception as e:
         log_event("generation_failed", user_id=user_id, error=str(e))
@@ -105,7 +106,8 @@ def generate_for_existing(review_id):
             rating=review["rating"],
             text=review.get("review_text"),
             name=review.get("reviewer_name"),
-            provider="on_demand"
+            provider="on_demand",
+            tone=request.json.get("tone") if request.is_json else None
         )
     except Exception as e:
         log_event("on_demand_failed", user_id=user_id, error=str(e))

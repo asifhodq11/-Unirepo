@@ -14,7 +14,7 @@ from app.models.reply_model import insert_reply
 from app.services.usage_service import increment_usage
 from app.services.ai_engine import generate_reply
 
-def process_single_generation(user: dict, review_id: str, rating: int, text: str, name: str = "", provider: str = "manual") -> dict:
+def process_single_generation(user: dict, review_id: str, rating: int, text: str, name: str = "", provider: str = "manual", tone: str = None) -> dict:
     """
     Unified pipeline for generating a reply to a single review.
     Handles AI call, database persistence, and usage increments.
@@ -28,7 +28,7 @@ def process_single_generation(user: dict, review_id: str, rating: int, text: str
         ai_result = generate_reply(
             business_name=user.get("business_name", "your business"),
             business_type=user.get("business_type", "business"),
-            tone_preference=user.get("tone_preference", "friendly"),
+            tone_preference=tone or user.get("tone_preference", "friendly"),
             star_rating=rating,
             review_text=text or "",
             reviewer_name=name or "",

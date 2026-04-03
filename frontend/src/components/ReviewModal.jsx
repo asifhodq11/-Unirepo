@@ -1,26 +1,24 @@
-/**
- * ReviewModal.jsx
- * Full-screen overlay modal for viewing, generating, editing, and sending review replies.
- * Used by both HistoryPage (generate + edit) and DashboardPage (read-only for replied).
- */
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import {
-  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft, Sparkles, Edit3, Cpu
+  Star, X, Bot, Check, Loader2, Play, User, ArrowLeft, Sparkles, Edit3, Cpu,
+  CheckCircle2, Send, MessageSquare
 } from 'lucide-react';
 import { useResilientAction } from '../hooks/useResilientAction';
+import { ProButton, ProBadge, ProCard } from './BaseComponents';
 
 export default function ReviewModal({
-  item,          // the review object
-  onClose,       // fn() to close the modal
-  onGenerate,    // fn(reviewId) → Promise — generate AI draft
-  onSend,        // fn(reviewId, replyId, text) → Promise — confirm and send
-  generating,    // boolean — is this review currently generating?
-  readOnly,      // boolean — if true, no edit/generate actions visible
+  item,
+  onClose,
+  onGenerate,
+  onSend,
+  generating,
+  readOnly,
 }) {
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [editText, setEditText] = useState('');
+  const [selectedTone, setSelectedTone] = useState('friendly');
   const textareaRef = useRef(null);
   const { execute, loading: internalLoading, isSafeMode } = useResilientAction();
   const overlayRef = useRef(null);
@@ -30,331 +28,242 @@ export default function ReviewModal({
   const isPending = item?.status === 'pending';
   const isReplied = item?.status === 'replied';
   const rating = item?.rating ?? 0;
-  const hasName = item?.reviewer_name && item.reviewer_name.trim();
 
-  // Populate textarea when draft arrives
   useEffect(() => {
     if (draft?.reply_text && isPending) {
       setEditText(draft.reply_text);
     }
   }, [draft, isPending]);
 
-  // Focus textarea after draft arrives
   useEffect(() => {
     if (hasDraft && isPending && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [hasDraft, isPending]);
 
-  // Call refreshUser on significant actions to sync usage counters
-  async function handleInternalGenerate() {
+  const handleInternalGenerate = async () => {
     await execute(
       async () => {
-        await onGenerate(item.id);
+        await onGenerate(item.id, selectedTone);
         await refreshUser();
       },
       {
-        loadingMessage: 'Generating draft...',
-        successMessage: 'Draft ready for review!',
-        errorMessage: 'Generation failed pulse. Please try again.'
+        loadingMessage: 'AI is thinking...',
+        successMessage: 'Draft optimized successfully.',
+        onSuccess: () => {
+          if (textareaRef.current) textareaRef.current.focus();
+        }
       }
     );
-  }
+  };
 
-  async function handleInternalSend() {
+  const handleInternalSend = async () => {
     await execute(
       async () => {
         await onSend(item.id, draft.id, editText);
         await refreshUser();
       },
       {
-        loadingMessage: 'Posting to Google Business...',
-        successMessage: 'Reply posted successfully!',
-        errorMessage: 'Failed to post reply. Check your connection.'
+        loadingMessage: 'Posting to Google...',
+        successMessage: 'Reply published.',
+        onSuccess: onClose
       }
     );
-  }
-
-  // Click-outside to close
-  function handleOverlayClick(e) {
-    if (e.target === overlayRef.current) onClose();
-  }
-
-  // ESC key to close
-  useEffect(() => {
-    function onKey(e) { if (e.key === 'Escape') onClose(); }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
- 
-  // Body scroll lock
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, []);
+  };
 
   if (!item) return null;
+
+  const TONES = [
+    { id: 'professional', label: 'Professional', icon: Cpu },
+    { id: 'friendly', label: 'Friendly', icon: Bot },
+    { id: 'concise', label: 'Concise', icon: Sparkles }
+  ];
 
   return (
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        key="modal-overlay"
-        onClick={handleOverlayClick}
+        onClick={(e) => e.target === overlayRef.current && onClose()}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 100,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 'var(--space-4)',
-          background: 'var(--modal-overlay, rgba(3, 7, 18, 0.85))',
-          backdropFilter: 'blur(8px)',
-        }}
+        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
       >
         <motion.div
-          key="modal-panel"
-          initial={{ opacity: 0, scale: 0.95, y: 24 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 24 }}
-          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg-surface border border-border rounded-3xl shadow-2xl flex flex-col"
           onClick={e => e.stopPropagation()}
-          style={{
-            width: '100%',
-            maxWidth: '660px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            background: 'var(--modal-bg, rgba(9, 9, 15, 0.7))',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-xl)',
-            padding: window.innerWidth < 480 ? 'var(--space-4)' : 'var(--space-6)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 'var(--space-5)',
-            boxShadow: '0 32px 64px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)',
-          }}
         >
-          {/* ── Header ── */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button
-              onClick={onClose}
-              className="btn btn-ghost btn-sm flex items-center gap-2"
-              style={{ color: 'var(--text-muted)', background: 'var(--bg-glass)', padding: '6px 12px' }}
-            >
-              <ArrowLeft size={16} /> Close
-            </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-              <span className={`badge ${
-                isReplied ? 'badge-success' :
-                isPending ? 'badge-warning' : 'badge-muted'
-              }`} style={{ letterSpacing: '0.05em', fontWeight: 700 }}>
-                {item.status?.toUpperCase()}
-              </span>
-              <button
+          {/* Top Bar */}
+          <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-bg-surface/80 backdrop-blur-xl z-10 transition-colors duration-300">
+            <div className="flex items-center gap-3">
+              <button 
                 onClick={onClose}
-                className="btn btn-ghost btn-sm"
-                style={{ color: 'var(--text-muted)', padding: '6px', borderRadius: '50%' }}
+                className="p-2 -ml-2 rounded-full hover:bg-white/5 transition-colors text-muted"
               >
-                <X size={20} />
+                <ArrowLeft size={20} />
               </button>
+              <h2 className="text-lg font-black text-primary tracking-tight">AI Command Center</h2>
             </div>
+            <ProBadge variant={isReplied ? 'success' : isPending ? 'warning' : 'muted'}>
+              {item.status}
+            </ProBadge>
           </div>
 
-          <div className="flex flex-col gap-5">
-            {/* ── Context Area (Reviewer + Star) ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-              <div style={{
-                width: 48, height: 48, borderRadius: '50%',
-                background: 'linear-gradient(135deg, var(--bg-elevated), var(--bg-surface))',
-                border: '1px solid var(--border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <User size={22} style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                  {hasName ? item.reviewer_name : 'Anonymous Guest'}
-                </span>
-                <div style={{ display: 'flex', gap: '2px' }}>
-                  {Array.from({ length: rating }).map((_, i) => (
-                    <Star key={i} size={15} fill="var(--accent)" stroke="var(--accent)" />
-                  ))}
-                  {Array.from({ length: 5 - rating }).map((_, i) => (
-                    <Star key={`e${i}`} size={15} fill="none" stroke="var(--text-muted)" style={{ opacity: 0.25 }} />
-                  ))}
+          <div className="p-8 space-y-8">
+            {/* Review Context Card */}
+            <section>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-border">
+                  <User size={24} className="text-muted" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-primary">{item.reviewer_name || 'Anonymous User'}</h3>
+                  <div className="flex gap-0.5 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star 
+                        key={i} 
+                        size={14} 
+                        fill={i < rating ? 'var(--accent)' : 'none'} 
+                        stroke={i < rating ? 'var(--accent)' : 'var(--text-muted)'} 
+                        className={i >= rating ? 'opacity-20' : ''}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* ── Customer Review Card ── */}
-            {item.review_text && (
-              <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-                position: 'relative',
-              }}>
-                <span style={{ 
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.12em', 
-                  color: 'var(--text-muted)', marginBottom: 'var(--space-3)', textTransform: 'uppercase' 
-                }}>
-                  Customer Feedback
-                </span>
-                <p style={{ fontSize: '1rem', lineHeight: '1.8', color: 'var(--text-secondary)', fontStyle: 'italic', fontWeight: 400 }}>
-                  "{item.review_text}"
+              
+              <div className="relative group">
+                <div className="absolute -inset-2 bg-gradient-to-r from-accent/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <p className="relative text-lg text-primary leading-relaxed italic font-medium p-4 border-l-4 border-accent/20 bg-white/[0.02] rounded-r-xl">
+                  "{item.review_text || 'No review text provided.'}"
                 </p>
               </div>
-            )}
+            </section>
 
-            {/* ── AI Reply Section ── */}
-            {!readOnly && (
-              <div className="flex flex-col gap-4">
-                {/* No draft yet: show Generate button */}
-                {isPending && !hasDraft && (
-                  <div style={{
-                    display: 'flex', flexDirection: 'column', items: 'center', gap: 'var(--space-4)',
-                    padding: 'var(--space-8) var(--space-4)',
-                    background: 'rgba(255,255,255,0.01)',
-                    border: '1px dashed var(--border)',
-                    borderRadius: 'var(--radius-lg)',
-                    textAlign: 'center',
-                  }}>
-                    <div style={{ color: 'var(--text-muted)', opacity: 0.5 }}>
-                      <Bot size={40} style={{ margin: '0 auto var(--space-3)' }} />
-                      <p className="text-sm">Ready to generate an AI-powered response.</p>
+            {/* AI Interaction Zone */}
+            <section className="space-y-6">
+              {!readOnly && isPending && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-muted uppercase tracking-widest">Select Intelligence Tone</span>
+                    <div className="flex gap-2">
+                       {TONES.map(tone => (
+                         <button
+                           key={tone.id}
+                           onClick={() => setSelectedTone(tone.id)}
+                           className={`
+                             px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border
+                             ${selectedTone === tone.id ? 'bg-accent border-accent text-white shadow-glow' : 'bg-white/5 border-border text-muted hover:text-primary'}
+                           `}
+                         >
+                           <tone.icon size={12} />
+                           {tone.label}
+                         </button>
+                       ))}
                     </div>
-                    <button
-                      className="btn btn-primary flex items-center gap-2"
-                      onClick={handleInternalGenerate}
-                      disabled={generating || internalLoading}
-                      style={{ width: 'auto', margin: '0 auto', padding: '10px 28px', fontSize: '0.95rem' }}
-                    >
-                      {generating || internalLoading
-                        ? <><Loader2 size={18} className="animate-spin" /> Analyzing Thinking…</>
-                        : <><Sparkles size={18} /> Generate AI Response</>
-                      }
-                    </button>
                   </div>
-                )}
 
-                {/* Draft ready: prominent editable area */}
-                {isPending && hasDraft && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div className="flex items-center gap-3">
-                        <span style={{ 
-                          fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', 
-                          color: 'var(--accent)', textTransform: 'uppercase',
-                          display: 'flex', alignItems: 'center', gap: '6px'
-                        }}>
-                          <Edit3 size={13} /> Review & Edit Reply
-                        </span>
-                        <motion.span 
-                          animate={{ opacity: [0.4, 1, 0.4] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                          style={{ fontSize: '0.65rem', background: 'var(--accent-subtle)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '4px', fontWeight: 700 }}
-                        >
-                          EDITABLE
-                        </motion.span>
-                      </div>
-                      {draft.model_used && (
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: '4px' }}>
-                          {isSafeMode ? <Cpu size={12} className="text-warning" /> : <Bot size={12} />}
-                          {isSafeMode ? 'Fast Mode (Backup)' : draft.model_used.split('/').pop()}
-                        </span>
+                  {!hasDraft ? (
+                    <div className="py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border rounded-2xl bg-white/[0.01]">
+                      {generating || internalLoading ? (
+                        <div className="space-y-4">
+                          <motion.div 
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent mx-auto"
+                          >
+                            <Bot size={32} />
+                          </motion.div>
+                          <p className="text-sm font-bold text-accent animate-pulse">ReplyIQ is analyzing the review...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <p className="text-sm text-muted max-w-xs mx-auto">Click generate to let the 4-pass AI pipeline craft the perfect response.</p>
+                          <ProButton 
+                            variant="primary" 
+                            size="lg" 
+                            icon={Sparkles} 
+                            onClick={handleInternalGenerate}
+                          >
+                            Generate Draft
+                          </ProButton>
+                        </div>
                       )}
                     </div>
-                    
-                    <div style={{ position: 'relative' }}>
-                      <textarea
-                        ref={textareaRef}
-                        value={editText}
-                        onChange={e => setEditText(e.target.value)}
-                        className="form-input"
-                        disabled={generating}
-                        style={{
-                          minHeight: '180px',
-                          width: '100%',
-                          resize: 'vertical',
-                          fontSize: '1rem',
-                          lineHeight: '1.7',
-                          // Clean border instead of gradient wrapper
-                          border: '1px solid var(--border)',
-                          background: 'var(--bg-elevated)',
-                          padding: 'var(--space-5)',
-                          borderRadius: 'var(--radius-lg)',
-                          color: 'var(--text-primary)',
-                          transition: 'all 0.3s ease',
-                          caretColor: 'var(--accent)',
-                          outline: 'none',
-                          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)'
-                        }}
-                        onFocus={e => {
-                          e.target.style.borderColor = 'var(--accent)';
-                          e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.2)';
-                        }}
-                        onBlur={e => {
-                          e.target.style.borderColor = 'var(--border)';
-                          e.target.style.boxShadow = 'inset 0 2px 4px rgba(0,0,0,0.02)';
-                        }}
-                        placeholder="Customize the response to your liking…"
-                      />
-                      <div style={{
-                        position: 'absolute', bottom: '12px', right: '16px',
-                        fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600,
-                      }}>
-                        {editText.length} characters
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                      <div className="flex items-center justify-between px-1">
+                        <div className="flex items-center gap-2">
+                          <Edit3 size={14} className="text-accent" />
+                          <span className="text-xs font-bold text-primary uppercase tracking-widest">Crafted AI Response</span>
+                        </div>
+                        <button 
+                          onClick={handleInternalGenerate}
+                          className="text-[10px] font-black text-accent hover:underline uppercase tracking-widest"
+                          disabled={generating || internalLoading}
+                        >
+                          Regenerate with {selectedTone} tone
+                        </button>
+                      </div>
+                      
+                      <div className="relative">
+                        <textarea
+                          ref={textareaRef}
+                          value={editText}
+                          onChange={e => setEditText(e.target.value)}
+                          className="w-full min-h-[200px] p-6 text-base text-primary bg-bg-surface border border-border rounded-2xl focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all outline-none resize-none leading-relaxed"
+                          placeholder="Your professional AI draft..."
+                          style={{ transitionDelay: '0s' }}
+                        />
+                        <div className="absolute bottom-4 right-4 flex items-center gap-3">
+                           <span className="text-[10px] font-black text-muted uppercase">{editText.length} chars</span>
+                           {isSafeMode && <Cpu size={14} className="text-warning animate-pulse" title="Fast Mode Active" />}
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-2">
+                        <ProButton 
+                          variant="secondary" 
+                          onClick={() => setEditText(draft.reply_text)}
+                          disabled={internalLoading}
+                        >
+                          Revert
+                        </ProButton>
+                        <ProButton 
+                          variant="primary" 
+                          icon={Send} 
+                          onClick={handleInternalSend}
+                          isLoading={internalLoading}
+                          className="px-8 shadow-glow-accent"
+                        >
+                          Post Reply
+                        </ProButton>
                       </div>
                     </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-3)' }}>
-                      <button
-                        className="btn btn-primary flex items-center gap-2"
-                        onClick={handleInternalSend}
-                        disabled={generating || internalLoading || !editText.trim()}
-                        style={{ width: 'auto', padding: '12px 32px', fontSize: '1rem', fontWeight: 700 }}
-                      >
-                        {generating || internalLoading
-                          ? <><Loader2 size={18} className="animate-spin" /> Sending…</>
-                          : <><Check size={18} /> Confirm & Send Reply</>
-                        }
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Read-only sent reply (for Replied items) ── */}
-            {(readOnly || isReplied) && hasDraft && (
-              <div style={{
-                background: 'rgba(16, 185, 129, 0.04)',
-                border: '1px solid rgba(16,185,129,0.2)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-5)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                  <Check size={16} style={{ color: 'var(--success)' }} />
-                  <span style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.12em', color: 'var(--success)', textTransform: 'uppercase' }}>
-                    Replied To Customer
-                  </span>
+                  )}
                 </div>
-                <p style={{ fontSize: '1rem', lineHeight: '1.7', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
-                  {draft.reply_text}
-                </p>
-              </div>
-            )}
+              )}
+
+              {/* Sent View */}
+              {(readOnly || isReplied) && hasDraft && (
+                <div className="p-6 bg-success/5 border border-success/20 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-success" />
+                    <span className="text-xs font-black text-success uppercase tracking-widest">Successfully Published</span>
+                  </div>
+                  <p className="text-lg text-primary leading-relaxed">
+                    {draft.reply_text}
+                  </p>
+                  <div className="pt-4 border-t border-success/10 flex items-center justify-between">
+                     <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Sent via AI Intelligence V2.3</span>
+                     <ProButton variant="ghost" size="sm" icon={ExternalLink} onClick={() => window.open(item.google_link, '_blank')}>View on Google</ProButton>
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
         </motion.div>
       </motion.div>

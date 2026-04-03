@@ -1,14 +1,14 @@
-# 🚀 ReplyIQ: GSD 100x Orchestration Rules
+# 🚀 ReplyIQ: GSD Superpowered Orchestration Rules
 
 This file defines the project vision and model selection preferences for a high-performance, manual-handover experience.
 
-## 🎯 Manual Model Preferences (GSD 100x)
+## 🎯 Manual Model Preferences (GSD Superpowered)
 When prompts ask for a handover, the user should manually select these models:
 
-- **Phase 1 (Research):** `Gemini 3.1 Pro` -> **[DEEP RESEARCH MODE]**
-- **Phase 2 (Planning):** `Claude 4.6 Sonnet` -> **[SYSTEM / EXECUTION MODE]**
-- **Phase 3 (Execution):** `Claude 4.6 Sonnet` -> **[PRECISION / NON-GENERIC MODE]** + **[RALPH / CLOSURE LOOP]**
-- **Phase 4 (Verification):** `Gemini 3 Flash` -> **[CODERABBIT / AUDITOR MODE]**
+- **Phase 1 (Research):** `Gemini 3.1 Pro` -> **[GRAPH-AWARE RESEARCH]**
+- **Phase 2 (Planning):** `Claude 4.6 Sonnet` -> **[SOCRATIC DESIGN MODE]**
+- **Phase 3 (Execution):** `Claude 4.6 Sonnet` -> **[RED-GREEN-REFACTOR TDD]**
+- **Phase 4 (Verification):** `Gemini 3 Flash` -> **[GRAPH-BASED REGRESSION]**
 
 ---
 
@@ -19,13 +19,6 @@ Every model in this workspace MUST check its suitability before starting:
 
 ---
 
-## 🆘 Claude Quota Fallback
-If the user specifies **"Claude quota over"**:
-- **Substitute:** `Gemini 3.1 Pro` becomes the primary brain for Phase 2 & 3.
-- **Logic:** Gemini must adopt a **High Reasoning** persona using recursive thinking to match Claude-level quality.
-
----
-
 ## 🏗️ Project Architecture: ReplyIQ
 - **Framework:** Flask (Backend) + React (Frontend - Vite)
 - **Database:** Supabase (PostgreSQL + Realtime)
@@ -33,5 +26,13 @@ If the user specifies **"Claude quota over"**:
 - **Deployment:** Railway / Docker Monorepo
 
 ---
-> [!NOTE]
+
+## 🆘 The Superpower Guardrails
+- **Atomic Tasks:** Phase 2 must break work into 2-5 minute execution units.
+- **Socratic Hook:** Phase 2 MUST ask the user 2 probing questions before finishing the `PLAN.xml`.
+- **TDD Requirement:** Phase 3 MUST write failing tests for all logic changes.
+- **Graph Check:** Phase 4 MUST use the structure map to verify remote impact.
+
+---
+> [!IMPORTANT]
 > These rules are active for all models working in the `replyiq-monorepo` workspace.
