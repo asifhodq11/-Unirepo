@@ -74,10 +74,10 @@ async function request(method, path, { body, timeout = DEFAULT_TIMEOUT_MS } = {}
   }
 
   if (!res.ok) {
-    // Backend returns: { "error": { "code": "CODE", "message": "Human text", "details": {...} } }
+    // Backend returns: { "error": { "code": "CODE", "message": "Human text", "details": "Real exception text" } }
     const errorData = data?.error || {};
     const errCode   = errorData.code || data?.code || 'SERVER_ERROR';
-    const errMsg    = errorData.message || data?.message || `Request failed (${res.status})`;
+    const errMsg    = errorData.details || errorData.message || data?.message || `Request failed (${res.status})`;
     throw new ApiError(errCode, errMsg, res.status);
   }
 

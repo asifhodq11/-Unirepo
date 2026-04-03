@@ -59,7 +59,7 @@ def generate():
         )
     except Exception as e:
         log_event("generation_failed", user_id=user_id, error=str(e))
-        return build_error("AI_FAILURE", details="Pipeline failed to complete."), 500
+        return build_error("AI_FAILURE", details=str(e)), 500
 
     return jsonify({"review": saved_review, "reply": saved_reply}), 201
 
@@ -95,7 +95,7 @@ def generate_for_existing(review_id):
         )
     except Exception as e:
         log_event("on_demand_failed", user_id=user_id, error=str(e))
-        return build_error("AI_FAILURE", details="Pipeline failed to complete."), 500
+        return build_error("AI_FAILURE", details=str(e)), 500
 
     return jsonify({"review": review, "reply": saved_reply}), 201
 
