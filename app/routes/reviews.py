@@ -33,7 +33,14 @@ def generate():
     user_id = user["id"]
 
     # 1. Quota Check
-    check_usage_limit(user_id)
+    try:
+        check_usage_limit(user_id)
+    except Exception as e:
+        from app.utils.exceptions import ReplyIQError
+        if isinstance(e, ReplyIQError):
+            raise
+        log_event("usage_check_failed", user_id=user_id, error=str(e))
+        return build_error("SERVER_ERROR", details=str(e)), 500
 
     # 2. Persist Review
     review_data = {
@@ -81,7 +88,14 @@ def generate_for_existing(review_id):
         return build_error("CONFLICT", details="Review already processed."), 409
 
     # 2. Quota Check
-    check_usage_limit(user_id)
+    try:
+        check_usage_limit(user_id)
+    except Exception as e:
+        from app.utils.exceptions import ReplyIQError
+        if isinstance(e, ReplyIQError):
+            raise
+        log_event("usage_check_failed", user_id=user_id, error=str(e))
+        return build_error("SERVER_ERROR", details=str(e)), 500
 
     # 3. Execution (Service Layer)
     try:

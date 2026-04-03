@@ -34,14 +34,19 @@ def check_usage_limit(user_id: str) -> None:
     Prevents stale session cache from allowing
     over-limit requests when two arrive simultaneously.
     """
-    result = (
-        supabase.from_("users")
-        .select("reply_count_this_month, plan, billing_cycle_start, subscription_end")
-        .eq("id", user_id)
-        .single()
-        .execute()
-    )
-    user = result.data
+    try:
+        result = (
+            supabase.from_("users")
+            .select("reply_count_this_month, plan, billing_cycle_start, subscription_end")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        user = result.data
+    except Exception as e:
+        from app.utils.logger import log_event
+        log_event("usage_check_db_error", user_id=user_id, error=str(e))
+        raise RuntimeError(f"Failed to check usage limits. Database schema may be missing columns: {str(e)}")
     plan = user.get("plan", "free")
     
     # Graceful degradation: if subscription ended, treat as free plan for limits
@@ -77,15 +82,20 @@ def increment_usage(user_id: str) -> None:
     to prevent race conditions (Wave 2 Hardening).
     """
     # 1. Fetch current plan to determine limit
-    result = (
-        supabase.from_("users")
-        .select("plan")
-        .eq("id", user_id)
-        .single()
-        .execute()
-    )
-    if not result.data:
-        return
+    try:
+        result = (
+            supabase.from_("users")
+            .select("plan")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        if not result.data:
+            return
+    except Exception as e:
+        from app.utils.logger import log_event
+        log_event("increment_usage_db_error", user_id=user_id, error=str(e))
+        return  # Fail gracefully on usage increment so we don't break generation
     
     plan = result.data.get("plan", "free")
     limit = get_plan_limit(plan)
@@ -112,15 +122,18 @@ def reserve_bulk_usage(user_id: str, count: int) -> None:
         return
 
     # 1. Fetch current plan to determine limit
-    result = (
-        supabase.from_("users")
-        .select("plan")
-        .eq("id", user_id)
-        .single()
-        .execute()
-    )
-    if not result.data:
-        return
+    try:
+        result = (
+            supabase.from_("users")
+            .select("plan")
+            .eq("id", user_id)
+            .single()
+            .execute()
+        )
+        if not result.data:
+            return
+    except Exception as e:
+        raise RuntimeError(f"Failed to reserve bulk usage. DB error: {str(e)}")
     
     plan = result.data.get("plan", "free")
     limit = get_plan_limit(plan)
