@@ -101,16 +101,23 @@ def increment_usage(user_id: str) -> None:
     limit = get_plan_limit(plan)
 
     # 2. Call the atomic RPC which returns a boolean
-    rpc_result = supabase.rpc("increment_reply_count", {
-        "user_id_input": user_id,
-        "max_limit": limit
-    }).execute()
+    try:
+        rpc_result = supabase.rpc("increment_reply_count", {
+            "user_id_input": user_id,
+            "max_limit": limit
+        }).execute()
 
-    # 3. Handle failure (limit hit during race condition)
-    if rpc_result.data is False:
-        # We don't have the b_start here for a pretty reset_date, 
-        # but check_usage_limit would have caught this 99% of the time anyway.
-        raise ReplyLimitReached(used=limit, limit=limit, reset_date="next cycle")
+        # 3. Handle failure (limit hit during race condition)
+        if rpc_result.data is False:
+            # We don't have the b_start here for a pretty reset_date, 
+            # but check_usage_limit would have caught this 99% of the time anyway.
+            raise ReplyLimitReached(used=limit, limit=limit, reset_date="next cycle")
+    except Exception as e:
+        if isinstance(e, ReplyLimitReached):
+            raise
+        from app.utils.logger import log_event
+        log_event("increment_usage_rpc_error", user_id=user_id, error=str(e))
+        # Fail gracefully: don't crash a successful generation just because the DB counter function is missing
 
 
 def reserve_bulk_usage(user_id: str, count: int) -> None:
@@ -139,19 +146,27 @@ def reserve_bulk_usage(user_id: str, count: int) -> None:
     limit = get_plan_limit(plan)
 
     # 2. Call the bulk reservation RPC
-    rpc_result = supabase.rpc("check_and_reserve_bulk_credits", {
-        "user_id_input": user_id,
-        "required_count": count,
-        "max_limit": limit
-    }).execute()
+    try:
+        rpc_result = supabase.rpc("check_and_reserve_bulk_credits", {
+            "user_id_input": user_id,
+            "required_count": count,
+            "max_limit": limit
+        }).execute()
 
-    # 3. Handle failure (Atomic rejection)
-    if rpc_result.data is False:
-        raise ReplyLimitReached(
-            used="Calculated",
-            limit=limit,
-            reset_date="Insufficient credits for bulk batch."
-        )
+        # 3. Handle failure (Atomic rejection)
+        if rpc_result.data is False:
+            raise ReplyLimitReached(
+                used="Calculated",
+                limit=limit,
+                reset_date="Insufficient credits for bulk batch."
+            )
+    except Exception as e:
+        if isinstance(e, ReplyLimitReached):
+            raise
+        from app.utils.logger import log_event
+        log_event("reserve_bulk_usage_rpc_error", user_id=user_id, error=str(e))
+        # Fail gracefully if DB schema missing
+
 
 
 def get_today_reply_count(user_id: str) -> int:
