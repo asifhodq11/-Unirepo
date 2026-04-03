@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight, Bot, Lock, Code2, Terminal, Search, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { measureHeight } from '../../utils/textMeasure';
 
 const MOCK_RESPONSE = `Hi there, we're extremely sorry to hear about your experience. Quality is our absolute top priority, and it sounds like we missed the mark this time. We would love the opportunity to make this right. Please reach out to our management team directly so we can resolve this for you immediately. We value your feedback and hope to see you again.`;
 
@@ -12,6 +13,26 @@ export default function HeroSandbox() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [displayedText, setDisplayedText] = useState('');
   const [email, setEmail] = useState('');
+
+  // Ghost Box reservation: measure MOCK_RESPONSE height before animation starts
+  // so the container never changes size during typewriter streaming (eliminates CLS).
+  const containerRef = useRef(null);
+  const [reservedHeight, setReservedHeight] = useState(220); // Safe CSS fallback
+
+  useEffect(() => {
+    // Wait for fonts to be ready before measuring
+    document.fonts.ready.then(() => {
+      if (!containerRef.current) return;
+      const paddingH = 40; // 20px padding on each side inside the output box
+      const w = containerRef.current.offsetWidth - paddingH;
+      if (w <= 0) return;
+      const h = measureHeight(MOCK_RESPONSE, w);
+      if (h !== null) {
+        // Add 80px for the output header + cursor chrome
+        setReservedHeight(Math.ceil(h) + 80);
+      }
+    });
+  }, []);
 
   // Auto-typing effect
   useEffect(() => {
@@ -164,9 +185,10 @@ export default function HeroSandbox() {
         <AnimatePresence>
           {(isGenerating || hasGenerated) && (
             <motion.div
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: 'auto', marginTop: 'var(--space-2)' }}
-              style={{ overflow: 'hidden' }}
+              ref={containerRef}
+              initial={{ opacity: 0, height: reservedHeight }}
+              animate={{ opacity: 1, height: reservedHeight }}
+              style={{ overflow: 'hidden', minHeight: reservedHeight }}
             >
               <div style={{
                 background: 'rgba(0,0,0,0.3)', // Darker well for the output

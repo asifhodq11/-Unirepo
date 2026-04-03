@@ -70,6 +70,11 @@
   --font-body:      'Plus Jakarta Sans', -apple-system, sans-serif;
   --transition:     all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   --result:         #18181b;
+
+  /* --- Floating UI Collision System --- */
+  /* Set to 1 via JS when the Bulk Generate bar is active; 0 otherwise. */
+  --bulk-bar-active: 0;
+  --bulk-bar-height: 84px;
 }
 
 /* â”€â”€ Light Theme Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -1034,15 +1039,21 @@ a:hover { color: var(--accent-hover); }
   }
 
   /* Premium Floating Pill Navigation */
+  /* Uses the --bulk-bar-active CSS variable to automatically "duck" upward
+     when the History page bulk-generate bar is active, preventing overlap. */
   .nav-floating-pill {
     display: flex;
     position: fixed;
-    bottom: calc(24px + env(safe-area-inset-bottom));
+    bottom: calc(
+      24px +
+      calc(var(--bulk-bar-active) * var(--bulk-bar-height)) +
+      env(safe-area-inset-bottom)
+    );
     left: 50%;
     transform: translateX(-50%);
     width: min(400px, 92vw);
     height: 72px;
-    background: rgba(0, 0, 0, 0.55); /* Solid dark base for legibility */
+    background: rgba(0, 0, 0, 0.55);
     backdrop-filter: blur(60px) saturate(200%);
     -webkit-backdrop-filter: blur(60px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.18);
@@ -1051,6 +1062,8 @@ a:hover { color: var(--accent-hover); }
     align-items: center;
     justify-content: space-around;
     padding: 0 12px;
+    /* Hardware-accelerated transition so the duck is smooth */
+    transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 
       0 8px 32px rgba(0, 0, 0, 0.6),
       0 2px 8px rgba(0, 0, 0, 0.4),
@@ -1158,6 +1171,27 @@ a:hover { color: var(--accent-hover); }
 /* --- Mobile Safe Utilities --- */
 .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
 .pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* ── Landing Page: GPU-composited Ambient Orb (replaces framer-motion JS animation) ── */
+/* This runs entirely on the GPU compositor thread — zero JS overhead on the main thread. */
+.ambient-orb-primary {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, var(--accent-subtle, rgba(139,92,246,0.15)) 0%, transparent 70%);
+  filter: blur(80px);
+  opacity: 0.5;
+  pointer-events: none;
+  will-change: transform, opacity; /* Force GPU layer */
+  animation: ambientOrbPulse 25s linear infinite;
+}
+
+@keyframes ambientOrbPulse {
+  0%,100% { transform: scale(1) translateX(0);     opacity: 0.15; }
+  50%      { transform: scale(1.1) translateX(30px); opacity: 0.25; }
+}
 
 /* --- Premium Typography Overrides --- */
 h1, h2, h3 { text-wrap: balance; }

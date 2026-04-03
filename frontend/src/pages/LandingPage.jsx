@@ -5,6 +5,7 @@ import PublicHeader from '../components/public/PublicHeader';
 import HeroSandbox from '../components/public/HeroSandbox';
 
 // Ambient Background Mesh Component
+// Uses pure CSS animation (GPU compositor thread) instead of framer-motion (JS main thread).
 function AmbientBackground() {
   return (
     <div style={{
@@ -12,23 +13,14 @@ function AmbientBackground() {
       overflow: 'hidden', zIndex: 0, pointerEvents: 'none',
       background: 'var(--bg-base)'
     }}>
-      {/* Massive radial gradients to simulate a complex 3D light space */}
-      <motion.div
-        animate={{ scale: [1, 1.1, 1], opacity: [0.15, 0.25, 0.15], x: [0, 30, 0] }}
-        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-        style={{
-          position: 'absolute', top: '-10%', left: '-10%', width: '50vw', height: '50vw',
-          background: 'radial-gradient(circle, var(--accent-subtle) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-          opacity: 0.5,
-          pointerEvents: 'none'
-        }} />
-        <div style={{ 
-          position: 'absolute', bottom: '-10%', left: '-10%', width: '50%', height: '50%', 
-          background: 'radial-gradient(circle, var(--text-dim) 0%, transparent 60%)',
-          filter: 'blur(120px)',
-        }}
-      />
+      {/* GPU-composited ambient orb — no JS animation loop needed */}
+      <div className="ambient-orb-primary" />
+      <div style={{ 
+        position: 'absolute', bottom: '-10%', left: '-10%', width: '50%', height: '50%', 
+        background: 'radial-gradient(circle, var(--text-dim) 0%, transparent 60%)',
+        filter: 'blur(120px)',
+        pointerEvents: 'none'
+      }} />
       {/* Premium Grain Overlay */}
       <div style={{
         position: 'absolute', inset: 0,

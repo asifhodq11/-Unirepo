@@ -197,6 +197,18 @@ export default function HistoryPage() {
   const [isProcessing, setIsProcessing]   = useState(false);
   const toast = useToast();
 
+  // ── Floating Collision System ─────────────────────────────────────────
+  // When the bulk bar is visible, broadcast --bulk-bar-active=1 so that the
+  // nav pill automatically "ducks" upward and avoids being covered.
+  useEffect(() => {
+    const isActive = selectionMode && selectedIds.size > 0;
+    document.documentElement.style.setProperty('--bulk-bar-active', isActive ? '1' : '0');
+    return () => {
+      // Always clean up when History page unmounts
+      document.documentElement.style.setProperty('--bulk-bar-active', '0');
+    };
+  }, [selectionMode, selectedIds.size]);
+
   const used = user?.reply_count_this_month ?? 0;
   const limit = getPlanLimit(plan);
   const remainingCredits = Math.max(0, limit - used);
