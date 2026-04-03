@@ -173,6 +173,9 @@ export default function AppLayout() {
           <button className="nav-pill-center" onClick={() => setIsGeneratorOpen(true)}>
             <Plus className="nav-icon" size={32} strokeWidth={2.5} />
           </button>
+        </nav>
+      )}
+
       {/* ── Global Quick Reply (Controlled) ── */}
       <FloatingGenerator 
         isOpen={isGeneratorOpen} 
