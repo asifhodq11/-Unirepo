@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Mail, ChevronRight, Command } from 'lucide-react';
+import { Mail, ChevronRight, Command, ArrowLeft, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../hooks/useToast';
-import { VanguardButton } from '../components/VanguardComponents';
+import { ExecutiveButton } from '../components/ExecutiveComponents';
 
 export default function ForgotPasswordPage() {
   const { forgotPassword } = useAuth();
@@ -19,66 +19,82 @@ export default function ForgotPasswordPage() {
     setLoading(false);
     
     if (error) {
-      showToast({ title: 'System Error', desc: error.message, type: 'error' });
+      showToast({ title: 'Request Failed', desc: error.message, type: 'error' });
     } else {
-      showToast({ title: 'Transmission Sent', desc: 'Neural reset link dispatched. Check your terminal.', type: 'success' });
+      showToast({ title: 'Link Sent', desc: 'Success! Check your email to reset your password.', type: 'success' });
     }
   };
 
   return (
-    <div className="min-h-screen w-full bg-black relative flex items-center justify-center p-4">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden sm:flex items-center justify-center">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-orange-900/10 blur-[150px] mix-blend-screen" />
+    <div className="min-h-screen w-full bg-slate-950 relative flex items-center justify-center p-6 font-body">
+      
+      {/* Executive Depth */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-indigo-900/10 blur-[150px]" />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E')] opacity-[0.02] mix-blend-overlay" />
       </div>
 
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
-        className="w-full max-w-md relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="w-full max-w-[440px] relative z-10"
       >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-            <Command size={32} className="text-white" />
-          </div>
-          <h1 className="text-3xl font-display font-light text-white tracking-tight">Node Recovery</h1>
-          <p className="text-white/30 text-[10px] font-mono tracking-widest uppercase mt-4">Reset Authentication Key</p>
+        <div className="flex flex-col items-center mb-10 text-center">
+          <Link to="/" className="flex flex-col items-center group">
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-transform duration-300">
+              <Command size={28} className="text-white" />
+            </div>
+            <h1 className="text-3xl font-display font-bold text-white tracking-tight">Email Recovery</h1>
+            <p className="text-slate-500 mt-2 text-sm font-medium">Enter your email to receive a secure reset link.</p>
+          </Link>
         </div>
 
-        <div className="p-8 rounded-[32px] bg-white/[0.02] border border-white/10 backdrop-blur-3xl shadow-[0_24px_64px_-12px_rgba(0,0,0,0.8)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 border-none">
+        <div className="p-10 rounded-[32px] bg-slate-900/40 border border-slate-800/80 backdrop-blur-xl shadow-2xl shadow-black/50">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             
-            <div className="space-y-1">
-              <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest pl-2">System ID (Email)</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/50 transition-all font-body text-sm"
-                placeholder="commander@network.com"
-              />
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Email Address</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500 transition-colors" size={16} />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-slate-950/60 border border-slate-800 rounded-xl py-3.5 pl-12 pr-4 text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-indigo-500/50 transition-all font-body text-sm"
+                  placeholder="name@company.com"
+                />
+              </div>
             </div>
 
-            <VanguardButton 
+            <div className="mt-2 text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+              Confirm your identity via registered email.
+            </div>
+
+            <ExecutiveButton 
               type="submit" 
               variant="primary" 
-              className="w-full !rounded-2xl !py-4"
+              className="w-full h-14 text-base shadow-lg shadow-indigo-500/20"
               isLoading={loading}
-              icon={Mail}
+              icon={Send}
             >
-              Send Reset Sequence
-            </VanguardButton>
+              Send Reset Link
+            </ExecutiveButton>
 
           </form>
         </div>
 
-        <div className="mt-8 text-center text-sm font-body">
-          <Link to="/login" className="text-white/40 hover:text-white transition-colors flex items-center justify-center gap-2">
-            Return to Core Node
+        <div className="mt-8 text-center">
+          <Link to="/login" className="text-sm font-bold text-slate-500 hover:text-white transition-colors flex items-center justify-center gap-2 group">
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            Return to Sign In
           </Link>
         </div>
       </motion.div>
     </div>
   );
 }
+
+
+

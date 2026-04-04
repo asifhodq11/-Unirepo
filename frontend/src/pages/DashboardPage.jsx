@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, MessageSquareQuote, ShieldCheck, Zap } from 'lucide-react';
+import { Activity, MessageSquareQuote, ShieldCheck, Zap, ArrowUpRight, Clock, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { VanguardCard, VanguardStat, VanguardBadge } from '../components/VanguardComponents';
-import { VanguardGenerator } from '../components/VanguardGenerator';
+import { ExecutiveCard, ExecutiveStat, ExecutiveBadge } from '../components/ExecutiveComponents';
+import { ExecutiveGenerator } from '../components/ExecutiveGenerator';
 
 const DashboardPage = () => {
   const { user } = useAuth();
   
   const containerVariants = {
     hidden: { opacity: 0 },
-    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+    show: { opacity: 1, transition: { staggerChildren: 0.05 } }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, scale: 0.98, filter: 'blur(5px)' },
-    show: { opacity: 1, scale: 1, filter: 'blur(0px)', transition: { type: "spring", stiffness: 100, damping: 20 } }
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } }
   };
 
   return (
@@ -23,52 +23,80 @@ const DashboardPage = () => {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="flex flex-col gap-6 w-full"
+      className="flex flex-col gap-8 w-full pb-20"
     >
-      {/* Header Phase */}
-      <motion.div variants={itemVariants} className="flex flex-col justify-between gap-1 mb-2">
-        <div className="flex items-center gap-3 mb-1">
-          <VanguardBadge variant="emerald">System Online</VanguardBadge>
+      {/* Executive Action Header */}
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/60 pb-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse" />
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">System Status</span>
+          </div>
+          <h1 className="text-3xl font-display font-bold text-white tracking-tight">
+            Executive Summary
+          </h1>
+          <p className="text-slate-400 text-sm">Reviewing activity for {user?.email_metadata?.business_name || 'ReplyIQ Workspace'}</p>
         </div>
-        <h1 className="text-3xl font-display font-bold text-white tracking-tight">
-          Welcome back, {user?.user_metadata?.first_name || 'Admin'}
-        </h1>
-        <p className="text-white/40 text-sm tracking-wide">ReplyIQ SaaS Dashboard</p>
+        
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex flex-col items-end px-4 border-r border-slate-800">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Priority Queue</span>
+            <span className="text-xl font-display font-medium text-indigo-400">12 Pending</span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">System Health</span>
+            <span className="text-xl font-display font-medium text-emerald-400">Optimal</span>
+          </div>
+        </div>
       </motion.div>
 
-      {/* Main Bento Grid */}
+      {/* Main Grid Architecture */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Core Generator (Takes up large left section) */}
-        <motion.div variants={itemVariants} className="lg:col-span-8 flex flex-col min-h-[480px]">
-          <VanguardGenerator />
+        {/* Primary Workflow Module */}
+        <motion.div variants={itemVariants} className="lg:col-span-8 flex flex-col">
+          <ExecutiveGenerator />
         </motion.div>
         
-        {/* Analytics & Metrics Stack (Takes up right section) */}
-        <motion.div variants={itemVariants} className="lg:col-span-4 flex flex-col gap-4">
+        {/* Performance Sidebar */}
+        <motion.div variants={itemVariants} className="lg:col-span-4 flex flex-col gap-6">
           
-          <VanguardStat 
-            label="Replies Generated" 
-            value="142" 
-            subValue="Today's Volume" 
-            icon={MessageSquareQuote} 
-          />
-          
-          <VanguardStat 
-            label="AI Accuracy Score" 
-            value="98.4%" 
-            subValue="Based on approvals" 
-            icon={ShieldCheck} 
-            delay={0.1}
-          />
+          <div className="grid grid-cols-1 gap-4">
+            <ExecutiveStat 
+              label="Replies Generated" 
+              value="1,284" 
+              subValue="+12.5%" 
+              icon={MessageSquareQuote} 
+            />
+            
+            <ExecutiveStat 
+              label="AI Accuracy Score" 
+              value="99.2%" 
+              subValue="+0.4%" 
+              icon={ShieldCheck} 
+            />
+          </div>
 
-          <VanguardCard className="flex-1 flex flex-col justify-center items-center text-center p-6 bg-gradient-to-br from-purple-500/10 to-cyan-500/5 group" delay={0.2}>
-            <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-500">
-              <Zap className="text-purple-400" size={20} />
+          <ExecutiveCard className="p-6 bg-indigo-600/5 border-indigo-500/10 group" hover={false}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                <Zap size={20} />
+              </div>
+              <ExecutiveBadge variant="indigo">Pro Active</ExecutiveBadge>
             </div>
-            <h3 className="text-base font-display text-white mb-1">Subscription Active</h3>
-            <p className="text-xs text-white/40 leading-relaxed max-w-[200px]">Your API limits are unlocked for current billing cycle.</p>
-          </VanguardCard>
+            <h3 className="text-lg font-display font-bold text-white mb-1">Billing Overview</h3>
+            <p className="text-sm text-slate-400 mb-6 font-body">Your enterprise features are unlocked. Next cycle begins May 1st.</p>
+            
+            <div className="flex flex-col gap-3">
+              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <span>Usage (Current Month)</span>
+                <span>8.4k / 10k</span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className="w-[84%] h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)]" />
+              </div>
+            </div>
+          </ExecutiveCard>
 
         </motion.div>
       </div>
@@ -78,3 +106,5 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+
+

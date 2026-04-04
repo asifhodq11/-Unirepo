@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './hooks/useToast';
 import { ThemeProvider } from './context/ThemeContext';
 
-// Vanguard Pages
+// Executive Pages
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -18,15 +18,21 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 
-// Vanguard Layout
+// Executive Layout
 import { AppLayout } from './components/layout/AppLayout';
 
-function VanguardLoader() {
+function ExecutiveLoader() {
   return (
-    <div className="min-h-screen grid place-items-center bg-black">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 rounded-full border-4 border-cyan-400 border-t-transparent animate-spin shadow-[0_0_20px_#22d3ee]" />
-        <p className="text-white/50 tracking-widest uppercase text-xs animate-pulse font-mono">Initializing System</p>
+    <div className="min-h-screen grid place-items-center bg-slate-950">
+      <div className="flex flex-col items-center gap-6">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-2 border-slate-800 border-t-indigo-500 animate-spin" />
+          <div className="absolute inset-0 w-12 h-12 rounded-full border border-indigo-500/20 blur-sm" />
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-white font-display font-medium tracking-tight">Accessing Environment</p>
+          <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em] animate-pulse">Establishing Secure Link</p>
+        </div>
       </div>
     </div>
   );
@@ -34,7 +40,7 @@ function VanguardLoader() {
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, loading, isAdmin } = useAuth();
-  if (loading) return <VanguardLoader />;
+  if (loading) return <ExecutiveLoader />;
   if (!user) return <Navigate to="/login" replace />;
   if (adminOnly && !isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
@@ -42,7 +48,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <VanguardLoader />;
+  if (loading) return <ExecutiveLoader />;
   if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -95,3 +101,6 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
+
+

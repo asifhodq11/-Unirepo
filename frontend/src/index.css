@@ -1,54 +1,53 @@
 /* ============================================================
-   ReplyIQ VANGUARD Design System — The 'Premium Elite'
-   Breathtaking aesthetics, ethereal glassmorphism, animated
-   light states, and floating topologies.
+   ReplyIQ Executive Design System — Premium Enterprise
+   Optimized for high-density, professional business workflows.
    ============================================================ */
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Vanguard Fluid Tokens ───────────── */
+/* ── ReplyIQ Executive Tokens ───────────── */
 :root {
-  /* --- The Abyss (Vantablack core) --- */
-  --bg-base:        #000000; 
-  --bg-surface:     rgba(10, 10, 12, 0.6); 
-  --bg-card:        rgba(15, 15, 20, 0.4); 
-  --bg-input:       rgba(255, 255, 255, 0.03); 
-  --bg-elevated:    rgba(30, 30, 35, 0.8); 
+  /* --- The Slate Core (Executive Dark) --- */
+  --bg-base:        #020617; /* Slate 950 */
+  --bg-surface:     #0f172a; /* Slate 900 */
+  --bg-card:        rgba(30, 41, 59, 0.4); /* Slate 800-ish */
+  --bg-input:       rgba(255, 255, 255, 0.02); 
+  --bg-elevated:    #1e293b; /* Slate 800 */
   
-  /* --- Core Chromatic Glows --- */
-  --accent:         #ffffff; 
-  --accent-hover:   #e2e2e8; 
-  --accent-cyan:    #22d3ee; 
-  --accent-purple:  #c084fc;
-  --accent-glow:    0 0 20px rgba(255,255,255,0.2);
+  /* --- Primary Brand Chromatics --- */
+  --accent:         #6366f1; /* Indigo 500 */
+  --accent-hover:   #818cf8; /* Indigo 400 */
+  --accent-cyan:    #0ea5e9; /* Sky 500 */
+  --accent-purple:  #8b5cf6; /* Violet 500 */
+  --accent-glow:    0 0 30px rgba(99, 102, 241, 0.15);
 
-  --success:        #34d399; 
-  --warning:        #fbbf24; 
-  --danger:         #f87171; 
+  --success:        #10b981; /* Emerald 500 */
+  --warning:        #f59e0b; /* Amber 500 */
+  --danger:         #ef4444; /* Red 500 */
   
-  /* --- Stark Contrasts --- */
-  --text-primary:   #ffffff; 
-  --text-secondary: rgba(255,255,255,0.6); 
-  --text-muted:     rgba(255,255,255,0.3); 
-  --text-dim:       rgba(255,255,255,0.15); 
-  --accent-fg:      #000000; 
+  /* --- High-Contrast Text Hierarchy --- */
+  --text-primary:   #f8fafc; /* Slate 50 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --text-muted:     #64748b; /* Slate 500 */
+  --text-dim:       #475569; /* Slate 600 */
+  --accent-fg:      #ffffff; 
 
-  /* --- Sub-Pixel Ethereal Borders --- */
+  /* --- Sub-Pixel Borders --- */
   --border:         rgba(255, 255, 255, 0.08); 
-  --border-focus:   rgba(255, 255, 255, 0.2); 
-  --border-subtle:  rgba(255, 255, 255, 0.03); 
+  --border-focus:   rgba(99, 102, 241, 0.4); 
+  --border-subtle:  rgba(255, 255, 255, 0.04); 
   
-  /* Vanguard Ethereal Glass Surfaces */
-  --bg-glass:       rgba(255, 255, 255, 0.03); 
-  --bg-glass-hover: rgba(255, 255, 255, 0.08);
+  /* ReplyIQ Executive Surfaces */
+  --bg-glass:       rgba(15, 23, 42, 0.6); 
+  --bg-glass-hover: rgba(15, 23, 42, 0.8);
 
-  /* --- Premium Drop Shadows --- */
-  --shadow-sm:      0 4px 24px -4px rgba(0, 0, 0, 0.5);
-  --shadow-md:      0 12px 32px -8px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255,255,255,0.05);
-  --shadow-lg:      0 24px 64px -12px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(255,255,255,0.1);
-  --shadow-inner:   inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  /* --- Professional Depth --- */
+  --shadow-sm:      0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg:      0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-inner:   inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
 
   --space-1:  0.25rem;
   --space-2:  0.5rem;
@@ -58,55 +57,55 @@
   --space-8:  2rem;
   --space-12: 3rem;
 
-  /* --- Liquid Radii --- */
-  --radius-sm:      8px;
-  --radius-md:      12px;   
-  --radius-lg:      16px;  
-  --radius-xl:      24px;
-  --radius-2xl:     32px;
-  --radius-3xl:     48px;
+  /* --- Precise Radii --- */
+  --radius-sm:      6px;
+  --radius-md:      10px;   
+  --radius-lg:      14px;  
+  --radius-xl:      20px;
+  --radius-2xl:     28px;
+  --radius-3xl:     40px;
   --radius-full:    9999px;
 
-  /* --- Transcendent Typography --- */
-  --font-display:   'Plus Jakarta Sans', sans-serif;
-  --font-body:      'Plus Jakarta Sans', sans-serif;
+  /* --- Enterprise Typography --- */
+  --font-display:   'Inter', sans-serif;
+  --font-body:      'Inter', sans-serif;
   --font-mono:      'JetBrains Mono', monospace;
-  --transition:     all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); 
+  --transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
   
   --touch-target-min: 44px; 
-  --blur-limit: 48px;
+  --blur-limit: 24px;
 
-  /* --- Floating Component Architecture --- */
+  /* --- Fixed Component Architecture --- */
   --bulk-bar-active: 0;
-  --bulk-bar-height: 84px;
+  --bulk-bar-height: 72px;
 }
 
-/* ── Light Theme (Opal Glassmode) ────────────────────────── */
+/* ── Light Mode Executive ────────────────────────── */
 [data-theme='light'] {
-  --bg-base:        #f0f0f5; 
-  --bg-surface:     rgba(255, 255, 255, 0.7); 
-  --bg-card:        rgba(255, 255, 255, 0.5);
-  --bg-elevated:    rgba(255, 255, 255, 0.9);
+  --bg-base:        #f8fafc; /* Slate 50 */
+  --bg-surface:     #ffffff; 
+  --bg-card:        #f1f5f9; /* Slate 100 */
+  --bg-elevated:    #ffffff;
   --bg-input:       rgba(0, 0, 0, 0.02);
 
-  --accent:         #000000; 
-  --accent-hover:   #222; 
-  --accent-cyan:    #0ea5e9; 
+  --accent:         #4f46e5; 
+  --accent-hover:   #4338ca; 
+  --accent-cyan:    #0284c7; 
   --accent-fg:      #ffffff;
 
-  --border:         rgba(0, 0, 0, 0.06); 
-  --border-focus:   rgba(0, 0, 0, 0.15); 
+  --border:         #e2e8f0; /* Slate 200 */
+  --border-focus:   rgba(79, 70, 229, 0.4); 
 
-  --text-primary:   #000000; 
-  --text-secondary: rgba(0, 0, 0, 0.6); 
-  --text-muted:     rgba(0, 0, 0, 0.3); 
+  --text-primary:   #0f172a; /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted:     #94a3b8; /* Slate 400 */
 
-  --shadow-sm:      0 4px 24px -4px rgba(0,0,0,0.05);
-  --shadow-md:      0 12px 32px -8px rgba(0,0,0,0.08), 0 0 1px 1px rgba(0,0,0,0.02);
-  --shadow-lg:      0 24px 64px -12px rgba(0,0,0,0.1), 0 0 1px 1px rgba(0,0,0,0.05);
-  --shadow-inner:   inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  --shadow-sm:      0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --shadow-md:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg:      0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-inner:   inset 0 2px 4px 0 rgba(0, 0, 0, 0.05);
 
-  --modal-bg:       rgba(255, 255, 255, 0.85);
+  --modal-bg:       #ffffff;
 }
 
 /* Enhancing Glass Edges in Light Mode */
@@ -133,36 +132,36 @@ body {
   overflow-x: hidden;
 }
 
-/* Vanguard Mesh Glow Topology */
+/* ReplyIQ Executive Topology (Subtle Depth) */
 body::before {
   content: '';
   position: fixed;
-  top: -50%; left: -50%; right: -50%; bottom: -50%;
+  top: -20%; left: -10%; right: -10%; bottom: -20%;
   background: 
-    radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.1) 0%, transparent 40%),
-    radial-gradient(ellipse at 80% 100%, rgba(192, 132, 252, 0.1) 0%, transparent 50%);
+    radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.03) 0%, transparent 40%);
   z-index: -2;
   pointer-events: none;
 }
 
-/* Sub-Surface Noise Diffusion */
+/* Sub-Surface Noise Diffusion (Retained for Texture) */
 body::after {
   content: '';
   position: fixed;
   top:0; left:0; right:0; bottom:0;
   background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
-  opacity: 0.04;
+  opacity: 0.02;
   z-index: -1;
   pointer-events: none;
 }
 
 /* ── Typography ───────────────────────────────────── */
-h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
-h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
-h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
-h3 { font-size: 1.125rem; font-weight: 700; }
-h4 { font-size: 0.95rem; font-weight: 700; }
-p  { color: var(--text-secondary); line-height: 1.7; font-weight: 400; letter-spacing: -0.01em; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); letter-spacing: -0.02em; }
+h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 1.75rem; font-weight: 600; }
+h3 { font-size: 1.25rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+p  { color: var(--text-secondary); line-height: 1.6; font-weight: 400; }
 a  { color: var(--accent); text-decoration: none; transition: var(--transition); }
 a:hover { color: var(--accent-hover); }
 
@@ -180,11 +179,11 @@ a:hover { color: var(--accent-hover); }
   background-clip: text;
 }
 
-/* ── Layout ───────────────────────────────────────── */
+// Executive Layout ───────────────────────────────────────── */
 .container { max-width: 1400px; margin: 0 auto; padding: 0 var(--space-6); }
 .page { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ── Vanguard Glass Cards ── */
+/* ── Executive Glass Cards ── */
 .card {
   background: var(--bg-surface);
   backdrop-filter: blur(var(--blur-limit));
