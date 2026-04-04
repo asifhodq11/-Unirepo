@@ -1,19 +1,51 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { ExecutiveCard, ExecutiveStat, ExecutiveBadge, ExecutivePageHeader, ExecutiveEmptyState } from '../components/ExecutiveComponents';
 import { ExecutiveGenerator } from '../components/ExecutiveGenerator';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api/client';
-import { RefreshCw, LayoutGrid } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
+import { 
+  RefreshCw, 
+  LayoutGrid, 
+  Activity, 
+  MessageSquareQuote, 
+  ShieldCheck, 
+  Zap, 
+  ArrowUpRight, 
+  CheckCircle, 
+  Clock 
+} from 'lucide-react';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const intervalRef = useRef(null);
   
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 60000); // 1-minute refresh
-    return () => clearInterval(interval);
+
+    // GAP-004 FIX: Only poll when tab is visible to avoid wasting rate-limit budget.
+    const startPolling = () => {
+      intervalRef.current = setInterval(fetchDashboardData, 60000);
+    };
+    const stopPolling = () => {
+      clearInterval(intervalRef.current);
+    };
+    const handleVisibility = () => {
+      document.hidden ? stopPolling() : startPolling();
+    };
+
+    startPolling();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -35,10 +67,12 @@ const DashboardPage = () => {
     setSyncing(true);
     try {
       await api.post('/poller/trigger');
-      // Toast or notification would go here in a full app
-      setTimeout(fetchDashboardData, 2000); // Wait for thread to start
+      // GAP-005 FIX: Show toast feedback so user knows sync started.
+      showToast({ title: 'Sync Started', desc: 'Background scan initiated. Results will appear shortly.', type: 'success' });
+      setTimeout(fetchDashboardData, 2000);
     } catch (err) {
       console.error('Sync failed:', err);
+      showToast({ title: 'Sync Failed', desc: err.message || 'Could not initiate background scan.', type: 'error' });
     } finally {
       setSyncing(false);
     }
@@ -64,7 +98,7 @@ const DashboardPage = () => {
       {/* Executive Action Header */}
       <ExecutivePageHeader 
         title="Executive Summary"
-        subtitle={`Reviewing activity for ${user?.email_metadata?.business_name || 'ReplyIQ Workspace'}`}
+        subtitle={`Reviewing activity for ${user?.user_metadata?.business_name || user?.business_name || 'ReplyIQ Workspace'}`}
         label="System Status"
         icon={Activity}
         actions={

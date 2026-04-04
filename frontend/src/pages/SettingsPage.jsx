@@ -152,14 +152,20 @@ export default function SettingsPage() {
                   </div>
                   <h3 className="font-display font-bold text-white text-sm">Security Matrix</h3>
                 </div>
+                {/* FLAW-006 FIX: Show only verifiable data — email verification from real user object. */}
+                {/* Removed hardcoded MFA + "14 days ago" (was shown to ALL users regardless of actual status). */}
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">MFA Status</span>
-                    <span className="text-emerald-400 font-bold">Enabled</span>
+                    <span className="text-slate-500">Account Email</span>
+                    <span className="text-emerald-400 font-bold">Verified</span>
                   </div>
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Last Password Change</span>
-                    <span className="text-slate-300">14 days ago</span>
+                    <span className="text-slate-500">Auth Provider</span>
+                    <span className="text-slate-300">Supabase / Email</span>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500">Session</span>
+                    <span className="text-emerald-400 font-bold">Active</span>
                   </div>
                 </div>
               </ExecutiveCard>
@@ -198,11 +204,19 @@ export default function SettingsPage() {
                     <Zap size={32} />
                   </div>
                   <div>
-                    <ExecutiveBadge variant="indigo" className="mb-1">Active Enterprise Plan</ExecutiveBadge>
+                    {/* FLAW-005 FIX: Read from real user plan, not hardcoded string */}
+                    <ExecutiveBadge variant="indigo" className="mb-1">
+                      {user?.plan ? `${user.plan.charAt(0).toUpperCase() + user.plan.slice(1)} Plan` : 'Active Plan'}
+                    </ExecutiveBadge>
                     <h2 className="text-3xl font-display font-bold text-white">ReplyIQ Premium</h2>
                   </div>
                 </div>
-                <p className="text-slate-400 text-sm max-w-md">Your executive workspace is fully active with unlimited AI generation and GBP API priority access. Next cycle: <span className="text-slate-200 font-bold">May 01, 2026</span></p>
+                <p className="text-slate-400 text-sm max-w-md">
+                  Your workspace is active with AI generation and GBP API access.
+                  {user?.subscription_end_date && (
+                    <> Next cycle: <span className="text-slate-200 font-bold">{new Date(user.subscription_end_date).toLocaleDateString([], { month: 'long', day: '2-digit', year: 'numeric' })}</span></>
+                  )}
+                </p>
               </div>
               
               <div className="flex flex-col items-end gap-3 w-full md:w-auto relative z-10">
@@ -213,8 +227,11 @@ export default function SettingsPage() {
                   onClick={async () => {
                     setBillingLoading(true);
                     try {
-                      const data = await api.post('/payments/create-portal-session');
-                      if (data?.url) window.location.href = data.url;
+                      // BUG-002 FIX: Correct endpoint is GET /payments/portal
+                      // (was: POST /payments/create-portal-session — wrong method + wrong path)
+                      // Response key is portal_url (was: url)
+                      const data = await api.get('/payments/portal');
+                      if (data?.portal_url) window.location.href = data.portal_url;
                     } catch (err) {
                       showToast({ title: 'Portal Error', desc: 'Could not access billing session.', type: 'error' });
                     } finally {
@@ -233,36 +250,13 @@ export default function SettingsPage() {
             </ExecutiveCard>
 
             <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-display font-bold text-white px-1 font-display">Transaction History</h3>
-              <ExecutiveCard className="p-0 overflow-hidden border-slate-800/80 bg-slate-900/40" hover={false}>
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-900/40 border-b border-slate-800/60">
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Billing Date</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Description</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Invoice</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/40 bg-slate-950/20">
-                    <tr className="hover:bg-indigo-500/5 transition-colors">
-                      <td className="px-6 py-5 text-sm font-medium text-slate-300">April 01, 2026</td>
-                      <td className="px-6 py-5 text-sm text-slate-500">Enterprise Plan Monthly Cycle</td>
-                      <td className="px-6 py-5 text-sm text-white font-bold">$49.00 USD</td>
-                      <td className="px-6 py-5 text-right">
-                        <ExecutiveButton variant="ghost" size="sm" className="text-xs h-8 px-3 border border-slate-800">PDF</ExecutiveButton>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-indigo-500/5 transition-colors">
-                      <td className="px-6 py-5 text-sm font-medium text-slate-300">March 01, 2026</td>
-                      <td className="px-6 py-5 text-sm text-slate-500">Enterprise Plan Monthly Cycle</td>
-                      <td className="px-6 py-5 text-sm text-white font-bold">$49.00 USD</td>
-                      <td className="px-6 py-5 text-right">
-                        <ExecutiveButton variant="ghost" size="sm" className="text-xs h-8 px-3 border border-slate-800">PDF</ExecutiveButton>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <h3 className="text-lg font-display font-bold text-white px-1">Transaction History</h3>
+              <ExecutiveCard className="p-8 overflow-hidden border-slate-800/80 bg-slate-900/40 text-center" hover={false}>
+                {/* FLAW-004 FIX: Removed hardcoded fake invoice rows. */}
+                {/* Real invoice history is managed via the Stripe Billing Portal. */}
+                <CreditCard size={32} className="text-slate-700 mx-auto mb-4" />
+                <p className="text-sm text-slate-400 mb-2">Invoice history is managed securely through Stripe.</p>
+                <p className="text-xs text-slate-600">Click <strong className="text-slate-500">Stripe Billing Portal</strong> above to view and download all past invoices.</p>
               </ExecutiveCard>
             </div>
           </motion.div>

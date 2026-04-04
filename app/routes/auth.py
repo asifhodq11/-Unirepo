@@ -174,8 +174,19 @@ def login():
 # POST /api/v1/auth/logout
 # ──────────────────────────────────────────────────────────────
 @auth_bp.route("/logout", methods=["POST"])
-@require_auth
 def logout():
+    """
+    BUG-004 FIX: @require_auth was removed.
+    An expired session cookie would cause a 401 before the cookie could be cleared,
+    trapping the user in a stale session loop. Cookie is now cleared unconditionally.
+    """
+    # Silently attempt to invalidate the Supabase session server-side.
+    # This is best-effort; the real cleanup is the cookie deletion below.
+    try:
+        supabase.auth.sign_out()
+    except Exception:
+        pass  # Ignore — expired or missing token is expected here
+
     response = make_response({"status": "ok"}, 200)
     _clear_session_cookie(response)
     return response

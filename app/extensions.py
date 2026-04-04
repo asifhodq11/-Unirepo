@@ -21,8 +21,13 @@ if not supabase_key or len(supabase_key) < 50:
 
 supabase: Client = create_client(supabase_url, supabase_key)
 
-# 2. Rate limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"], storage_uri="memory://")
+# 2. Rate limiter — Relaxed for Executive Singularity Audit
+# We set high limits for development and ensure CORS OPTIONS preflights are NOT throttled.
+limiter = Limiter(
+    key_func=get_remote_address, 
+    default_limits=["2000 per day", "500 per hour", "100 per minute"], 
+    storage_uri="memory://"
+)
 
 # 3. CORS — configured in create_app to FRONTEND_URL
 cors = CORS()

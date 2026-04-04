@@ -42,9 +42,7 @@ export default function HistoryPage() {
         subtitle="A centralized record of all AI-generated response drafts."
         label="Activity Log"
         icon={History}
-        actions={
-          <ExecutiveButton variant="outline" size="sm" icon={Calendar}>Filter by Date</ExecutiveButton>
-        }
+        actions={null}
       />
 
       {/* Grid List */}
@@ -109,7 +107,8 @@ export default function HistoryPage() {
                         >
                           <Copy size={14} />
                         </ExecutiveButton>
-                        <ExecutiveButton variant="outline" size="sm">Review</ExecutiveButton>
+                        {/* FLAW-002 FIX: Removed ghost "Review" button (had no onClick handler). */}
+                        {/* Wire to an approval modal in a future sprint. */}
                       </div>
                     </div>
                     

@@ -6,6 +6,7 @@ import { api } from '../api/client';
 
 export const ExecutiveGenerator = () => {
   const [reviewContext, setReviewContext] = useState('');
+  const [reviewerName, setReviewerName] = useState('');
   const [status, setStatus] = useState('idle'); // idle, generating, done, error
   const [result, setResult] = useState('');
   const [activeTone, setActiveTone] = useState('professional');
@@ -24,7 +25,9 @@ export const ExecutiveGenerator = () => {
       const response = await api.post('/reviews/generate', { 
         review_text: reviewContext,
         rating: rating,
-        tone: activeTone 
+        tone: activeTone,
+        // FLAW-001 FIX: Include reviewer_name so Activity Feed shows real names
+        reviewer_name: reviewerName.trim() || null,
       });
       setResult(response.reply?.reply_text || response.reply || 'Response generated successfully.');
       setStatus('done');
@@ -92,9 +95,18 @@ export const ExecutiveGenerator = () => {
             className="flex-1 w-full p-4 bg-slate-950/40 rounded-xl border border-slate-800 focus:border-indigo-500/50 focus:bg-slate-950/60 outline-none resize-none text-slate-200 placeholder:text-slate-600 font-body text-sm transition-all"
           />
           
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{reviewContext.length} Characters</span>
+        <div className="flex items-center justify-between mt-4 gap-4">
+            <div className="flex items-center gap-4 flex-1">
+              {/* FLAW-001 FIX: Reviewer Name input — populates reviewer_name in API + Activity Feed */}
+              <input
+                type="text"
+                value={reviewerName}
+                onChange={(e) => setReviewerName(e.target.value)}
+                disabled={status === 'generating'}
+                placeholder="Reviewer name (optional)"
+                className="flex-1 px-3 py-1.5 bg-slate-950/40 border border-slate-800 rounded-lg text-xs text-slate-300 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/40 transition-all font-body"
+              />
+              <span className="text-[10px] font-bold text-slate-600 uppercase tracking-widest whitespace-nowrap">{reviewContext.length} chars</span>
             </div>
             
             <ExecutiveButton 
@@ -131,7 +143,7 @@ export const ExecutiveGenerator = () => {
               
               <div className="mt-6 flex justify-end gap-2">
                 <ExecutiveButton variant="ghost" size="sm" icon={Copy} onClick={() => navigator.clipboard.writeText(result)}>Copy</ExecutiveButton>
-                <ExecutiveButton variant="ghost" size="sm" icon={RotateCcw} onClick={() => { setStatus('idle'); setReviewContext(''); }}>Reset</ExecutiveButton>
+                <ExecutiveButton variant="ghost" size="sm" icon={RotateCcw} onClick={() => { setStatus('idle'); setReviewContext(''); setReviewerName(''); }}>Reset</ExecutiveButton>
               </div>
             </motion.div>
           )}

@@ -27,6 +27,13 @@ def create_app(config_name="development"):
     # 1. Attach Extensions
     limiter.init_app(app)
 
+    # FLAW-007 FIX: Exempt CORS OPTIONS preflight requests from rate limiting.
+    # flask-limiter uses a decorator pattern, NOT a constructor arg.
+    # Preflights hitting the limit caused 429s that blocked all API calls.
+    @limiter.request_filter
+    def _exempt_options_preflight():
+        return request.method == "OPTIONS"
+
     # Enable CORS
     # If same-domain, we allow all origins from our own host
     cors.init_app(app, origins=[app.config["FRONTEND_URL"]], supports_credentials=True)
