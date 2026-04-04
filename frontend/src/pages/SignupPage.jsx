@@ -1,182 +1,137 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Command, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { api, ApiError } from '../api/client';
-import { Zap, AlertTriangle, Mail, RefreshCw, ArrowRight } from 'lucide-react';
-
-const TONE_OPTIONS = ['friendly', 'professional', 'casual'];
-const BUSINESS_TYPES = [
-  'Restaurant', 'Hotel', 'Retail Store', 'Café', 'Salon/Spa',
-  'Medical Practice', 'Legal Firm', 'Gym/Fitness', 'Automotive', 'Other',
-];
+import { useToast } from '../hooks/useToast';
+import { VanguardButton } from '../components/VanguardComponents';
 
 export default function SignupPage() {
-  const { setUser } = useAuth();
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    business_name: '',
-    business_type: '',
-    tone_preference: 'friendly',
-  });
-  const [error, setError]                 = useState('');
-  const [loading, setLoading]             = useState(false);
+  const { signup } = useAuth();
+  const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  
+  const [email, setEmail] = useState(searchParams.get('email') || '');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+  useEffect(() => {
+    const e = searchParams.get('email');
+    if (e) setEmail(e);
+  }, [searchParams]);
 
-
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    if (form.password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
+    if (!email || !password || !firstName) return;
     setLoading(true);
-    try {
-      const { status, data } = await api.rawPost('/auth/signup', form);
-      if (status === 202) {
-        // Email verification required — jump to dedicated verify page
-        window.location.href = `/verify-email?email=${encodeURIComponent(form.email)}`;
-      } else {
-        // 201 — session created, store user and navigate
-        setUser(data.user);
-        window.location.href = '/dashboard';
-      }
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Signup failed. Please try again.');
-    } finally {
-      setLoading(false);
+    const { error, data } = await signup(email, password, { first_name: firstName, last_name: lastName });
+    setLoading(false);
+    
+    if (error) {
+      showToast({ title: 'Access Denied', desc: error.message, type: 'error' });
+    } else {
+      showToast({ title: 'Profile Created', desc: 'Please verify your transmission endpoint (Email).', type: 'success' });
     }
-  }
+  };
 
   return (
-    <div className="flex justify-center items-center py-12 bg-bg-base px-4 min-h-screen">
-      <div className="card w-full max-w-[480px] mx-auto p-8 shadow-sm">
-        {/* Logo */}
-        <div className="flex justify-center mb-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-bg-elevated border border-border text-text-primary p-2 rounded-md">
-              <Zap size={20} fill="currentColor" />
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-black relative">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden text-center flex items-center justify-center">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-purple-900/10 blur-[150px] mix-blend-screen" />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+        className="w-full max-w-md relative z-10"
+      >
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,255,255,0.05)]">
+            <Command size={32} className="text-white" />
+          </div>
+          <h1 className="text-3xl font-display font-light text-white tracking-tight">System Registry</h1>
+        </div>
+
+        <div className="p-8 rounded-[32px] bg-white/[0.02] border border-white/10 backdrop-blur-3xl shadow-[0_24px_64px_-12px_rgba(0,0,0,0.8)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5 border-none">
+            
+            <div className="flex gap-4">
+              <div className="space-y-1 w-full">
+                <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest pl-2">First Name</label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/50 transition-all font-body text-sm"
+                  placeholder="John"
+                />
+              </div>
+              <div className="space-y-1 w-full">
+                <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest pl-2">Last Name</label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/50 transition-all font-body text-sm"
+                  placeholder="Doe"
+                />
+              </div>
             </div>
-            <span className="text-xl font-semibold tracking-tight">ReplyIQ</span>
-          </div>
-        </div>
 
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold tracking-tight mb-1">Create an account</h2>
-          <p className="text-text-secondary text-sm">Turn reviews into authentic, human replies — instantly.</p>
-        </div>
-
-        {error && (
-          <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '1rem' }}>
-            <AlertTriangle size={18} /> {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Business info */}
-          <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">Business name</label>
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest pl-2">Transmission Endpoint (Email)</label>
               <input
-                id="signup-business-name"
-                type="text"
-                className="form-input"
-                placeholder="Bella Italia"
-                value={form.business_name}
-                onChange={set('business_name')}
+                type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/50 transition-all font-body text-sm"
+                placeholder="commander@network.com"
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Business type</label>
-              <select
-                id="signup-business-type"
-                className="form-input form-select"
-                value={form.business_type}
-                onChange={set('business_type')}
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono text-white/40 uppercase tracking-widest pl-2">Authentication Key (Password)</label>
+              <input
+                type="password"
                 required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/50 transition-all font-body text-sm"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+              />
+            </div>
+
+            <div className="mt-2 text-center text-xs text-white/30 font-body">
+              By creating your profile, you accept our <Link to="/terms" className="text-white hover:text-purple-400 transition-colors">Protocols</Link>.
+            </div>
+
+            <div className="mt-2">
+              <VanguardButton 
+                type="submit" 
+                variant="primary" 
+                className="w-full !rounded-2xl !py-4"
+                isLoading={loading}
+                icon={UserPlus}
               >
-                <option value="" disabled>Select…</option>
-                {BUSINESS_TYPES.map(t => (
-                  <option key={t} value={t.toLowerCase()}>{t}</option>
-                ))}
-              </select>
+                Construct Profile
+              </VanguardButton>
             </div>
-          </div>
 
-          {/* Tone preference */}
-          <div className="form-group">
-            <label className="form-label">Reply tone</label>
-            <div className="flex gap-2">
-              {TONE_OPTIONS.map(t => (
-                <button
-                  key={t}
-                  type="button"
-                  id={`tone-${t}`}
-                  onClick={() => setForm(f => ({ ...f, tone_preference: t }))}
-                  className={`btn btn-sm ${form.tone_preference === t ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ flex: 1, textTransform: 'capitalize' }}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            <p className="form-hint">You can change this later in settings.</p>
-          </div>
+          </form>
+        </div>
 
-          <hr className="divider" />
-
-          {/* Account credentials */}
-          <div className="form-group">
-            <label className="form-label">Email</label>
-            <input
-              id="signup-email"
-              type="email"
-              className="form-input"
-              placeholder="you@business.com"
-              value={form.email}
-              onChange={set('email')}
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input
-              id="signup-password"
-              type="password"
-              className="form-input"
-              placeholder="Min. 8 characters"
-              value={form.password}
-              onChange={set('password')}
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-          </div>
-
-          <button
-            id="signup-submit"
-            type="submit"
-            className="btn btn-primary btn-lg btn-full"
-            disabled={loading}
-            style={{ marginTop: '0.25rem' }}
-          >
-            {loading ? <><span className="spinner" /> Creating account…</> : 'Create free account'}
-          </button>
-        </form>
-
-        <p className="text-sm text-center text-muted" style={{ marginTop: '1.25rem' }}>
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium" style={{ color: 'var(--accent-hover)' }}>
-            Sign in
-          </Link>
-        </p>
-      </div>
+        <div className="mt-8 text-center">
+          <p className="text-sm font-body text-white/40">
+            Already verified? <Link to="/login" className="text-white hover:text-purple-400 transition-colors ml-1 border-b border-white/20 hover:border-purple-400/50">Return to Node</Link>
+          </p>
+        </div>
+      </motion.div>
     </div>
   );
 }

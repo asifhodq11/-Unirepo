@@ -1,86 +1,49 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './hooks/useToast';
-import { useEnergyMode } from './hooks/useEnergyMode';
-import { useTidalMode } from './hooks/useTidalMode';
+import { ThemeProvider } from './context/ThemeContext';
 
-// Pages
-import LoginPage    from './pages/LoginPage';
-import SignupPage   from './pages/SignupPage';
+// Vanguard Pages
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
-import HistoryPage  from './pages/HistoryPage';
+import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
-import ApprovalPage from './pages/ApprovalPage';
-import LandingPage  from './pages/LandingPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage  from './pages/ResetPasswordPage';
-import PrivacyPolicyPage  from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import AuthCallbackPage  from './pages/AuthCallbackPage';
 import AdminPage from './pages/AdminPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
+import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 
-// Layout
-import AppLayout from './components/layout/AppLayout';
+// Vanguard Layout
+import { AppLayout } from './components/layout/AppLayout';
 
-// ── Full-screen loading state ──────────────────────────────────
-function PageLoader() {
+function VanguardLoader() {
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--bg-base)' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
-        <div className="spinner spinner-lg" />
-        <p className="text-muted text-sm">Loading…</p>
+    <div className="min-h-screen grid place-items-center bg-black">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full border-4 border-cyan-400 border-t-transparent animate-spin shadow-[0_0_20px_#22d3ee]" />
+        <p className="text-white/50 tracking-widest uppercase text-xs animate-pulse font-mono">Initializing System</p>
       </div>
     </div>
   );
 }
 
-// ── Auth guard — shows loader, redirects if not logged in ──────
-function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (!user)   return <Navigate to="/login" replace />;
+function ProtectedRoute({ children, adminOnly = false }) {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return <VanguardLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (adminOnly && !isAdmin) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
-// ── Public guard — redirects to dashboard if already logged in ─
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <PageLoader />;
-  if (user)    return <Navigate to="/dashboard" replace />;
-  return children;
-}
-
-// ── Smart Root Dispatcher ──────────────────────────────────────
-function RootDispatcher() {
-  const { user, loading } = useAuth();
-  const searchParams = new URLSearchParams(window.location.search);
-  const email = searchParams.get('email');
-  const hash = window.location.hash;
-
-  if (loading) return <PageLoader />;
-  
-  // Intercept Supabase auth redirect to root
-  if (hash && hash.includes('access_token=')) {
-    return <Navigate to={`/auth/callback${hash}`} replace />;
-  }
-  
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
-  
-  if (email) {
-    return <Navigate to={`/signup?email=${encodeURIComponent(email)}`} replace />;
-  }
-  
-  return <Navigate to="/landing" replace />;
-}
-
-// ── Smart Features Initializer ─────────────────────────────────
-function SmartFeatures({ children }) {
-  // These hooks set data-* attributes on <body> for CSS overrides
-  useEnergyMode();  // data-energy="high|medium|low"
-  useTidalMode();   // data-tidal="peak|trough|wind-down"
+  if (loading) return <VanguardLoader />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -88,52 +51,45 @@ function SmartFeatures({ children }) {
 function Router() {
   return (
     <Routes>
-      {/* Application Entry Point — Solves the routing hierarchy */}
-      <Route path="/"        element={<RootDispatcher />} />
-      {/* Dedicated Marketing Landing Page */}
+      <Route path="/" element={<Navigate to="/landing" replace />} />
       <Route path="/landing" element={<LandingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
 
-      {/* Public routes */}
-      <Route path="/login"           element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/signup"          element={<PublicRoute><SignupPage /></PublicRoute>} />
+      {/* Auth Flows */}
+      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><SignupPage /></PublicRoute>} />
       <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
-      <Route path="/reset-password"  element={<ResetPasswordPage />} />
-      <Route path="/auth/callback"   element={<AuthCallbackPage />} />
-      <Route path="/verify-email"    element={<VerifyEmailPage />} />
+      <Route path="/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-      {/* Legal pages — always public, no auth guard */}
-      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-      <Route path="/terms"   element={<TermsOfServicePage />} />
-
-      {/* Public token route — no login needed */}
-      <Route path="/approve/:token" element={<ApprovalPage />} />
-
-      {/* Protected routes — wrapped in sidebar layout */}
+      {/* Protected Command Center */}
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="history"   element={<HistoryPage />} />
-        <Route path="settings"  element={<SettingsPage />} />
-        <Route path="admin"     element={<AdminPage />} />
+        <Route path="history" element={<HistoryPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        {/* Guarded Admin Route */}
+        <Route path="admin" element={
+          <ProtectedRoute adminOnly>
+            <AdminPage />
+          </ProtectedRoute>
+        } />
       </Route>
 
-      {/* 404 fallback */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
-
-import { ThemeProvider } from './context/ThemeContext';
 
 export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
-          <SmartFeatures>
-            <BrowserRouter>
-              <Router />
-            </BrowserRouter>
-          </SmartFeatures>
+          <BrowserRouter>
+            <Router />
+          </BrowserRouter>
         </ToastProvider>
       </AuthProvider>
     </ThemeProvider>

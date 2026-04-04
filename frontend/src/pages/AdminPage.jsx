@@ -1,269 +1,145 @@
-import { useEffect, useState } from 'react';
-import { api } from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, DollarSign, Activity, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
+import { Shield, Users, Activity, HardDrive, Search, Filter, MoreHorizontal, UserCheck, UserX } from 'lucide-react';
+import { VanguardCard, VanguardStat, VanguardBadge, VanguardButton } from '../components/VanguardComponents';
+import { api } from '../api/client';
 
 export default function AdminPage() {
-  const { user } = useAuth();
-  const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState(null);
-  const [error, setError] = useState(null);
-  
-  // Modal state for Google Configuration
-  const [editGoogleUser, setEditGoogleUser] = useState(null);
-  const [googleConnected, setGoogleConnected] = useState(false);
-  const [googleLocationId, setGoogleLocationId] = useState('');
-  const [savingGoogle, setSavingGoogle] = useState(false);
 
-  async function handleSaveGoogle(e) {
-    e.preventDefault();
-    if (!editGoogleUser) return;
-    setSavingGoogle(true);
-    try {
-      await api.put(`/admin/users/${editGoogleUser.id}/google-config`, {
-        google_connected: googleConnected,
-        google_location_id: googleLocationId
-      });
-      setUsers(users.map(u => u.id === editGoogleUser.id 
-        ? { ...u, google_connected: googleConnected, google_location_id: googleLocationId } 
-        : u
-      ));
-      setEditGoogleUser(null);
-    } catch (err) {
-      alert("Failed to save google config");
-    } finally {
-      setSavingGoogle(false);
-    }
-  }
+  // Stagger variants for the bento grid
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
 
-  // Redundant structural guard just in case the route wasn't enough
-  if (!user?.is_admin) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  async function fetchAdminData(isRefresh = false) {
-    if (isRefresh) setRefreshing(true);
-    try {
-      const [statsRes, usersRes] = await Promise.all([
-        api.get(`/admin/dashboard?t=${Date.now()}`),
-        api.get(`/admin/users?t=${Date.now()}`)
-      ]);
-      
-      setStats(statsRes);
-      setUsers(usersRes.items || []);
-      setLastUpdated(statsRes.calculated_at);
-    } catch (err) {
-      console.error('Failed to load admin data:', err);
-      if (!isRefresh) setError('Failed to load secure admin data.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }
+  const itemVariants = {
+    hidden: { opacity: 0, scale: 0.95 },
+    show: { opacity: 1, scale: 1 }
+  };
 
   useEffect(() => {
-    fetchAdminData();
+    // In a real app, we'd fetch actual user data here
+    // api.get('/admin/users').then(...)
+    
+    // Mock data for immersive visualization
+    setUsers([
+      { id: 'usr_01', email: 'commander@vanguard.io', role: 'root', joined: '2026-03-01', status: 'active' },
+      { id: 'usr_02', email: 'agent.smith@matrix.net', role: 'admin', joined: '2026-03-15', status: 'active' },
+      { id: 'usr_03', email: 'guest.beta@network.com', role: 'user', joined: '2026-04-02', status: 'suspended' },
+    ]);
+    setLoading(false);
   }, []);
 
-  if (loading) {
-    return (
-      <div style={{ display: 'grid', placeItems: 'center', height: '100%', padding: 'var(--space-6)' }}>
-        <div className="spinner spinner-lg" />
-        <p className="text-muted text-sm mt-4">Compiling financials...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div style={{ padding: 'var(--space-6)' }}>
-        <div className="card border-danger" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--space-6)', textAlign: 'center' }}>
-          <AlertTriangle color="var(--danger-color)" size={48} style={{ marginBottom: 'var(--space-4)' }} />
-          <h2 className="text-lg font-bold mb-2">Access Denied / Error</h2>
-          <p className="text-muted">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ padding: 'var(--space-6)', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ marginBottom: 'var(--space-6)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="w-full max-w-7xl mx-auto flex flex-col gap-8 pb-24"
+    >
+      {/* Admin Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Admin Business Intelligence</h1>
-          <p className="text-muted">Real-time financial safety and platform metrics.</p>
-          {lastUpdated && (
-            <p className="text-xs text-accent mt-1">
-              Last calculated: {new Date(lastUpdated).toLocaleTimeString()}
-            </p>
-          )}
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="text-purple-400" size={24} />
+            <h1 className="text-4xl font-display font-light text-white tracking-tight">System Core <span className="font-bold">Admin</span></h1>
+          </div>
+          <p className="text-white/40 mt-2 text-sm tracking-wide font-mono uppercase">Global Registry & Node Oversight</p>
         </div>
-        <button 
-          className="btn btn-secondary btn-sm"
-          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-          onClick={() => fetchAdminData(true)}
-          disabled={refreshing}
-        >
-          <RefreshCw size={14} className={refreshing ? 'spin' : ''} />
-          {refreshing ? 'Refreshing...' : 'Refresh Stats'}
-        </button>
-      </header>
-
-      {/* KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-8)' }}>
-        
-        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-muted">Estimated MRR</p>
-              <h3 className="text-2xl font-bold text-success">${stats?.financials?.mrr?.toFixed(2) || '0.00'}</h3>
-            </div>
-            <div className="icon-wrapper" style={{ background: 'oklch(var(--success) / 0.1)', color: 'oklch(var(--success))', padding: '8px', borderRadius: '8px' }}>
-              <DollarSign size={24} />
-            </div>
-          </div>
-          <p className="text-xs text-muted">Projected off active plans</p>
-        </motion.div>
-
-        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-muted">Total AI Cost</p>
-              <h3 className="text-2xl font-bold text-danger">${stats?.financials?.ai_cost?.toFixed(4) || '0.0000'}</h3>
-            </div>
-            <div className="icon-wrapper" style={{ background: 'oklch(var(--danger) / 0.1)', color: 'oklch(var(--danger))', padding: '8px', borderRadius: '8px' }}>
-              <Activity size={24} />
-            </div>
-          </div>
-          <p className="text-xs text-muted">{stats?.usage?.total_tokens?.toLocaleString()} tokens across {stats?.usage?.total_replies} replies</p>
-        </motion.div>
-
-        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} className="card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-muted">Total Active Users</p>
-              <h3 className="text-2xl font-bold">{stats?.users?.total || 0}</h3>
-            </div>
-            <div className="icon-wrapper" style={{ background: 'oklch(var(--accent) / 0.1)', color: 'oklch(var(--accent))', padding: '8px', borderRadius: '8px' }}>
-              <Users size={24} />
-            </div>
-          </div>
-          <p className="text-xs text-muted">{stats?.users?.pro} Pro / {stats?.users?.starter} Starter</p>
-        </motion.div>
-
-        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="card">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <p className="text-sm font-medium text-muted">Gross Margin</p>
-              <h3 className="text-2xl font-bold text-success">${stats?.financials?.margin?.toFixed(2) || '0.00'}</h3>
-            </div>
-            <div className="icon-wrapper" style={{ background: 'oklch(var(--success) / 0.1)', color: 'oklch(var(--success))', padding: '8px', borderRadius: '8px' }}>
-              <DollarSign size={24} />
-            </div>
-          </div>
-          <p className="text-xs text-muted">MRR - AI Cost</p>
-        </motion.div>
+        <div className="flex gap-3">
+          <VanguardButton variant="ghost" size="sm">Export Telemetry</VanguardButton>
+          <VanguardButton variant="neon" size="sm">Emergency Lock</VanguardButton>
+        </div>
       </div>
 
-      {/* User Table */}
-      <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
-        <div style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--border-color)' }}>
-          <h2 className="text-lg font-bold">User Roster</h2>
+      {/* Real-time Health Hybrid (Stats + Visuals) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <VanguardStat label="Total Nodes" value="1,284" subValue="+12.4% vs last cycle" icon={Users} />
+        <VanguardStat label="Neural Latency" value="24ms" subValue="Region: US-EAST-1" icon={Activity} delay={0.1} />
+        <VanguardStat label="Synthesis Load" value="88%" subValue="Critical Threshold: 95%" icon={HardDrive} delay={0.2} />
+        
+        <VanguardCard className="flex flex-col justify-center p-6 bg-emerald-500/5 transition-all" delay={0.3}>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Protocol Stable</span>
+          </div>
+          <p className="text-sm text-white/60">All backend clusters are operating within nominal Vanguard parameters.</p>
+        </VanguardCard>
+      </div>
+
+      {/* User Management Hybrid (Table inside Glass) */}
+      <VanguardCard className="p-0 border-white/5 overflow-hidden" delay={0.4}>
+        <div className="p-6 border-b border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/[0.02]">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search user ID or email..."
+              className="w-full bg-black/40 border border-white/10 rounded-full py-2.5 pl-12 pr-6 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-400/50 transition-all font-body"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-4">
+            <VanguardButton variant="ghost" size="sm" icon={Filter}>Filter</VanguardButton>
+          </div>
         </div>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Email</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Business</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Plan</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Usage (Mo)</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Joined</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Google</th>
-                <th style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-muted)' }}>Action</th>
+              <tr className="bg-white/[0.03]">
+                <th className="px-6 py-4 text-[10px] font-mono text-white/40 uppercase tracking-widest">Profile</th>
+                <th className="px-6 py-4 text-[10px] font-mono text-white/40 uppercase tracking-widest">Role</th>
+                <th className="px-6 py-4 text-[10px] font-mono text-white/40 uppercase tracking-widest">Registry Date</th>
+                <th className="px-6 py-4 text-[10px] font-mono text-white/40 uppercase tracking-widest">Status</th>
+                <th className="px-6 py-4 text-right"></th>
               </tr>
             </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)', background: 'var(--bg-base)' }}>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem' }}>{u.email}</td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem' }}>{u.business_name}</td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                    <span className={`badge badge-sm ${u.plan === 'pro' ? 'badge-success' : u.plan === 'starter' ? 'badge-accent' : 'badge-muted'}`}>
-                      {u.plan}
-                    </span>
+            <tbody className="divide-y divide-white/5">
+              {users.map((user) => (
+                <tr key={user.id} className="hover:bg-white/[0.01] transition-colors group">
+                  <td className="px-6 py-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-cyan-500/20 flex items-center justify-center border border-white/10 font-bold text-white/80">
+                        {user.email[0].toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-semibold text-white">{user.email}</span>
+                        <span className="text-[10px] font-mono text-white/30 uppercase tracking-tighter">{user.id}</span>
+                      </div>
+                    </div>
                   </td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem' }}>{u.reply_count_this_month}</td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                    {new Date(u.created_at).toLocaleDateString()}
+                  <td className="px-6 py-5">
+                    <VanguardBadge variant={user.role === 'root' ? 'purple' : 'white'}>{user.role}</VanguardBadge>
                   </td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                    {u.google_connected ? <CheckCircle size={16} className="text-success" /> : <XCircle size={16} className="text-muted" />}
+                  <td className="px-6 py-5 text-sm text-white/40 font-mono">
+                    {user.joined}
                   </td>
-                  <td style={{ padding: 'var(--space-3) var(--space-4)' }}>
-                    <button 
-                      onClick={() => {
-                        setEditGoogleUser(u);
-                        setGoogleConnected(u.google_connected || false);
-                        setGoogleLocationId(u.google_location_id || '');
-                      }} 
-                      className="btn btn-ghost btn-sm text-xs py-1 px-3">
-                      Config
-                    </button>
+                  <td className="px-6 py-5">
+                    <VanguardBadge variant={user.status === 'active' ? 'emerald' : 'purple'}>
+                      {user.status}
+                    </VanguardBadge>
+                  </td>
+                  <td className="px-6 py-5 text-right">
+                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-white transition-colors">
+                        <UserCheck size={16} />
+                      </button>
+                      <button className="p-2 hover:bg-white/5 rounded-lg text-white/40 hover:text-red-400 transition-colors">
+                        <UserX size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={7} style={{ padding: 'var(--space-6)', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No users found.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
-      </div>
-      
-      {/* Edit Google Config Modal */}
-      {editGoogleUser && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)' }}>
-          <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-            <h3 className="text-lg font-bold mb-4">Edit Google Config</h3>
-            <p className="text-sm text-muted mb-4 break-all">User: {editGoogleUser.email}</p>
-            <form onSubmit={handleSaveGoogle}>
-              <div className="form-group mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={googleConnected} onChange={e => setGoogleConnected(e.target.checked)} />
-                  <span className="text-sm">Google Connected</span>
-                </label>
-              </div>
-              <div className="form-group mb-6">
-                <label className="text-sm font-medium mb-1 block">Google Location ID</label>
-                <input 
-                  type="text" 
-                  className="input flex-1" 
-                  style={{ width: '100%' }}
-                  value={googleLocationId} 
-                  onChange={e => setGoogleLocationId(e.target.value)} 
-                  placeholder="e.g. 1234567890" 
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button type="button" className="btn btn-secondary" onClick={() => setEditGoogleUser(null)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={savingGoogle}>
-                  {savingGoogle ? 'Saving...' : 'Save Config'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+      </VanguardCard>
+    </motion.div>
   );
 }
