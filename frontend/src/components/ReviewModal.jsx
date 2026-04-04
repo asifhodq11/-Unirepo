@@ -93,7 +93,7 @@ export default function ReviewModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg-surface border border-border rounded-3xl shadow-2xl flex flex-col"
+          className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-bg-surface border border-border rounded-xl shadow-xl flex flex-col"
           onClick={e => e.stopPropagation()}
         >
           {/* Top Bar */}
@@ -116,7 +116,7 @@ export default function ReviewModal({
             {/* Review Context Card */}
             <section>
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center border border-border">
+                <div className="w-12 h-12 rounded-md bg-bg-elevated flex items-center justify-center border border-border">
                   <User size={24} className="text-muted" />
                 </div>
                 <div>
@@ -136,8 +136,8 @@ export default function ReviewModal({
               </div>
               
               <div className="relative group">
-                <div className="absolute -inset-2 bg-gradient-to-r from-accent/5 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <p className="relative text-lg text-primary leading-relaxed italic font-medium p-4 border-l-4 border-accent/20 bg-white/[0.02] rounded-r-xl">
+                <div className="absolute -inset-2 bg-gradient-to-r from-accent/5 to-transparent rounded-md opacity-0 group-hover:opacity-100 transition-opacity" />
+                <p className="relative text-lg text-primary leading-relaxed italic font-medium p-4 border-l-4 border-accent/20 bg-bg-elevated rounded-r-md">
                   "{item.review_text || 'No review text provided.'}"
                 </p>
               </div>
@@ -156,7 +156,7 @@ export default function ReviewModal({
                            onClick={() => setSelectedTone(tone.id)}
                            className={`
                              px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border
-                             ${selectedTone === tone.id ? 'bg-accent border-accent text-white shadow-glow' : 'bg-white/5 border-border text-muted hover:text-primary'}
+                             ${selectedTone === tone.id ? 'bg-accent border-accent text-bg-base shadow-sm' : 'bg-bg-elevated border-border text-text-muted hover:text-text-primary'}
                            `}
                          >
                            <tone.icon size={12} />
@@ -167,7 +167,7 @@ export default function ReviewModal({
                   </div>
 
                   {!hasDraft ? (
-                    <div className="py-12 flex flex-col items-center justify-center text-center border-2 border-dashed border-border rounded-2xl bg-white/[0.01]">
+                    <div className="py-12 flex flex-col items-center justify-center text-center border border-dashed border-border rounded-lg bg-bg-surface">
                       {generating || internalLoading ? (
                         <div className="space-y-4">
                           <motion.div 
@@ -214,7 +214,7 @@ export default function ReviewModal({
                           ref={textareaRef}
                           value={editText}
                           onChange={e => setEditText(e.target.value)}
-                          className="w-full min-h-[200px] p-6 text-base text-primary bg-bg-surface border border-border rounded-2xl focus:border-accent focus:ring-4 focus:ring-accent/10 transition-all outline-none resize-none leading-relaxed"
+                          className="w-full min-h-[200px] p-4 text-sm text-text-primary bg-bg-elevated border border-border rounded-md focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors outline-none resize-none leading-relaxed"
                           placeholder="Your professional AI draft..."
                           style={{ transitionDelay: '0s' }}
                         />
@@ -237,7 +237,7 @@ export default function ReviewModal({
                           icon={Send} 
                           onClick={handleInternalSend}
                           isLoading={internalLoading}
-                          className="px-8 shadow-glow-accent"
+                          className="px-8"
                         >
                           Post Reply
                         </ProButton>

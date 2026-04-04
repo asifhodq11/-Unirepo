@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
@@ -12,7 +12,7 @@ import {
 import { 
   ProCard, ProButton, ProBadge, ProStat, ProRow, ProFilterGroup 
 } from '../components/BaseComponents';
-import ReviewModal from '../components/ReviewModal';
+const ReviewModal = lazy(() => import('../components/ReviewModal'));
 import { getPlanLimit } from '../utils/plans';
 import { useToast } from '../hooks/useToast';
 import { useResilientAction } from '../hooks/useResilientAction';
@@ -21,14 +21,14 @@ const PER_PAGE = 20;
 
 function EmptyState({ hasFilters, onClear }) {
   return (
-    <div className="py-24 flex flex-col items-center justify-center text-center">
-      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-muted mb-6">
-        {hasFilters ? <Filter size={32} /> : <Inbox size={32} />}
+    <div className="py-24 flex flex-col items-center justify-center text-center border border-dashed border-border rounded-lg bg-bg-surface mt-4">
+      <div className="w-12 h-12 rounded-md bg-bg-elevated border border-border flex items-center justify-center text-text-muted mb-4">
+        {hasFilters ? <Filter size={24} /> : <Inbox size={24} />}
       </div>
-      <h3 className="text-lg font-bold text-primary mb-2">
+      <h3 className="text-base font-semibold text-text-primary mb-1">
         {hasFilters ? 'No matches found' : 'History is empty'}
       </h3>
-      <p className="text-sm text-muted max-w-xs mb-8">
+      <p className="text-sm text-text-secondary max-w-xs mb-6">
         {hasFilters 
           ? 'Try adjusting your filters or search query to find what you are looking for.' 
           : 'Your review history will appear here once the AI engine begins processing incoming reviews.'}
@@ -156,13 +156,13 @@ export default function HistoryPage() {
       {/* Header */}
       <header className="flex justify-between items-end mb-8">
         <div>
-          <h1 className="text-2xl font-black text-primary tracking-tight">Review History</h1>
-          <div className="flex items-center gap-4 mt-2">
-            <span className="text-xs text-muted font-bold uppercase tracking-widest">
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Review History</h1>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-text-secondary font-medium tracking-wide bg-bg-surface px-2 py-1 rounded border border-border">
               {total} Total Reviews
             </span>
             <div className="w-1 h-1 rounded-full bg-border" />
-            <span className={`text-xs font-bold uppercase tracking-widest ${remaining < 5 ? 'text-danger' : 'text-accent'}`}>
+            <span className={`text-xs font-semibold uppercase tracking-wider ${remaining < 5 ? 'text-danger' : 'text-accent'}`}>
               {remaining} Credits Remaining
             </span>
           </div>
@@ -176,7 +176,7 @@ export default function HistoryPage() {
       </header>
 
       {/* Filters Hub */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sticky top-4 z-30 px-4 py-3 bg-bg-surface/80 backdrop-blur-xl border border-border rounded-2xl shadow-xl">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4 sticky top-4 z-30 px-4 py-3 bg-bg-surface border border-border rounded shadow-sm">
         <div className="flex items-center gap-4">
           <ProFilterGroup>
             {['all', 'pending', 'replied', 'failed'].map(s => {
@@ -186,8 +186,8 @@ export default function HistoryPage() {
                   key={s}
                   onClick={() => setFilterStatus(s === 'all' ? null : s)}
                   className={`
-                    px-4 py-1.5 rounded-lg text-xs font-bold transition-all
-                    ${active ? 'bg-accent text-white shadow-glow' : 'text-muted hover:text-primary'}
+                    px-4 py-1.5 rounded-md text-sm font-medium transition-colors
+                    ${active ? 'bg-bg-elevated text-text-primary border border-border shadow-sm' : 'text-text-muted hover:text-text-primary border border-transparent'}
                   `}
                 >
                   {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -277,7 +277,7 @@ export default function HistoryPage() {
                           size={10} 
                           fill={i < item.rating ? 'var(--accent)' : 'none'} 
                           stroke={i < item.rating ? 'var(--accent)' : 'var(--text-muted)'} 
-                          className={i >= item.rating ? 'opacity-20' : ''}
+                          className={i >= item.rating ? 'opacity-40' : ''}
                         />
                       ))}
                     </div>
@@ -331,26 +331,24 @@ export default function HistoryPage() {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-primary text-white rounded-2xl shadow-2xl flex items-center gap-8 border border-white/10"
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-bg-elevated text-text-primary rounded-lg shadow-md flex items-center gap-6 border border-border w-11/12 max-w-lg"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center font-black">
+              <div className="w-8 h-8 rounded-md bg-accent text-bg-base flex items-center justify-center font-bold">
                 {selectedIds.size}
               </div>
               <div className="text-sm">
-                <p className="font-bold">Reviews Selected</p>
-                <p className="text-[10px] opacity-70 uppercase tracking-widest">
-                  Ready for AI batch processing
-                </p>
+                <p className="font-semibold text-text-primary tracking-tight">Reviews Selected</p>
+                <p className="text-xs text-text-secondary">Ready for processing</p>
               </div>
             </div>
             
-            <div className="h-8 w-px bg-white/10" />
+            <div className="h-8 w-px bg-border mx-auto" />
             
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setSelectedIds(new Set())}
-                className="px-4 py-2 text-xs font-bold hover:bg-white/10 rounded-lg transition-all"
+                className="px-4 py-2 text-sm font-medium hover:bg-bg-surface rounded-md transition-colors text-text-secondary border border-transparent hover:border-border"
               >
                 Cancel
               </button>
@@ -358,7 +356,6 @@ export default function HistoryPage() {
                 onClick={handleBulkGenerate} 
                 isLoading={isProcessing}
                 variant="primary"
-                className="shadow-glow-accent bg-accent"
               >
                 Process Batch
               </ProButton>
@@ -367,11 +364,15 @@ export default function HistoryPage() {
         )}
       </AnimatePresence>
 
-      <ReviewModal 
-        item={selectedReview} 
-        onClose={() => setSelectedReview(null)} 
-        onSuccess={() => fetchData(page)}
-      />
+      <Suspense fallback={null}>
+        {selectedReview && (
+          <ReviewModal 
+            item={selectedReview} 
+            onClose={() => setSelectedReview(null)} 
+            onSuccess={() => fetchData(page)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

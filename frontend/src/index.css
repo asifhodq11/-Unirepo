@@ -1,50 +1,54 @@
 /* ============================================================
-   ReplyIQ Elite Design System â€” V2
+   ReplyIQ Elite Design System — V2
    Dark-mode SaaS UI with perceptual colour science,
    typographic precision, layout stability, and smart features.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-/* â”€â”€ Design Tokens (Premium Bento V3) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Design Tokens (Enterprise Standard) ───────────── */
 :root {
-  /* --- Core Palette (Professional Deep Indigo / Steel Slate) --- */
-  --bg-base:        #060810; /* Deeper, solid grounding */
-  --bg-surface:     rgba(15, 20, 35, 0.6);
-  --bg-card:        rgba(15, 20, 35, 0.7);
-  --bg-input:       #0f1322;
+  /* --- Monochrome Core (Zinc) --- */
+  --bg-base:        #09090b; 
+  --bg-surface:     #18181b; 
+  --bg-card:        #18181b; 
+  --bg-input:       #18181b; 
+  --bg-elevated:    #27272a; 
   
-  --accent:         #6366f1; /* Indigo-500 */
-  --accent-hover:   #818cf8; /* Indigo-400 */
-  --accent-cyan:    #22d3ee; 
-  --accent-glow:    rgba(99, 102, 241, 0.25);
+  --accent:         #ffffff; 
+  --accent-hover:   #f4f4f5; 
+  --accent-cyan:    #fafafa; 
+  --accent-glow:    transparent;
 
   --success:        #10b981; 
   --warning:        #f59e0b; 
   --danger:         #ef4444; 
   
-  --text-primary:   #f8fafc;
-  --text-secondary: #94a3b8; /* Slate-400: High legible contrast */
-  --text-muted:     #64748b; /* Slate-500: Meets 4.5:1 on base-bg */
-  --text-dim:       #475569;
-  --accent-fg:      #ffffff;
+  --text-primary:   #fafafa; 
+  --text-secondary: #a1a1aa; 
+  --text-muted:     #71717a; 
+  --text-dim:       #52525b; 
+  --accent-fg:      #09090b; 
   --white:          #ffffff;
   --black:          #000000;
 
-  /* --- Professional Layout Standards --- */
-  --border:         rgba(255, 255, 255, 0.1); /* Crisper hairline edges */
-  --border-subtle:  rgba(255, 255, 255, 0.05);
-  --bg-glass:       rgba(15, 20, 35, 0.6);
-  --bg-glass-hover: rgba(22, 28, 48, 0.75);
-  --bg-glass-heavy: rgba(6, 8, 16, 0.95);
+  /* --- Strict Borders & Surfaces --- */
+  --border:         #27272a; 
+  --border-focus:   #71717a; 
+  --border-subtle:  #18181b; 
+  
+  /* Glass deprecated - mapped to solid */
+  --bg-glass:       #18181b; 
+  --bg-glass-hover: #27272a;
+  --bg-glass-heavy: #09090b;
 
-  --shadow-sm:      0 1px 2px rgba(0,0,0,0.5);
-  --shadow-md:      0 8px 16px rgba(0,0,0,0.6);
-  --shadow-lg:      0 20px 50px rgba(0,0,0,0.8);
-  --shadow-glow:    0 0 30px rgba(99, 102, 241, 0.1);
-  --shadow-inner:   inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  /* --- Tight Enterprise Shadows --- */
+  --shadow-sm:      0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:      0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-lg:      0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glow:    none;
+  --shadow-inner:   inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
 
-  /* --- Spacing & Radii (Enterprise Standard) --- */
   --space-1:  0.25rem;
   --space-2:  0.5rem;
   --space-3:  0.75rem;
@@ -53,70 +57,66 @@
   --space-8:  2rem;
   --space-12: 3rem;
 
-  --radius-sm:      4px;
-  --radius-md:      8px;   /* Sharper, more professional feel */
-  --radius-lg:      12px;  /* Standard Dashboard Card radius */
-  --radius-xl:      16px;
+  /* --- Minimal Radii --- */
+  --radius-sm:      2px;
+  --radius-md:      4px;   
+  --radius-lg:      6px;  
+  --radius-xl:      8px;
   --radius-full:    9999px;
 
-  /* --- Typography & Motion --- */
-  --font-display:   'Outfit', 'Inter', sans-serif;
-  --font-body:      'Inter', 'Plus Jakarta Sans', sans-serif;
-  --transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  /* --- Typography (Inter Only) --- */
+  --font-display:   'Inter', -apple-system, sans-serif;
+  --font-body:      'Inter', -apple-system, sans-serif;
+  --transition:     all 0.15s ease-out; 
   
-  /* --- Accessibility & Performance --- */
-  --touch-target-min: 44px;
-  --gpu-accel: translateZ(0); /* Hardware acceleration hook */
-  --blur-limit: blur(20px);  /* Capped for mobile performance */
+  --touch-target-min: 40px; 
+  --gpu-accel: translateZ(0); 
+  --blur-limit: none;
 
   /* --- Floating UI Collision System --- */
   --bulk-bar-active: 0;
   --bulk-bar-height: 84px;
 }
 
-/* â”€â”€ Light Theme Overrides â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Light Theme Overrides ────────────────────────── */
 [data-theme='light'] {
-  --bg-base:        #f1f5f9; /* Slate-100 */
-  --bg-surface:     rgba(255, 255, 255, 0.55); /* More transparent so mesh gradient shines through */
-  --bg-elevated:    rgba(255, 255, 255, 0.85);
-  --bg-glass:       rgba(255, 255, 255, 0.4);
+  --bg-base:        #fafafa; 
+  --bg-surface:     #ffffff; 
+  --bg-card:        #ffffff;
+  --bg-elevated:    #ffffff;
+  --bg-input:       #ffffff;
 
-  /* Boost mesh gradient in light mode to make the glass visible */
-  --bg-blob-1: rgba(6, 182, 212, 0.3);
-  --bg-blob-2: rgba(139, 92, 246, 0.35);
-  --bg-blob-3: rgba(236, 72, 153, 0.2);
+  --accent:         #09090b; 
+  --accent-hover:   #27272a; 
+  --accent-cyan:    #18181b; 
+  --accent-fg:      #ffffff;
 
-  /* Darker borders for contrast in light mode */
-  --border:         rgba(15, 23, 42, 0.08); 
-  --border-focus:   var(--accent);
+  --border:         #e4e4e7; 
+  --border-focus:   #a1a1aa; 
 
-  /* Text: Slate-900 / Slate-600 */
-  --text-primary:   #0f172a;
-  --text-secondary: #475569;
-  --text-muted:     #64748b;
+  --text-primary:   #09090b; 
+  --text-secondary: #52525b; 
+  --text-muted:     #a1a1aa; 
 
-  /* Lighter, softer shadows */
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md:      0 8px 16px rgba(15, 23, 42, 0.08);
-  --shadow-lg:      0 16px 40px rgba(15, 23, 42, 0.1);
-  --shadow-glow:    0 0 30px rgba(139, 92, 246, 0.1);
+  --shadow-md:      0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.03);
+  --shadow-lg:      0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  --shadow-glow:    none;
+  --shadow-inner:   none;
 
-  --result:         #ffffff;
-  --result-border:  rgba(6, 182, 212, 0.2);
-
-  --modal-bg:       rgba(255, 255, 255, 0.85);
-  --sandbox-bg:     rgba(255, 255, 255, 0.6);
-  --sandbox-fade:   rgba(241, 245, 249, 0.95);
+  --modal-bg:       #ffffff;
+  --sandbox-bg:     #fafafa;
+  --sandbox-fade:   #ffffff;
 }
 
 /* Enhancing Glass Edges in Light Mode */
 [data-theme='light'] .card,
 [data-theme='light'] .main-content {
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
-/* â”€â”€ Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Reset ────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-size: 16px; scroll-behavior: smooth; }
@@ -133,26 +133,7 @@ body {
   overflow-x: hidden;
 }
 
-/* â”€â”€ Animated Mesh Gradient Background â”€â”€ */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: 
-    radial-gradient(circle at 15% 50%, var(--bg-blob-1, rgba(6, 182, 212, 0.08)), transparent 40%),
-    radial-gradient(circle at 85% 30%, var(--bg-blob-2, rgba(139, 92, 246, 0.12)), transparent 40%),
-    radial-gradient(circle at 50% 80%, var(--bg-blob-3, rgba(236, 72, 153, 0.05)), transparent 50%);
-  z-index: -1;
-  pointer-events: none;
-  animation: bgPulse 15s ease-in-out infinite alternate;
-}
-
-@keyframes bgPulse {
-  0% { transform: scale(1) translateY(0); }
-  100% { transform: scale(1.1) translateY(-2%); }
-}
-
-/* Noise overlay to prevent banding */
+/* Animated Blobs Removed for Professional Mode */
 body::after {
   content: '';
   position: fixed;
@@ -163,7 +144,7 @@ body::after {
   pointer-events: none;
 }
 
-/* â”€â”€ Typography (Weight Contrast 300 â†’ 700 for unambiguous hierarchy) â”€â”€ */
+/* ── Typography ───────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; line-height: 1.1; }
 h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; }
@@ -173,7 +154,7 @@ p  { color: var(--text-secondary); line-height: 1.7; font-weight: 400; letter-sp
 a  { color: var(--accent); text-decoration: none; transition: var(--transition); }
 a:hover { color: var(--accent-hover); }
 
-/* â”€â”€ Gradient text â”€â”€ */
+/* ── Gradient text ────────────────────────────────── */
 .text-gradient {
   background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
   -webkit-background-clip: text;
@@ -187,74 +168,61 @@ a:hover { color: var(--accent-hover); }
   background-clip: text;
 }
 
-/* â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Layout ───────────────────────────────────────── */
 .container { max-width: 1200px; margin: 0 auto; padding: 0 var(--space-6); }
 .page { min-height: 100vh; display: flex; flex-direction: column; }
 
-/* â”€â”€ Cards & Bento Boxes â”€â”€ */
+/* ── Cards & Bento Boxes ── */
 .card {
   background: var(--bg-surface);
-  backdrop-filter: var(--blur-limit);
-  -webkit-backdrop-filter: var(--blur-limit);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
   transition: var(--transition);
-  transform: var(--gpu-accel);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: var(--shadow-sm);
 }
-.card:hover { border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); }
+.card:hover { border-color: var(--border-focus); box-shadow: var(--shadow-md); }
 
 .card-glass {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  contain: layout;
 }
 
-/* â”€â”€ Buttons (pre-allocated shadow to prevent jitter) â”€â”€â”€â”€ */
+/* ── Buttons (Enterprise Flat) ──── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  padding: 0.625rem 1.25rem;
+  padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
   font-family: var(--font-body);
   font-size: 0.875rem;
-  font-weight: 600;
-  border: none;
+  font-weight: 500;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: var(--transition);
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-  /* Pre-allocate shadow layer (eliminates jitter on hover) */
-  box-shadow: 0 0 0 0px transparent;
+  box-shadow: var(--shadow-sm);
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
 
 .btn-primary {
-  background: var(--text-primary);
-  color: var(--bg-base);
-  box-shadow: 0 4px 14px rgba(255,255,255,0.1);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: transparent;
 }
 .btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(255,255,255,0.15);
-  background: #fff;
+  background: var(--accent-hover);
 }
-.btn-primary:active:not(:disabled) { transform: translateY(0); }
 
 .btn-accent {
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent));
-  color: #fff;
-  box-shadow: 0 4px 20px var(--accent-glow);
+  background: var(--accent);
+  color: var(--accent-fg);
 }
 .btn-accent:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 30px var(--accent-glow);
+  background: var(--accent-hover);
 }
 
 .btn-secondary {

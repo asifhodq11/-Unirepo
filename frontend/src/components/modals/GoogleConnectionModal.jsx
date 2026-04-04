@@ -70,13 +70,13 @@ export default function GoogleConnectionModal({ isOpen, onClose }) {
         <div style={{
           background: 'var(--bg-base)', border: '1px solid var(--border)',
           borderRadius: '24px', width: '100%', maxWidth: '520px',
-          pointerEvents: 'all', overflow: 'hidden', boxShadow: '0 40px 100px rgba(0,0,0,0.9)'
+          pointerEvents: 'all', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
         }}>
           {/* Header */}
           <div style={{
             padding: '1.5rem 1.5rem 1rem', borderBottom: '1px solid var(--border)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            background: 'linear-gradient(to bottom, rgba(255,255,255,0.03), transparent)'
+            background: 'var(--bg-surface)'
           }}>
             <div className="flex flex-col">
               <span className="text-xs font-bold text-accent uppercase tracking-widest mb-1">One-Click Setup</span>
@@ -98,7 +98,7 @@ export default function GoogleConnectionModal({ isOpen, onClose }) {
 
             {/* Checklist */}
             <div className="flex flex-col gap-4 mb-6">
-              <div className="card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="card" style={{ padding: '1rem', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                 <div className="flex items-start gap-4">
                   <div className="icon-wrapper" style={{ flexShrink: 0, background: 'rgba(99,102,241,0.1)', color: 'var(--accent)' }}>
                     <Mail size={18} />
@@ -115,7 +115,7 @@ export default function GoogleConnectionModal({ isOpen, onClose }) {
                 </div>
               </div>
 
-              <div className="card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div className="card" style={{ padding: '1rem', background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
                 <div className="flex items-start gap-4">
                   <div className="icon-wrapper" style={{ flexShrink: 0, background: 'rgba(99,102,241,0.1)', color: 'var(--accent)' }}>
                     <ShieldCheck size={18} />

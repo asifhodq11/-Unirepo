@@ -47,20 +47,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
+    <div className="flex justify-center items-center min-h-screen bg-bg-base px-4">
+      <div className="card w-full max-w-[400px] mx-auto p-8 shadow-sm">
         {/* Logo */}
-        <div className="auth-logo">
-          <div className="auth-logo-icon" style={{ background: 'linear-gradient(135deg, var(--accent), var(--accent-cyan))', color: 'var(--black)', padding: '12px', borderRadius: 'var(--radius-md)', display: 'flex' }}>
-            <Zap size={28} fill="currentColor" />
+        <div className="flex justify-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-bg-elevated border border-border text-text-primary p-2 rounded-md">
+              <Zap size={20} fill="currentColor" />
+            </div>
+            <span className="text-xl font-semibold tracking-tight">ReplyIQ</span>
           </div>
-          <span className="auth-logo-name">ReplyIQ</span>
         </div>
 
-        <h2 style={{ marginBottom: '0.25rem' }}>Welcome back</h2>
-        <p className="text-sm text-muted" style={{ marginBottom: '1.75rem' }}>
-          Sign in to your account
-        </p>
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight mb-1">Welcome back</h2>
+          <p className="text-text-secondary text-sm">Enter your credentials to continue.</p>
+        </div>
 
         {error && (
           <div className="alert alert-error flex items-center gap-2" style={{ marginBottom: '1rem' }}>

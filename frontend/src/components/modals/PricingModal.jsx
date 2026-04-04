@@ -124,12 +124,11 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
             background: 'var(--accent)',
             color: '#fff',
             fontWeight: 700,
-            boxShadow: '0 0 24px var(--shadow-glow)',
           }
         : {
-            background: 'rgba(255,255,255,0.07)',
+            background: 'var(--bg-surface)',
             color: 'var(--text-primary)',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid var(--border)',
           },
     };
   }
@@ -173,9 +172,9 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
                 width: '100%', maxWidth: 1000,
                 maxHeight: '90vh', overflowY: 'auto',
                 background: 'var(--bg-base)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                border: '1px solid var(--border)',
                 borderRadius: '24px',
-                boxShadow: '0 40px 120px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
                 padding: '2rem',
                 position: 'relative',
               }}
@@ -239,13 +238,12 @@ export default function PricingModal({ isOpen, onClose, currentPlan = 'free' }) 
                           ? '2px solid var(--accent)'
                           : isHighlight
                           ? '1px solid var(--accent)'
-                          : '1px solid rgba(255,255,255,0.07)',
+                          : '1px solid var(--border)',
                         background: isCurrent
-                          ? 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(99,102,241,0.03) 100%)'
+                          ? 'var(--bg-elevated)'
                           : isHighlight
-                          ? 'linear-gradient(180deg, rgba(99,102,241,0.07) 0%, var(--bg-elevated) 100%)'
-                          : 'rgba(255,255,255,0.02)',
-                        boxShadow: isHighlight ? '0 16px 48px var(--shadow-glow)' : 'none',
+                          ? 'var(--bg-surface)'
+                          : 'var(--bg-base)',
                         transform: isHighlight ? 'translateY(-4px)' : 'none',
                       }}
                     >

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,8 +10,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { getPlanLimit, getPlanLimitDisplay } from '../utils/plans';
 import { ProCard, ProButton, ProBadge, ProStat } from '../components/BaseComponents';
-import ReviewModal from '../components/ReviewModal';
-import OnboardingModal from '../components/modals/OnboardingModal';
+const ReviewModal = lazy(() => import('../components/ReviewModal'));
+const OnboardingModal = lazy(() => import('../components/modals/OnboardingModal'));
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { useToast } from '../hooks/useToast';
 import { useResilientAction } from '../hooks/useResilientAction';
@@ -64,7 +64,7 @@ function EngineHeartbeat({ isSafeMode, onTriggerScan, running }) {
     <ProCard className="mb-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-accent">
+          <div className="w-10 h-10 rounded-md bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
             <Network size={20} />
           </div>
           <div>
@@ -209,17 +209,17 @@ export default function DashboardPage() {
             
             <div className="space-y-3">
               {loading ? (
-                [1, 2, 3].map(i => <div key={i} className="h-16 w-full rounded-lg bg-white/5 animate-pulse" />)
+                [1, 2, 3].map(i => <div key={i} className="h-16 w-full rounded-md bg-bg-elevated animate-pulse border border-border" />)
               ) : activities.length > 0 ? (
                 activities.slice(0, 5).map(act => (
                   <motion.div 
                     key={act.id}
                     whileHover={{ x: 4 }}
                     onClick={() => act.status === 'pending' ? navigate(`/history?open=${act.id}`) : setSelectedReview(act)}
-                    className="group flex items-center justify-between p-3 rounded-lg border border-border hover:border-accent/40 hover:bg-white/[0.02] cursor-pointer transition-all"
+                    className="group flex items-center justify-between p-3 rounded-md border border-border hover:border-border-focus hover:bg-bg-elevated cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-white/5 border border-border flex items-center justify-center group-hover:border-accent/20">
+                      <div className="w-10 h-10 rounded-md bg-bg-surface border border-border flex items-center justify-center group-hover:border-border-focus">
                         <User size={16} className="text-muted" />
                       </div>
                       <div>
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-white/[0.02] rounded-xl border border-dashed border-border">
+                <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-bg-surface rounded-md border border-dashed border-border">
                   <BarChart3 size={24} className="text-muted mb-2" />
                   <p className="text-[10px] text-muted uppercase font-bold tracking-widest">Awaiting More Data</p>
                 </div>
@@ -285,14 +285,14 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-border">
+              <div className="flex justify-between items-center p-3 rounded-md bg-bg-elevated border border-border">
                 <div className="flex items-center gap-3">
                   <TrendingUp size={16} className="text-success" />
                   <span className="text-xs font-bold">Growth Velocity</span>
                 </div>
                 <span className="text-xs font-black text-success">+14%</span>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-white/5 border border-border">
+              <div className="flex justify-between items-center p-3 rounded-md bg-bg-elevated border border-border">
                 <div className="flex items-center gap-3">
                   <MousePointer2 size={16} className="text-accent" />
                   <span className="text-xs font-bold">Interaction Rate</span>
@@ -304,17 +304,23 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <ReviewModal 
-        item={selectedReview} 
-        onClose={() => setSelectedReview(null)} 
-        readOnly 
-      />
-      
-      <OnboardingModal 
-        isOpen={showOnboarding} 
-        onClose={() => setShowOnboarding(false)} 
-        user={user} 
-      />
+      <Suspense fallback={null}>
+        {selectedReview && (
+          <ReviewModal 
+            item={selectedReview} 
+            onClose={() => setSelectedReview(null)} 
+            readOnly 
+          />
+        )}
+        
+        {showOnboarding && (
+          <OnboardingModal 
+            isOpen={showOnboarding} 
+            onClose={() => setShowOnboarding(false)} 
+            user={user} 
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

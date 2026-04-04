@@ -8,8 +8,7 @@ import { motion } from 'framer-motion';
 export const ProCard = ({ children, className = '', hover = true, ...props }) => {
   return (
     <div 
-      className={`card ${hover ? 'hover:border-primary/20' : ''} ${className}`} 
-      style={{ transform: 'var(--gpu-accel)' }}
+      className={`card ${hover ? 'hover:border-border-focus' : ''} ${className}`} 
       {...props}
     >
       {children}
@@ -29,26 +28,15 @@ export const ProButton = ({
   icon: Icon,
   ...props 
 }) => {
-  const variants = {
-    primary: 'bg-accent text-white hover:bg-accent-hover shadow-glow',
-    secondary: 'bg-bg-surface border border-border text-primary hover:bg-white/10',
-    ghost: 'bg-transparent text-muted hover:text-primary hover:bg-white/5',
-    danger: 'bg-danger/10 text-danger border border-danger/20 hover:bg-danger hover:text-white',
-  };
-
   const sizes = {
-    sm: 'h-8 px-3 text-xs',
-    md: 'h-11 px-6 text-sm', // Meets 44px target
-    lg: 'h-14 px-8 text-base font-bold',
+    sm: 'btn-sm',
+    md: '', 
+    lg: 'btn-lg',
   };
 
   return (
     <button
-      className={`
-        inline-flex items-center justify-center gap-2 rounded-lg font-medium 
-        transition-all duration-200 active:scale-95 disabled:opacity-50 
-        disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}
-      `}
+      className={`btn btn-${variant} ${sizes[size]} ${className}`}
       disabled={isLoading}
       {...props}
     >
@@ -69,17 +57,17 @@ export const ProButton = ({
  */
 export const ProBadge = ({ children, variant = 'muted', className = '' }) => {
   const variants = {
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    danger: 'bg-danger/10 text-danger border-danger/20',
-    accent: 'bg-accent/10 text-accent border-accent/20',
-    muted: 'bg-white/5 text-muted border-white/10',
+    success: 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20',
+    warning: 'bg-[#f59e0b]/10 text-[#f59e0b] border-[#f59e0b]/20',
+    danger: 'bg-[#ef4444]/10 text-[#ef4444] border-[#ef4444]/20',
+    accent: 'bg-white text-black',
+    muted: 'bg-[#27272a] text-[#a1a1aa] border-[#27272a]',
   };
 
   return (
     <span className={`
-      inline-flex items-center px-2 py-0.5 rounded-full text-[10px] 
-      font-bold uppercase tracking-wider border ${variants[variant]} ${className}
+      inline-flex items-center px-2 py-0.5 rounded-md text-[10px] 
+      font-black uppercase tracking-widest border ${variants[variant]} ${className}
     `}>
       {children}
     </span>
@@ -117,13 +105,12 @@ export const ProRow = ({ children, className = '', onClick, selected = false, ..
   return (
     <div 
       className={`
-        group flex items-center gap-4 p-4 rounded-xl border border-border 
-        hover:border-accent/40 hover:bg-white/[0.02] cursor-pointer 
-        transition-all duration-200 ${selected ? 'border-accent bg-accent/5' : ''}
+        group flex items-center gap-4 p-4 rounded-md border border-border 
+        hover:border-border-focus hover:bg-bg-elevated cursor-pointer 
+        transition-all duration-200 ${selected ? 'border-primary bg-bg-elevated' : ''}
         ${className}
       `}
       onClick={onClick}
-      style={{ transform: 'translateZ(0)' }}
       {...props}
     >
       {children}
@@ -137,7 +124,7 @@ export const ProRow = ({ children, className = '', onClick, selected = false, ..
 export const ProFilterGroup = ({ children, className = '' }) => {
   return (
     <div className={`
-      inline-flex items-center gap-1 p-1 rounded-xl bg-bg-surface border border-border
+      inline-flex items-center gap-1 p-1 rounded-md bg-bg-surface border border-border
       ${className}
     `}>
       {children}

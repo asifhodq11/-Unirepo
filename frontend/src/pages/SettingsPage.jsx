@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { api, ApiError } from '../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight, CreditCard, AlertTriangle, CheckCircle, Settings, User, Activity, Zap, Shield, MessageSquare } from 'lucide-react';
 import { getPlanLimitDisplay, TONE_OPTIONS, PLAN_LABELS } from '../utils/plans';
-import PricingModal from '../components/modals/PricingModal';
-import GoogleConnectionModal from '../components/modals/GoogleConnectionModal';
+const PricingModal = lazy(() => import('../components/modals/PricingModal'));
+const GoogleConnectionModal = lazy(() => import('../components/modals/GoogleConnectionModal'));
 import { useToast } from '../hooks/useToast';
 
 const CANCEL_REASONS = [
@@ -138,7 +138,7 @@ export default function SettingsPage() {
         
         {/* Left Column: Core Settings */}
         <div className="flex flex-col gap-6">
-          <motion.div className="card card-glass" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <motion.div className="card" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
             <h3 style={{ marginBottom: 'var(--space-5)' }} className="flex items-center gap-2">
               <User size={18} className="text-muted" /> Business Profile
             </h3>
@@ -191,14 +191,14 @@ export default function SettingsPage() {
           </motion.div>
 
           <motion.div className="grid-2 gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            <div className="card card-glass flex-col justify-between">
+            <div className="card flex-col justify-between">
               <div className="flex items-center gap-2 text-muted mb-2"><Activity size={16} className="text-accent-cyan" /> <span>Usage This Month</span></div>
               <div className="flex items-baseline gap-1">
                 <span style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1 }} className="text-gradient">{used}</span>
                 <span className="text-muted">/ {limitDisplay}</span>
               </div>
             </div>
-            <div className="card card-glass flex-col justify-between">
+            <div className="card flex-col justify-between">
               <div className="flex items-center gap-2 text-muted mb-2"><Zap size={16} className="text-success" /> <span>Google Connection</span></div>
               <div className="flex flex-col gap-2 items-start w-full">
                 {user?.google_status === 'degraded' 
@@ -224,7 +224,7 @@ export default function SettingsPage() {
           {/* Autonomy Dial — Pro plan only */}
           {(plan === 'pro' || plan === 'ultra') && (
             <motion.div
-              className="card card-glass"
+              className="card"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -286,7 +286,7 @@ export default function SettingsPage() {
 
         {/* Right Column: Billing & Subscription */}
         <motion.div className="flex flex-col h-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-          <div className="card card-glass flex flex-col items-start justify-center" style={{ flex: 1, border: '1px solid var(--accent-subtle)' }}>
+          <div className="card flex flex-col items-start justify-center" style={{ flex: 1, border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-between w-full mb-6">
               <h3 className="flex items-center gap-2">
                 <CreditCard size={18} className="text-muted" /> Subscription Plan
@@ -392,7 +392,7 @@ export default function SettingsPage() {
                   {cancelStep === 1 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--danger)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
+                      style={{ background: 'var(--bg-surface)', border: '1px solid var(--danger)', padding: 'var(--space-5)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                   {cancelStep === 2 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--accent)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
+                      style={{ background: 'var(--bg-surface)', border: '1px solid var(--accent)', padding: 'var(--space-5)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
@@ -467,7 +467,7 @@ export default function SettingsPage() {
                   {cancelStep === 3 && (
                     <motion.div 
                       className="card" 
-                      style={{ background: 'var(--bg-glass-heavy)', border: '1px solid var(--border)', padding: 'var(--space-5)', boxShadow: 'var(--shadow-xl)' }}
+                      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', padding: 'var(--space-5)' }}
                       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-3 mb-4">
@@ -529,17 +529,23 @@ export default function SettingsPage() {
       </div>
 
       {/* Pricing Modal — mounted at page root to avoid z-index issues */}
-      <PricingModal
-        isOpen={showPricingModal}
-        onClose={() => setShowPricingModal(false)}
-        currentPlan={plan}
-      />
-      
-      {/* Google Connection Modal */}
-      <GoogleConnectionModal
-        isOpen={showGoogleModal}
-        onClose={() => setShowGoogleModal(false)}
-      />
+      <Suspense fallback={null}>
+        {showPricingModal && (
+          <PricingModal
+            isOpen={showPricingModal}
+            onClose={() => setShowPricingModal(false)}
+            currentPlan={plan}
+          />
+        )}
+        
+        {/* Google Connection Modal */}
+        {showGoogleModal && (
+          <GoogleConnectionModal
+            isOpen={showGoogleModal}
+            onClose={() => setShowGoogleModal(false)}
+          />
+        )}
+      </Suspense>
     </motion.div>
   );
 }
