@@ -45,28 +45,28 @@ export default function AdminPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Shield className="text-purple-400" size={24} />
-            <h1 className="text-4xl font-display font-light text-white tracking-tight">System Core <span className="font-bold">Admin</span></h1>
+            <h1 className="text-3xl font-display font-light text-white tracking-tight">Admin <span className="font-bold">Dashboard</span></h1>
           </div>
-          <p className="text-white/40 mt-2 text-sm tracking-wide font-mono uppercase">Global Registry & Node Oversight</p>
+          <p className="text-white/40 mt-1 text-sm tracking-wide">ReplyIQ System Management</p>
         </div>
         <div className="flex gap-3">
-          <VanguardButton variant="ghost" size="sm">Export Telemetry</VanguardButton>
-          <VanguardButton variant="neon" size="sm">Emergency Lock</VanguardButton>
+          <VanguardButton variant="ghost" size="sm">Export Users</VanguardButton>
+          <VanguardButton variant="neon" size="sm">System Config</VanguardButton>
         </div>
       </div>
 
       {/* Real-time Health Hybrid (Stats + Visuals) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <VanguardStat label="Total Nodes" value="1,284" subValue="+12.4% vs last cycle" icon={Users} />
-        <VanguardStat label="Neural Latency" value="24ms" subValue="Region: US-EAST-1" icon={Activity} delay={0.1} />
-        <VanguardStat label="Synthesis Load" value="88%" subValue="Critical Threshold: 95%" icon={HardDrive} delay={0.2} />
+        <VanguardStat label="Active Users" value="1,284" subValue="+12.4% vs last cycle" icon={Users} />
+        <VanguardStat label="Response Time" value="24ms" subValue="API Average" icon={Activity} delay={0.1} />
+        <VanguardStat label="API Usage" value="88%" subValue="Critical Threshold: 95%" icon={HardDrive} delay={0.2} />
         
         <VanguardCard className="flex flex-col justify-center p-6 bg-emerald-500/5 transition-all" delay={0.3}>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Protocol Stable</span>
+            <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">System Healthy</span>
           </div>
-          <p className="text-sm text-white/60">All backend clusters are operating within nominal Vanguard parameters.</p>
+          <p className="text-sm text-white/60">All services are operating within normal parameters.</p>
         </VanguardCard>
       </div>
 

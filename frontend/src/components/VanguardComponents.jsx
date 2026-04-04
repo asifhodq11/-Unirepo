@@ -11,11 +11,11 @@ export const VanguardCard = ({ children, className = '', hover = true, delay = 0
       initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
       animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
       transition={{ duration: 0.6, delay, ease: [0.2, 0.8, 0.2, 1] }}
-      className={`card ${hover ? 'hover:scale-[1.01] hover:-translate-y-1' : ''} ${className}`}
+      className={`card relative overflow-hidden bg-[#0A0A0A] border border-white/10 rounded-2xl shadow-xl ${hover ? 'hover:border-white/20 hover:scale-[1.01] hover:-translate-y-1' : ''} transition-all duration-300 ${className}`}
       {...props}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none rounded-inherit" />
-      {children}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/[0.05] to-transparent pointer-events-none rounded-2xl" />
+      <div className="relative z-10">{children}</div>
     </motion.div>
   );
 };

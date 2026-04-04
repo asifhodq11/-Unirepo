@@ -24,32 +24,31 @@ export const VanguardGenerator = () => {
   };
 
   return (
-    <VanguardCard className="flex flex-col h-full bg-gradient-to-b from-white/[0.05] to-transparent border-t-white/10">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-cyan-400/10 rounded-full border border-cyan-400/20 shadow-[0_0_15px_rgba(34,211,238,0.2)]">
-          <Sparkles className="text-cyan-400" size={20} />
+    <VanguardCard className="flex flex-col h-full bg-[#0A0A0A] border-white/10">
+      <div className="flex items-center gap-3 p-6 border-b border-white/5">
+        <div className="p-2.5 bg-cyan-400/10 rounded-xl border border-cyan-400/20">
+          <Sparkles className="text-cyan-400" size={18} />
         </div>
         <div>
-          <h2 className="text-xl font-display font-bold text-white tracking-tight">Neural Core</h2>
-          <p className="text-xs text-white/40 tracking-widest uppercase font-mono mt-1">Generation Engine Active</p>
+          <h2 className="text-lg font-display font-semibold text-white tracking-tight">AI Reply Generator</h2>
+          <p className="text-xs text-white/40 font-mono mt-0.5">Ready to draft</p>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-4 relative z-10">
+      <div className="flex-1 flex flex-col p-6 relative z-10">
         
         {/* Input Phase */}
-        <div className="relative group flex-1 min-h-[160px]">
-          <div className="absolute inset-0 bg-white/5 rounded-2xl group-hover:bg-white/10 transition-colors duration-300 border border-white/5 group-hover:border-white/20" />
+        <div className="relative group flex-1 flex flex-col min-h-[160px]">
           <textarea 
             value={reviewContext}
             onChange={(e) => setReviewContext(e.target.value)}
             disabled={status === 'generating'}
             placeholder="Paste the customer review here..."
-            className="w-full h-full min-h-[160px] p-6 bg-transparent border-none outline-none resize-none text-white/90 placeholder:text-white/20 font-body text-base leading-relaxed"
+            className="flex-1 w-full p-4 bg-white/5 rounded-xl border border-white/10 focus:border-cyan-500/50 outline-none resize-none text-white placeholder:text-white/30 font-body text-sm transition-colors"
           />
           
-          <div className="absolute bottom-4 right-4 flex items-center gap-4">
-            <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">{reviewContext.length} bytes</span>
+          <div className="flex items-center justify-between mt-4">
+            <span className="text-xs font-mono text-white/30">{reviewContext.length} chars</span>
             
             <VanguardButton 
               variant="neon" 
@@ -58,7 +57,7 @@ export const VanguardGenerator = () => {
               disabled={!reviewContext.trim() || status === 'generating'}
               icon={status === 'done' ? CheckCheck : Send}
             >
-              {status === 'done' ? 'Synthesized' : 'Process'}
+              {status === 'done' ? 'Generated' : 'Generate Reply'}
             </VanguardButton>
           </div>
         </div>

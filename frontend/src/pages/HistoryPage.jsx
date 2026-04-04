@@ -41,9 +41,9 @@ export default function HistoryPage() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Terminal className="text-cyan-400" size={20} />
-            <h1 className="text-4xl font-display font-light text-white tracking-tight">Neural Feed</h1>
+            <h1 className="text-3xl font-display font-light text-white tracking-tight">Generation <span className="font-bold">History</span></h1>
           </div>
-          <p className="text-white/40 mt-2 text-sm tracking-wide font-mono uppercase">Review Synthesis Log</p>
+          <p className="text-white/40 mt-1 text-sm tracking-wide">Recent AI Replies and Activity</p>
         </div>
       </div>
 
@@ -51,27 +51,27 @@ export default function HistoryPage() {
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="flex flex-col gap-4">
         {history.map((record, index) => (
           <motion.div key={record.id || index} variants={itemVariants}>
-            <VanguardCard className="p-0 overflow-hidden border-white/5" hover={false}>
+            <VanguardCard className="p-0 overflow-hidden border-white/10" hover={false}>
               
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.5fr_auto] divide-y lg:divide-y-0 lg:divide-x divide-white/10">
                 
                 {/* Input Sector */}
-                <div className="p-6 bg-white/[0.02]">
+                <div className="p-6 bg-[#0A0A0A]">
                   <div className="flex items-center gap-2 mb-3">
                     <MessageSquare size={14} className="text-purple-400" />
-                    <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">Input Stimulus</span>
+                    <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">Customer Review</span>
                   </div>
                   <p className="text-white/80 text-sm leading-relaxed">&quot;{record.original_review}&quot;</p>
                 </div>
 
                 {/* Synthesis Sector */}
-                <div className="p-6 relative bg-gradient-to-br from-cyan-950/20 to-transparent">
+                <div className="p-6 relative bg-cyan-950/20">
                   <div className="absolute top-0 left-0 w-1 h-full bg-cyan-400/50" />
                   <div className="flex items-center gap-2 mb-3">
                     <Globe size={14} className="text-cyan-400" />
-                    <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">Constructed Response</span>
+                    <span className="text-[10px] font-mono text-cyan-400 uppercase tracking-widest">AI Generated Reply</span>
                   </div>
-                  <p className="text-white font-body leading-relaxed">{record.generated_reply}</p>
+                  <p className="text-white font-body text-sm leading-relaxed">{record.generated_reply}</p>
                 </div>
 
                 {/* Meta Sector */}
