@@ -4,6 +4,10 @@
    light states, and floating topologies.
    ============================================================ */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ── Vanguard Fluid Tokens ───────────── */
 :root {
   /* --- The Abyss (Vantablack core) --- */
