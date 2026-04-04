@@ -156,7 +156,7 @@ def login():
             user = create_user(
                 user_id=auth_response.user.id,
                 email=email_to_use,
-                business_name="Recovered Account",
+                business_name="[Pending Business Name]",
                 business_type="unknown",
                 tone_preference="friendly",
             )

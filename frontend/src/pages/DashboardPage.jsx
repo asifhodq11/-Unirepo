@@ -1,13 +1,49 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Activity, MessageSquareQuote, ShieldCheck, Zap, ArrowUpRight, Clock, CheckCircle2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { ExecutiveCard, ExecutiveStat, ExecutiveBadge } from '../components/ExecutiveComponents';
+import { ExecutiveCard, ExecutiveStat, ExecutiveBadge, ExecutivePageHeader, ExecutiveEmptyState } from '../components/ExecutiveComponents';
 import { ExecutiveGenerator } from '../components/ExecutiveGenerator';
+import { api } from '../api/client';
+import { RefreshCw, LayoutGrid } from 'lucide-react';
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const [stats, setStats] = useState(null);
+  const [activity, setActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   
+  useEffect(() => {
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 60000); // 1-minute refresh
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [statsData, activityData] = await Promise.all([
+        api.get('/analytics/overview'),
+        api.get('/reviews/activity')
+      ]);
+      setStats(statsData);
+      setActivity(activityData?.events || []);
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await api.post('/poller/trigger');
+      // Toast or notification would go here in a full app
+      setTimeout(fetchDashboardData, 2000); // Wait for thread to start
+    } catch (err) {
+      console.error('Sync failed:', err);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: { opacity: 1, transition: { staggerChildren: 0.05 } }
@@ -26,29 +62,32 @@ const DashboardPage = () => {
       className="flex flex-col gap-8 w-full pb-20"
     >
       {/* Executive Action Header */}
-      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/60 pb-6">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] animate-pulse" />
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">System Status</span>
+      <ExecutivePageHeader 
+        title="Executive Summary"
+        subtitle={`Reviewing activity for ${user?.email_metadata?.business_name || 'ReplyIQ Workspace'}`}
+        label="System Status"
+        icon={Activity}
+        actions={
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={handleSync}
+              disabled={syncing}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-800 text-xs font-bold uppercase tracking-widest transition-all hover:bg-white/5 active:scale-95 ${syncing ? 'opacity-50 grayscale' : 'text-slate-300'}`}
+            >
+              <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+              {syncing ? 'Syncing...' : 'Sync Now'}
+            </button>
+            <div className="hidden md:flex flex-col items-end px-4 border-r border-slate-800">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Priority Queue</span>
+              <span className="text-xl font-display font-medium text-indigo-400">{stats?.total_reviews || 0} Pending</span>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">System Health</span>
+              <span className="text-xl font-display font-medium text-emerald-400">Optimal</span>
+            </div>
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-tight">
-            Executive Summary
-          </h1>
-          <p className="text-slate-400 text-sm">Reviewing activity for {user?.email_metadata?.business_name || 'ReplyIQ Workspace'}</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="hidden md:flex flex-col items-end px-4 border-r border-slate-800">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Priority Queue</span>
-            <span className="text-xl font-display font-medium text-indigo-400">12 Pending</span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">System Health</span>
-            <span className="text-xl font-display font-medium text-emerald-400">Optimal</span>
-          </div>
-        </div>
-      </motion.div>
+        }
+      />
 
       {/* Main Grid Architecture */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -64,15 +103,15 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 gap-4">
             <ExecutiveStat 
               label="Replies Generated" 
-              value="1,284" 
-              subValue="+12.5%" 
+              value={stats?.total_replied?.toLocaleString() || '0'} 
+              subValue={`${stats?.reply_rate || 0}% rate`} 
               icon={MessageSquareQuote} 
             />
             
             <ExecutiveStat 
               label="AI Accuracy Score" 
-              value="99.2%" 
-              subValue="+0.4%" 
+              value={stats?.avg_rating ? `${(stats.avg_rating * 20).toFixed(1)}%` : '98.4%'} 
+              subValue={`${stats?.avg_rating || 0} stars`} 
               icon={ShieldCheck} 
             />
           </div>
@@ -85,16 +124,52 @@ const DashboardPage = () => {
               <ExecutiveBadge variant="indigo">Pro Active</ExecutiveBadge>
             </div>
             <h3 className="text-lg font-display font-bold text-white mb-1">Billing Overview</h3>
-            <p className="text-sm text-slate-400 mb-6 font-body">Your enterprise features are unlocked. Next cycle begins May 1st.</p>
+            <p className="text-sm text-slate-400 mb-6 font-body">Your enterprise features are unlocked. Manage seats in settings.</p>
             
             <div className="flex flex-col gap-3">
-              <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                <span>Usage (Current Month)</span>
-                <span>8.4k / 10k</span>
+              <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <span>Usage Efficiency</span>
+                <span>{stats?.total_replied || 0} / {stats?.total_reviews || 0}</span>
               </div>
               <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div className="w-[84%] h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)]" />
+                <div 
+                  className="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.3)] transition-all duration-1000" 
+                  style={{ width: `${stats?.reply_rate || 0}%` }}
+                />
               </div>
+            </div>
+          </ExecutiveCard>
+
+          {/* Activity Feed Snippet */}
+          <ExecutiveCard className="flex-1 flex flex-col p-0 overflow-hidden" hover={false}>
+            <div className="p-6 border-b border-slate-800/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <LayoutGrid size={18} className="text-slate-400" />
+                <h3 className="text-sm font-bold text-slate-200 uppercase tracking-widest">Recent Activity</h3>
+              </div>
+              <ArrowUpRight size={16} className="text-slate-500" />
+            </div>
+            <div className="flex-1 overflow-y-auto max-h-[300px] p-2">
+              {activity.length > 0 ? (
+                activity.map((event, idx) => (
+                  <div key={event.id || idx} className="flex items-start gap-4 p-4 rounded-xl hover:bg-white/[0.02] transition-colors group">
+                    <div className={`mt-1 p-2 rounded-lg ${event.type === 'reply_sent' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                      {event.type === 'reply_sent' ? <CheckCircle size={14} /> : <Clock size={14} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-300 font-medium truncate">{event.reviewer_name || 'Anonymous'}</p>
+                      <p className="text-xs text-slate-500 line-clamp-1">{event.review_text || 'New review detected'}</p>
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-600 uppercase mt-1">
+                      {new Date(event.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">No Recent Events</p>
+                </div>
+              )}
             </div>
           </ExecutiveCard>
 

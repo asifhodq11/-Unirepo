@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, CheckCheck, FileText, Send, AlertCircle, Copy, RotateCcw, MessageCirclePlus } from 'lucide-react';
-import { ExecutiveCard, ExecutiveButton } from './ExecutiveComponents';
+import { ExecutiveCard, ExecutiveButton, ExecutiveBadge } from './ExecutiveComponents';
 import { api } from '../api/client'; 
 
 export const ExecutiveGenerator = () => {
@@ -9,6 +9,7 @@ export const ExecutiveGenerator = () => {
   const [status, setStatus] = useState('idle'); // idle, generating, done, error
   const [result, setResult] = useState('');
   const [activeTone, setActiveTone] = useState('professional');
+  const [rating, setRating] = useState(5);
 
   const tones = [
     { id: 'professional', label: 'Professional' },
@@ -20,14 +21,15 @@ export const ExecutiveGenerator = () => {
     if (!reviewContext.trim()) return;
     setStatus('generating');
     try {
-      const response = await api.post('/replies/generate', { 
-        original_review: reviewContext, 
-        style: activeTone 
+      const response = await api.post('/reviews/generate', { 
+        review_text: reviewContext,
+        rating: rating,
+        tone: activeTone 
       });
-      setResult(response.generated_reply || response.reply || 'Response generated successfully.');
+      setResult(response.reply?.reply_text || response.reply || 'Response generated successfully.');
       setStatus('done');
     } catch (err) {
-      console.error(err);
+      console.error('Generation failed:', err);
       setStatus('error');
     }
   };
@@ -46,19 +48,34 @@ export const ExecutiveGenerator = () => {
           </div>
         </div>
         
-        {/* Tone Selector */}
-        <div className="hidden sm:flex bg-slate-950/50 p-1 rounded-lg border border-slate-800">
-          {tones.map((tone) => (
-            <button
-              key={tone.id}
-              onClick={() => setActiveTone(tone.id)}
-              className={`px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-md transition-all ${
-                activeTone === tone.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              {tone.label}
-            </button>
-          ))}
+        {/* Tone & Rating Controller */}
+        <div className="flex items-center gap-4">
+          {/* Rating Selection */}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-slate-950/50 rounded-lg border border-slate-800">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => setRating(star)}
+                className={`text-sm transition-all hover:scale-110 ${rating >= star ? 'text-amber-400' : 'text-slate-700'}`}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden sm:flex bg-slate-950/50 p-1 rounded-lg border border-slate-800">
+            {tones.map((tone) => (
+              <button
+                key={tone.id}
+                onClick={() => setActiveTone(tone.id)}
+                className={`px-3 py-1 text-[10px] uppercase tracking-wider font-bold rounded-md transition-all ${
+                  activeTone === tone.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'
+                }`}
+              >
+                {tone.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -1,18 +1,27 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ArrowUpRight, CheckCircle, ChevronRight, HelpCircle, Plus } from 'lucide-react';
 
 /**
- * ExecutiveCard: The high-density professional container.
- * Features subtle slate borders, deep indigo depth, and clear hierarchy.
+ * ExecutiveCard: A high-fidelity container with glassmorphism depth.
+ * Standardized with backdrop-blur-md for the 'Executive Slate' identity.
  */
-export const ExecutiveCard = ({ children, className = '', hover = true, delay = 0, ...props }) => {
+export const ExecutiveCard = ({ 
+  children, 
+  className = "", 
+  hover = true,
+  glass = true,
+  delay = 0 
+}) => {
+  const baseClasses = `relative rounded-2xl border border-slate-800/60 overflow-hidden transition-all duration-300 ${glass ? 'backdrop-blur-md bg-slate-900/40' : 'bg-slate-900'}`;
+  const hoverClasses = hover ? "hover:border-indigo-500/30 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] hover:bg-slate-900/50" : "";
+  
   return (
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: [0.2, 0.8, 0.2, 1] }}
-      className={`relative overflow-hidden bg-slate-900/40 border border-slate-800/60 rounded-xl shadow-lg backdrop-blur-md ${hover ? 'hover:border-indigo-500/30 hover:bg-slate-900/60' : ''} transition-all duration-200 ${className}`}
-      {...props}
+      className={`${baseClasses} ${hoverClasses} ${className}`}
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
       <div className="relative z-10">{children}</div>
@@ -22,6 +31,7 @@ export const ExecutiveCard = ({ children, className = '', hover = true, delay = 
 
 /**
  * ExecutiveButton: Professional action triggers with Indigo brand accents.
+ * Optimized for professional enterprise workflows with a minimum 44px hit-area (Rule 007).
  */
 export const ExecutiveButton = ({ 
   children, 
@@ -33,7 +43,7 @@ export const ExecutiveButton = ({
   onClick,
   ...props 
 }) => {
-  const baseClasses = "relative overflow-hidden inline-flex items-center justify-center gap-2 font-display font-medium transition-all duration-200 rounded-lg active:scale-95";
+  const baseClasses = "relative overflow-hidden inline-flex items-center justify-center gap-2 font-display font-medium transition-all duration-200 rounded-lg active:scale-95 min-h-[44px]";
   
   const sizes = {
     sm: 'text-xs px-3 py-1.5',
@@ -43,7 +53,7 @@ export const ExecutiveButton = ({
 
   const variants = {
     primary: "bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm border border-indigo-500/20",
-    neon: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700 shadow-sm",
+    secondary: "bg-slate-800 text-slate-100 hover:bg-slate-700 border border-slate-700 shadow-sm",
     ghost: "bg-transparent text-slate-400 hover:text-slate-100 hover:bg-slate-800 border border-transparent hover:border-slate-700",
     danger: "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20",
     outline: "bg-transparent text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/10"
@@ -111,6 +121,45 @@ export const ExecutiveBadge = ({ children, variant = 'indigo', className = '' })
     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${variants[variant]} ${className}`}>
       {children}
     </span>
+  );
+};
+
+/**
+ * ExecutivePageHeader: High-fidelity layout header with contextual labels.
+ */
+export const ExecutivePageHeader = ({ title, subtitle, label, icon: Icon, actions }) => {
+  return (
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+          <span className="text-[10px] font-bold text-indigo-400/80 uppercase tracking-widest">{label}</span>
+        </div>
+        <h1 className="text-4xl font-display font-bold text-white tracking-tight flex items-center gap-4">
+          {Icon && <Icon className="text-slate-700 hidden md:block" size={32} />}
+          {title}
+        </h1>
+        <p className="mt-2 text-slate-500 text-sm max-w-2xl leading-relaxed">{subtitle}</p>
+      </div>
+      {actions && <div className="flex items-center gap-3 w-full md:w-auto">{actions}</div>}
+    </div>
+  );
+};
+
+/**
+ * ExecutiveEmptyState: Professional vacancy markers.
+ */
+export const ExecutiveEmptyState = ({ title, desc, icon: Icon, action }) => {
+  return (
+    <ExecutiveCard className="flex flex-col items-center justify-center p-20 text-center border-dashed border-slate-800/40 bg-slate-900/10">
+      <div className="w-20 h-20 rounded-3xl bg-slate-900/40 border border-slate-800 flex items-center justify-center mb-6 shadow-inner relative group transition-all duration-500 hover:border-indigo-500/40">
+        <div className="absolute inset-0 bg-indigo-500/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+        {Icon ? <Icon className="text-slate-600 group-hover:text-indigo-400 transition-colors" size={40} strokeWidth={1} /> : <CheckCircle className="text-slate-700" size={40} strokeWidth={1} />}
+      </div>
+      <h3 className="text-xl font-display font-bold text-white mb-2">{title}</h3>
+      <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-8">{desc}</p>
+      {action && action}
+    </ExecutiveCard>
   );
 };
 

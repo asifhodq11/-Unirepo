@@ -132,7 +132,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ReplyIQ Executive Topology (Subtle Depth) */
+/* ── ReplyIQ Executive Topology (Professional Depth) ── */
 body::before {
   content: '';
   position: fixed;
@@ -224,7 +224,7 @@ a:hover { color: var(--accent-hover); }
   box-shadow: var(--shadow-inner);
 }
 
-/* ── Floating Buttons (Neon States) ──── */
+/* ── Action Triggers (Enterprise Surfaces) ──── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -336,8 +336,8 @@ a:hover { color: var(--accent-hover); }
 .star-group { display: flex; gap: var(--space-1); }
 .star-btn {
   font-size: 1.5rem;
-  min-height: var(--touch-target-min);
-  min-width: var(--touch-target-min);
+  min-height: 44px;
+  min-width: 44px;
   cursor: pointer;
   background: none;
   border: none;

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, Key, Sun, Moon, LogOut, Save, Settings as SettingsIcon, CreditCard, Zap, CheckCircle2, History as HistoryIcon, ShieldCheck, Mail } from 'lucide-react';
+import { User, Key, Sun, Moon, LogOut, Save, Settings as SettingsIcon, CreditCard, Zap, CheckCircle, History as HistoryIcon, ShieldCheck, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../hooks/useToast';
-import { ExecutiveCard, ExecutiveButton, ExecutiveBadge } from '../components/ExecutiveComponents';
+import { api } from '../api/client';
+import { ExecutiveCard, ExecutiveButton, ExecutiveBadge, ExecutivePageHeader } from '../components/ExecutiveComponents';
 
 export default function SettingsPage() {
   const { user, logout, updateProfile } = useAuth();
@@ -19,12 +20,20 @@ export default function SettingsPage() {
 
   const [firstName, setFirstName] = useState(user?.user_metadata?.first_name || '');
   const [lastName, setLastName] = useState(user?.user_metadata?.last_name || '');
+  const [businessName, setBusinessName] = useState(user?.business_name || '');
+  const [tone, setTone] = useState(user?.tone_preference || 'professional');
   const [loading, setLoading] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await updateProfile({ first_name: firstName, last_name: lastName });
+    const { error } = await updateProfile({ 
+      first_name: firstName, 
+      last_name: lastName,
+      business_name: businessName,
+      tone_preference: tone
+    });
     setLoading(false);
     
     if (error) {
@@ -51,15 +60,13 @@ export default function SettingsPage() {
       animate="show"
       className="w-full max-w-5xl mx-auto flex flex-col gap-8 pb-32"
     >
-      {/* Executive Header */}
-      <div className="flex flex-col gap-1 border-b border-slate-800/60 pb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <SettingsIcon className="text-indigo-400" size={18} />
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Workspace Configuration</span>
-        </div>
-        <h1 className="text-3xl font-display font-bold text-white tracking-tight">Account & Workspace</h1>
-        <p className="text-slate-400 text-sm">Managing your professional identity and subscription status.</p>
-      </div>
+      {/* Executive Page Header */}
+      <ExecutivePageHeader 
+        title="Settings"
+        subtitle="Manage your profile, workspace branding, and enterprise billing."
+        label="Configuration"
+        icon={SettingsIcon}
+      />
 
       {/* Modern Tabs */}
       <div className="flex gap-8 border-b border-slate-800/60 transition-all">
@@ -83,7 +90,7 @@ export default function SettingsPage() {
         {activeTab === 'profile' && (
           <motion.div key="profile" variants={itemVariants} initial="hidden" animate="show" exit="hidden" className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-8">
-              <ExecutiveCard className="h-full flex flex-col gap-8 p-8 border-slate-800/80 bg-slate-900/20" hover={false}>
+              <ExecutiveCard className="h-full flex flex-col gap-8 p-8 border-slate-800/80 bg-slate-900/40" hover={false}>
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20"><User size={24} className="text-indigo-400" /></div>
                   <div>
@@ -95,29 +102,31 @@ export default function SettingsPage() {
                 <form onSubmit={handleUpdate} className="flex flex-col gap-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="flex flex-col gap-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">First Name</label>
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Business Name</label>
                       <input 
                         type="text" 
-                        placeholder="e.g. Alexander"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="e.g. Acme Corp"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
                         className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-indigo-500/50 transition-all font-body text-sm"
                       />
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Last Name</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Hamilton"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-indigo-500/50 transition-all font-body text-sm"
-                      />
+                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Response Tone</label>
+                      <select 
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value)}
+                        className="w-full bg-slate-950/60 border border-slate-800 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500/50 transition-all font-body text-sm appearance-none"
+                      >
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="empathetic">Empathetic</option>
+                      </select>
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-1">Corporate Email</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider pl-1">Corporate Email</label>
                     <div className="flex items-center gap-3 w-full bg-slate-950/40 border border-slate-800/40 rounded-lg px-4 py-2.5 text-slate-500 font-medium text-sm cursor-not-allowed">
                       <Mail size={14} className="opacity-50" />
                       {user?.email}
@@ -136,7 +145,7 @@ export default function SettingsPage() {
 
             <div className="lg:col-span-4 flex flex-col gap-6">
               {/* Security Status */}
-              <ExecutiveCard className="p-6 border-slate-800/80 bg-slate-900/20" hover={false}>
+              <ExecutiveCard className="p-6 border-slate-800/80 bg-slate-900/40" hover={false}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                     <ShieldCheck size={20} className="text-emerald-400" />
@@ -156,7 +165,7 @@ export default function SettingsPage() {
               </ExecutiveCard>
 
               {/* Theme Selection */}
-              <ExecutiveCard className="p-6 border-slate-800/80 bg-slate-900/20" hover={false}>
+              <ExecutiveCard className="p-6 border-slate-800/80 bg-slate-900/40" hover={false}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 bg-slate-800 rounded-lg border border-slate-700">
                     {theme === 'dark' ? <Moon size={18} className="text-slate-300" /> : <Sun size={18} className="text-indigo-400" />}
@@ -197,26 +206,42 @@ export default function SettingsPage() {
               </div>
               
               <div className="flex flex-col items-end gap-3 w-full md:w-auto relative z-10">
-                <ExecutiveButton variant="primary" icon={CreditCard} className="w-full md:w-auto px-8 h-12 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+                <ExecutiveButton 
+                  variant="primary" 
+                  icon={CreditCard} 
+                  isLoading={billingLoading}
+                  onClick={async () => {
+                    setBillingLoading(true);
+                    try {
+                      const data = await api.post('/payments/create-portal-session');
+                      if (data?.url) window.location.href = data.url;
+                    } catch (err) {
+                      showToast({ title: 'Portal Error', desc: 'Could not access billing session.', type: 'error' });
+                    } finally {
+                      setBillingLoading(false);
+                    }
+                  }}
+                  className="w-full md:w-auto px-8 h-12 shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+                >
                   Stripe Billing Portal
                 </ExecutiveButton>
-                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  <CheckCircle2 size={12} className="text-emerald-500" />
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <CheckCircle size={12} className="text-emerald-500" />
                   PCI Compliance Secure
                 </div>
               </div>
             </ExecutiveCard>
 
             <div className="flex flex-col gap-4">
-              <h3 className="text-lg font-display font-bold text-white px-1">Transaction History</h3>
-              <ExecutiveCard className="p-0 overflow-hidden border-slate-800/80" hover={false}>
+              <h3 className="text-lg font-display font-bold text-white px-1 font-display">Transaction History</h3>
+              <ExecutiveCard className="p-0 overflow-hidden border-slate-800/80 bg-slate-900/40" hover={false}>
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-900/40 border-b border-slate-800/60">
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Billing Date</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Description</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Amount</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Invoice</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Billing Date</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Description</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Invoice</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/40 bg-slate-950/20">
@@ -246,5 +271,3 @@ export default function SettingsPage() {
     </motion.div>
   );
 }
-
-

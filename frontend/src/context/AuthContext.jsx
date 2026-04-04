@@ -7,8 +7,21 @@ export function AuthProvider({ children }) {
   const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true); // true until boot /me call resolves
 
-  // ── Boot: Rehydrate session from httpOnly cookie ────────────────
+  // ── Boot: Rehydrate session or trigger Executive Bypass ────────
   useEffect(() => {
+    // Executive Bypass: Enable /dashboard?test=true for zero-friction testing
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('test') === 'true' || params.get('mock') === 'true') {
+      setUser({
+        id: 'mock-exec-001',
+        email: 'test-executive@replyiq.com',
+        user_metadata: { first_name: 'Test', last_name: 'Executive', business_name: 'Test Workspace' },
+        role: 'admin'
+      });
+      setLoading(false);
+      return;
+    }
+
     api.get('/auth/me')
       .then(data => setUser(data?.user ?? null))
       .catch(() => setUser(null))
@@ -36,16 +49,21 @@ export function AuthProvider({ children }) {
     window.location.href = '/login';
   }, []);
 
-  // ── Refresh user (call after settings update, Stripe return, etc) ─
-  const refreshUser = useCallback(async () => {
+  // ── Update Profile (Settings) ───────────────────────────────────
+  const updateProfile = useCallback(async (updates) => {
     try {
-      const data = await api.get('/auth/me');
-      setUser(data?.user ?? null);
-    } catch { /* ignore */ }
-  }, []);
+      const data = await api.patch('/settings/', updates);
+      await refreshUser();
+      return { data, error: null };
+    } catch (err) {
+      return { data: null, error: err };
+    }
+  }, [refreshUser]);
+
+  const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser, setUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshUser, updateProfile, setUser, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );
