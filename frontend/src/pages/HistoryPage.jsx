@@ -250,7 +250,7 @@ export default function HistoryPage() {
               onClick={() => setSelectedReview(item)}
               className="group"
             >
-              <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_100px_auto] md:grid-cols-[auto_auto_minmax(0,1fr)_120px_100px_auto] items-center gap-4 w-full">
+              <div className="grid grid-cols-[auto_auto_1fr_auto_100px_auto] md:grid-cols-[auto_auto_1fr_120px_100px_auto] items-center gap-4 w-full">
                 {/* 1. Selection Checkbox */}
                 <div className="flex items-center justify-center w-6">
                   {item.status === 'pending' && (
