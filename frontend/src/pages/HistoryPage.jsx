@@ -250,26 +250,31 @@ export default function HistoryPage() {
               onClick={() => setSelectedReview(item)}
               className="group"
             >
-              <div className="flex items-center gap-4 flex-1 min-w-0">
-                {item.status === 'pending' && (
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
-                    className={`
-                      w-6 h-6 rounded flex items-center justify-center transition-all
-                      ${selectedIds.has(item.id) ? 'bg-accent text-white border-accent' : 'border-2 border-border hover:border-accent/40'}
-                    `}
-                  >
-                    {selectedIds.has(item.id) && <CheckSquare size={14} />}
-                  </button>
-                )}
+              <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_100px_auto] md:grid-cols-[auto_auto_minmax(0,1fr)_120px_100px_auto] items-center gap-4 w-full">
+                {/* 1. Selection Checkbox */}
+                <div className="flex items-center justify-center w-6">
+                  {item.status === 'pending' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(item.id); }}
+                      className={`
+                        w-6 h-6 rounded flex items-center justify-center transition-all
+                        ${selectedIds.has(item.id) ? 'bg-accent text-white border-accent' : 'border-2 border-border hover:border-accent/40'}
+                      `}
+                    >
+                      {selectedIds.has(item.id) && <CheckSquare size={14} />}
+                    </button>
+                  )}
+                </div>
                 
-                <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-border group-hover:border-accent/20">
+                {/* 2. Avatar */}
+                <div className="w-10 h-10 rounded-full bg-bg-surface flex items-center justify-center border border-border group-hover:border-accent/20">
                   <User size={18} className="text-muted" />
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-primary truncate">{item.reviewer_name || 'Anonymous User'}</span>
+                {/* 3. Main Content (Name & Review) */}
+                <div className="min-w-0 pr-4">
+                  <div className="flex items-center gap-3 mb-1">
+                    <span className="text-sm font-bold text-primary truncate max-w-[200px]">{item.reviewer_name || 'Anonymous User'}</span>
                     <div className="flex gap-0.5">
                       {[...Array(5)].map((_, i) => (
                         <Star 
@@ -277,30 +282,29 @@ export default function HistoryPage() {
                           size={10} 
                           fill={i < item.rating ? 'var(--accent)' : 'none'} 
                           stroke={i < item.rating ? 'var(--accent)' : 'var(--text-muted)'} 
-                          className={i >= item.rating ? 'opacity-40' : ''}
+                          className={i >= item.rating ? 'opacity-30' : ''}
                         />
                       ))}
                     </div>
                   </div>
-                  {/* PRETEXT-READY Preview */}
                   <p 
-                    className="text-xs text-muted truncate max-w-2xl italic"
+                    className="text-xs text-secondary line-clamp-2 max-w-3xl leading-relaxed"
                     style={{ contain: 'layout paint' }}
                   >
                     "{item.review_text || 'No review text provided.'}"
                   </p>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-8 pr-4">
-                <div className="hidden md:flex flex-col items-end">
-                  <span className="text-[10px] font-black text-muted uppercase tracking-widest mb-1">Received</span>
-                  <span className="text-xs font-bold text-primary">
+                {/* 4. Date (Hidden on mobile) */}
+                <div className="hidden md:flex flex-col items-end justify-center">
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-widest mb-1">Received</span>
+                  <span className="text-xs font-semibold text-primary">
                     {new Date(item.created_at).toLocaleDateString()}
                   </span>
                 </div>
                 
-                <div className="w-24 flex justify-end">
+                {/* 5. Status Badge */}
+                <div className="flex justify-end">
                   <ProBadge 
                     variant={
                       item.status === 'replied' ? 'success' : 
@@ -312,7 +316,10 @@ export default function HistoryPage() {
                   </ProBadge>
                 </div>
 
-                <MoreVertical size={16} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* 6. Context Menu */}
+                <div className="flex justify-end pr-2">
+                  <MoreVertical size={16} className="text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
               </div>
             </ProRow>
           ))

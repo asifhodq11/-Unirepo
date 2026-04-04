@@ -156,9 +156,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto">
+    <div className="w-full h-full flex flex-col gap-8 pb-32 md:pb-8">
       {/* ── Page Header ── */}
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-black text-primary tracking-tight">Overview</h1>
           <p className="text-sm text-muted font-medium mt-1">Real-time performance and AI monitoring.</p>
@@ -169,7 +169,7 @@ export default function DashboardPage() {
       {/* ── Actionable Alerts ── */}
       <AnimatePresence>
         {user?.google_status === 'degraded' && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-2">
             <ProCard className="bg-danger/5 border-danger/20 flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <AlertTriangle className="text-danger" size={20} />
@@ -185,16 +185,40 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       {/* ── Core Widgets ── */}
-      <DashboardOverview 
-        used={used} 
-        limit={limit} 
-        limitDisplay={limitDisplay} 
-        analytics={analytics} 
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ProStat 
+          label="Monthly Usage" 
+          value={used} 
+          subValue={`of ${limitDisplay} replies`} 
+          icon={Activity}
+          trend={null}
+        />
+        <ProStat 
+          label="Reputation" 
+          value={analytics?.avg_rating || "0.0"} 
+          subValue={`${analytics?.total_reviews ?? 0} total reviews`} 
+          icon={Star}
+          trend={12} // Visual polish
+        />
+        <ProStat 
+          label="AI Efficiency" 
+          value={`${analytics?.reply_rate ?? 0}%`} 
+          subValue="Response coverage" 
+          icon={Zap}
+          trend={8}
+        />
+        <ProStat 
+          label="Time Reclaimed" 
+          value={`${(analytics?.total_reviews ?? 0) > 0 ? ((analytics.total_reviews * 5) / 60).toFixed(1) : "0"}h`} 
+          subValue="Manual effort saved" 
+          icon={Clock}
+          trend={15}
+        />
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left: Main Feed */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="xl:col-span-2 space-y-8">
           <EngineHeartbeat 
             isSafeMode={isSafeMode} 
             onTriggerScan={handleTriggerScan} 
@@ -216,15 +240,15 @@ export default function DashboardPage() {
                     key={act.id}
                     whileHover={{ x: 4 }}
                     onClick={() => act.status === 'pending' ? navigate(`/history?open=${act.id}`) : setSelectedReview(act)}
-                    className="group flex items-center justify-between p-3 rounded-md border border-border hover:border-border-focus hover:bg-bg-elevated cursor-pointer transition-colors"
+                    className="group flex items-center justify-between p-3 flex-wrap md:flex-nowrap gap-4 rounded-xl border border-border hover:border-border-focus hover:bg-bg-elevated cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-md bg-bg-surface border border-border flex items-center justify-center group-hover:border-border-focus">
+                      <div className="w-10 h-10 rounded-xl bg-bg-surface border border-border flex items-center justify-center group-hover:border-border-focus">
                         <User size={16} className="text-muted" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-primary">{act.reviewer_name || 'Anonymous'}</span>
+                          <span className="text-sm font-bold text-primary truncate max-w-[150px] md:max-w-none">{act.reviewer_name || 'Anonymous'}</span>
                           <ProBadge variant={act.status === 'pending' ? 'warning' : 'success'}>
                             {act.status}
                           </ProBadge>
@@ -256,7 +280,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Right: Insights & Trends */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           <ProCard className="h-full">
             <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-6">Reputation Trend</h3>
             <div className="h-[200px] w-full">
@@ -270,14 +294,14 @@ export default function DashboardPage() {
                       </linearGradient>
                     </defs>
                     <Tooltip 
-                      contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
+                      contentStyle={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px' }}
                       itemStyle={{ color: 'var(--accent)', fontWeight: 'bold' }}
                     />
                     <Area type="monotone" dataKey="avg" stroke="var(--accent)" strokeWidth={3} fill="url(#trendGrad)" />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-bg-surface rounded-md border border-dashed border-border">
+                <div className="flex flex-col items-center justify-center h-full text-center p-6 bg-bg-surface rounded-2xl border border-dashed border-border">
                   <BarChart3 size={24} className="text-muted mb-2" />
                   <p className="text-[10px] text-muted uppercase font-bold tracking-widest">Awaiting More Data</p>
                 </div>
@@ -285,17 +309,17 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-8 space-y-4">
-              <div className="flex justify-between items-center p-3 rounded-md bg-bg-elevated border border-border">
+              <div className="flex justify-between items-center p-4 rounded-xl bg-bg-elevated border border-border">
                 <div className="flex items-center gap-3">
                   <TrendingUp size={16} className="text-success" />
-                  <span className="text-xs font-bold">Growth Velocity</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted">Growth Velocity</span>
                 </div>
                 <span className="text-xs font-black text-success">+14%</span>
               </div>
-              <div className="flex justify-between items-center p-3 rounded-md bg-bg-elevated border border-border">
+              <div className="flex justify-between items-center p-4 rounded-xl bg-bg-elevated border border-border">
                 <div className="flex items-center gap-3">
                   <MousePointer2 size={16} className="text-accent" />
-                  <span className="text-xs font-bold">Interaction Rate</span>
+                  <span className="text-xs font-bold uppercase tracking-widest text-muted">Interaction Rate</span>
                 </div>
                 <span className="text-xs font-black text-primary">3.2%</span>
               </div>

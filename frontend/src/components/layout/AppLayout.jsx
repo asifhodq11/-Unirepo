@@ -164,7 +164,7 @@ export default function AppLayout() {
       {/* ── Mobile Floating Navigation ── */}
       {isMobile && !isGeneratorOpen && (
         <nav className="nav-floating-pill">
-          {navItems.slice(0, 2).map(({ to, label, icon: Icon }) => (
+          {navItems.slice(0, Math.ceil(navItems.length / 2)).map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}>
               <Icon className="nav-icon" size={24} />
               <span>{label}</span>
@@ -173,6 +173,12 @@ export default function AppLayout() {
           <button className="nav-pill-center" onClick={() => setIsGeneratorOpen(true)}>
             <Plus className="nav-icon" size={32} strokeWidth={2.5} />
           </button>
+          {navItems.slice(Math.ceil(navItems.length / 2)).map(({ to, label, icon: Icon }) => (
+            <NavLink key={to} to={to} className={({ isActive }) => `nav-pill-item${isActive ? ' active' : ''}`}>
+              <Icon className="nav-icon" size={24} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
         </nav>
       )}
 
